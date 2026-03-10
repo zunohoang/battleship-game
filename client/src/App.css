@@ -1,42 +1,84 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+@import "tailwindcss";
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
+@layer base {
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+  /* =========================
+     LIGHT THEME (default)
+  ========================= */
+
+  :root {
+
+    /* background */
+    --bg-main: #f3f6fa;
+    --bg-panel: #ffffff;
+    --bg-card: #f8fbff;
+
+    /* text */
+    --text-main: #1e2a38;
+    --text-muted: #6b7a8c;
+
+    /* borders */
+    --border-main: #d7e3f0;
+
+    /* accent */
+    --accent-primary: #3b82f6;
+    --accent-hover: #2563eb;
+
+    /* states */
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    --accent-success: #10b981;
+
+    /* battleship specific */
+    --grid-line: #cfe0f0;
+    --grid-hover: #93c5fd;
+
+    --ship-color: #38bdf8;
+    --hit-color: #ef4444;
+    --miss-color: #9ca3af;
+
+    /* glow */
+    --hud-glow: rgba(59,130,246,0.35);
   }
-  to {
-    transform: rotate(360deg);
+
+
+  /* =========================
+     DARK THEME
+  ========================= */
+
+  .dark {
+
+    /* background */
+    --bg-main: #020a12;
+    --bg-panel: #061926;
+    --bg-card: #0a2432;
+
+    /* text */
+    --text-main: #d7f4ff;
+    --text-muted: #6fa9bd;
+
+    /* borders */
+    --border-main: #0e3c4f;
+
+    /* accent */
+    --accent-primary: #22d3ee;
+    --accent-hover: #06b6d4;
+
+    /* states */
+    --accent-danger: #ff5a5a;
+    --accent-warning: #ff8a3d;
+    --accent-success: #34d399;
+
+    /* battleship specific */
+    --grid-line: #0b3a4c;
+    --grid-hover: #164e63;
+
+    --ship-color: #22d3ee;
+    --hit-color: #ff5a5a;
+    --miss-color: #64748b;
+
+    /* glow */
+    --hud-glow: rgba(0,229,255,0.35);
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }
