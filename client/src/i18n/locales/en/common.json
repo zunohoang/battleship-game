@@ -1,11 +1,73 @@
 {
-  "appName": "Battleship",
-  "home": {
-    "title": "Welcome aboard",
-    "description": "Frontend foundation is ready."
-  },
-  "errors": {
-    "notFound": "Page not found",
-    "goHome": "Back to home"
-  }
+    "appName": "Battleship",
+    "home": {
+        "title": "Live to fight. Fight to live",
+        "description": "Frontend foundation is ready.",
+        "copyright": "Team 10 · IT2 K64 UTC",
+        "menu": {
+            "playOnline": "Play online",
+            "playBot": "Play with bot",
+            "botVsBot": "Bot vs bot",
+            "settings": "Settings",
+            "login": "Login",
+            "register": "Register"
+        },
+        "status": {
+            "sectors": "Sectors: 7-9 active",
+            "coordinates": "Lat: 45.32 | Long: -12.44",
+            "system": "System status: nominal",
+            "radar": "Radar sweep: enabled"
+        },
+        "playerStatus": {
+            "label": "Welcome",
+            "anonymous": "Anonymous",
+            "commander": "Commander {{username}}",
+            "defaultUsername": "Player"
+        },
+        "accessRules": {
+            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
+        }
+    },
+    "welcome": {
+        "subtitle": "Enter the fierce Naval warfares",
+        "title": "Welcome Commander",
+        "gameName": "BATTLESHIP:COMMAND",
+        "featureLabels": {
+            "webgame": "Instant access",
+            "matchmaking": "Fast matchmaking",
+            "ai": "Adaptive AI training",
+            "progress": "Career tracking"
+        },
+        "actions": {
+            "playAnonymous": "Play as anonymous",
+            "register": "Register",
+            "hasAccount": "Already have an account?",
+            "login": "Login"
+        },
+        "modals": {
+            "loginTitle": "Login",
+            "registerTitle": "Register",
+            "forgotPasswordTitle": "Forgot password",
+            "username": "Username",
+            "email": "Email",
+            "password": "Password",
+            "confirmPassword": "Confirm password",
+            "forgotPassword": "Forgot password?",
+            "forgotPasswordDescription": "Enter your email and we will send password reset instructions.",
+            "submitLogin": "Login",
+            "submitRegister": "Create account",
+            "submitForgotPassword": "Send reset link",
+            "cancel": "Cancel"
+        },
+        "features": {
+            "webgame": "Play without installation.",
+            "matchmaking": "Quick matchmaking for online skirmishes.",
+            "ai": "Practice mode against adaptive bot difficulty.",
+            "progress": "Track match history and player progression."
+        }
+    },
+    "errors": {
+        "notFound": "Page not found",
+        "goHome": "Back to home"
+    }
 }
