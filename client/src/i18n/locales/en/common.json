@@ -1,0 +1,11 @@
+{
+  "appName": "Battleship",
+  "home": {
+    "title": "Welcome aboard",
+    "description": "Frontend foundation is ready."
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "goHome": "Back to home"
+  }
+}

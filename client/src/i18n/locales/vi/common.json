@@ -1,0 +1,11 @@
+{
+  "appName": "Battleship",
+  "home": {
+    "title": "Sẵn sàng xuất phát",
+    "description": "Đã khởi tạo xong nền tảng frontend."
+  },
+  "errors": {
+    "notFound": "Không tìm thấy trang",
+    "goHome": "Quay về trang chủ"
+  }
+}

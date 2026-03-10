@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-This project is a frontend application built with **ReactJS**.
+This project is a frontend application built with **ReactTS**.
 The goal of the architecture is to ensure:
 
 * Scalability
@@ -14,14 +14,22 @@ The goal of the architecture is to ensure:
 
 # 2. Technology Stack
 
-| Technology                    | Purpose            |
-| ----------------------------- | ------------------ |
-| React                         | UI library         |
-| Vite / Create React App       | Project build tool |
-| React Router                  | Routing            |
-| Axios / Fetch                 | API calls          |
-| Redux / Zustand / Context API | State management   |
-| TailwindCSS / CSS Modules     | Styling            |
+| Technology                    | Purpose              |
+| ----------------------------- | -------------------- |
+| React                         | UI library           |
+| Vite / Create React App       | Project build tool   |
+| React Router                  | Routing              |
+| Axios / Fetch                 | API calls            |
+| Zustand / Context API         | State management     |
+| TailwindCSS / CSS Modules     | Styling              |
+| ESLint / Prettier             | Code quality         |
+| i18next                       | Internationalization |
+| Socket.io                     | Real-time updates    |
+| TypeScript                    | Type safety          |
+| Lottie                        | Animations           |
+| Lucide                        | Icons                |
+| Framer Motion                 | Animations           |
+| Jest / React Testing Library  | Testing              |
 
 ---
 
@@ -41,8 +49,9 @@ src/
 ├── utils/           # helper functions
 ├── constants/       # constants and config
 │
-├── App.jsx
-└── main.jsx
+├── App.tsx          # current app shell baseline
+├── App.css          # design-token/CSS variable strategy
+└── main.tsx         # provider/router composition point
 ```
 
 ---
@@ -93,7 +102,7 @@ Routing is handled using **React Router**.
 
 Example:
 
-```jsx
+```tsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Dashboard from "../pages/Dashboard";
