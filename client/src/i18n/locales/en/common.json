@@ -58,6 +58,7 @@
             "submitRegister": "Create account",
             "submitForgotPassword": "Send reset link",
             "cancel": "Cancel",
+            "later": "Maybe later",
             "profileSetupTitle": "Set up your profile",
             "signature": "Signature",
             "signatureHint": "Max 200 characters",
@@ -66,11 +67,6 @@
             "placeholder": {
                 "password": "Set a password",
                 "signature": "Write something about yourself…"
-            },
-            "errors": {
-                "timeout": "Request timed out. Please try again.",
-                "network": "Network error. Please check your internet connection.",
-                "generic": "Something went wrong. Please try again."
             }
         },
         "features": {
@@ -82,6 +78,22 @@
     },
     "errors": {
         "notFound": "Page not found",
-        "goHome": "Back to home"
+        "goHome": "Back to home",
+        "TIMEOUT": "Request timed out. Please try again.",
+        "NETWORK_ERROR": "Network error. Please check your internet connection.",
+        "INVALID_EMAIL": "Please enter a valid email address.",
+        "INVALID_CREDENTIALS": "Invalid email or password.",
+        "USERNAME_REQUIRED": "Username is required.",
+        "USERNAME_TOO_LONG": "Username must be at most 20 characters.",
+        "USERNAME_INVALID_FORMAT": "Username can only contain letters and numbers.",
+        "EMAIL_ALREADY_EXISTS": "This email is already registered.",
+        "USERNAME_ALREADY_EXISTS": "This username is already taken.",
+        "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
+        "PASSWORD_TOO_LONG": "Password must be at most 72 characters.",
+        "PASSWORD_MISMATCH": "Passwords do not match.",
+        "SIGNATURE_TOO_LONG": "Signature must be at most 200 characters.",
+        "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
+        "USER_NOT_FOUND": "User not found.",
+        "UNKNOWN_ERROR": "Something went wrong. Please try again."
     }
 }

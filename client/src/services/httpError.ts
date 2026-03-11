@@ -1,19 +1,22 @@
 import { isAxiosError } from 'axios'
 
-export type HttpErrorKind = 'timeout' | 'network' | 'unknown'
-
-export function getHttpErrorKind(error: unknown): HttpErrorKind {
+export function getApiErrorCode(error: unknown): string {
   if (!isAxiosError(error)) {
-    return 'unknown'
+    return 'UNKNOWN_ERROR'
   }
 
   if (error.code === 'ECONNABORTED') {
-    return 'timeout'
+    return 'TIMEOUT'
   }
 
   if (error.message === 'Network Error') {
-    return 'network'
+    return 'NETWORK_ERROR'
   }
 
-  return 'unknown'
+  const code = error.response?.data?.error
+  if (typeof code === 'string' && code.length > 0) {
+    return code
+  }
+
+  return 'UNKNOWN_ERROR'
 }

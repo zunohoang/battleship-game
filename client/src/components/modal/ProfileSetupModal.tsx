@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import defaultAvatarSrc from '@/assets/images/default-avatar.svg'
+import { validateProfileInput } from '@/utils/authValidation'
 
 export type ProfileSetupPayload = {
   avatarFile: File | null
@@ -15,8 +16,10 @@ export type ProfileSetupPayload = {
 type ProfileSetupModalProps = {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (payload: ProfileSetupPayload) => void
+  onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>
   username: string
+  signature?: string | null
+  avatarSrc?: string | null
 }
 
 export function ProfileSetupModal({
@@ -24,21 +27,24 @@ export function ProfileSetupModal({
   onClose,
   onSubmit,
   username: initialUsername,
+  signature: initialSignature,
+  avatarSrc: initialAvatarSrc,
 }: ProfileSetupModalProps) {
   const { t } = useTranslation('common')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [avatarSrc, setAvatarSrc] = useState(defaultAvatarSrc)
+  const [avatarSrc, setAvatarSrc] = useState(initialAvatarSrc ?? defaultAvatarSrc)
   const [username, setUsername] = useState(initialUsername)
-  const [signature, setSignature] = useState('')
+  const [signature, setSignature] = useState(initialSignature ?? '')
   const [password, setPassword] = useState('')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   
   const [showPreview, setShowPreview] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
 
   const isChanged =
     username !== initialUsername ||
-    signature !== '' ||
+    signature !== (initialSignature ?? '') ||
     avatarFile !== null ||
     password !== ''
 
@@ -55,11 +61,27 @@ export function ProfileSetupModal({
     reader.readAsDataURL(file)
   }
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const payload: ProfileSetupPayload = { avatarFile, avatarSrc, username, signature, password }
-    console.log('[ProfileSetupModal] payload:', payload)
-    onSubmit(payload)
+    const validation = validateProfileInput(username, signature, password)
+
+    if (validation.errorCode) {
+      setErrorMessage(t(`errors.${validation.errorCode}`))
+      return
+    }
+
+    const payload: ProfileSetupPayload = {
+      avatarFile,
+      avatarSrc,
+      username: validation.username,
+      signature: validation.signature,
+      password: validation.password,
+    }
+
+    const submitError = await onSubmit(payload)
+    if (submitError) {
+      setErrorMessage(submitError)
+    }
   }
 
   const inputClassName =
@@ -68,7 +90,7 @@ export function ProfileSetupModal({
   return (
     <>
       <Modal isOpen={isOpen} title={t('welcome.modals.profileSetupTitle')} onClose={onClose}>
-        <form className="grid gap-4" onSubmit={handleSubmit}>
+        <form className="grid gap-4" noValidate onSubmit={handleSubmit}>
 
           {/* Avatar */}
           <div className="flex flex-col items-center gap-2">
@@ -107,7 +129,10 @@ export function ProfileSetupModal({
               required
               maxLength={20}
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setErrorMessage(null)
+                setUsername(e.target.value)
+              }}
               className={inputClassName}
             />
           </label>
@@ -122,7 +147,10 @@ export function ProfileSetupModal({
               maxLength={200}
               rows={3}
               value={signature}
-              onChange={(e) => setSignature(e.target.value)}
+              onChange={(e) => {
+                setErrorMessage(null)
+                setSignature(e.target.value)
+              }}
               placeholder={t('welcome.modals.placeholder.signature')}
               className="rounded-xl border border-[#7dbde0] bg-white/85 px-3 py-2 text-[#24425f] outline-none focus:border-[#3f77b2] resize-none text-sm"
             />
@@ -136,17 +164,25 @@ export function ProfileSetupModal({
               autoComplete="new-password"
               placeholder={t('welcome.modals.placeholder.password')}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setErrorMessage(null)
+                setPassword(e.target.value)
+              }}
+              minLength={8}
+              maxLength={72}
               className={inputClassName}
             />
           </label>
 
-          <div className="mt-2 flex gap-3">
+          {errorMessage && (
+            <p className="rounded-xl border border-[#d36b6b] bg-[#ffe8e8] px-3 py-2 text-sm font-semibold text-[#8f2f2f]">
+              {errorMessage}
+            </p>
+          )}
+
+          <div className="mt-2 flex justify-center">
             <Button variant="primary" type="submit" className="h-11" disabled={!isChanged}>
               {t('welcome.modals.submitProfile')}
-            </Button>
-            <Button type="button" className="h-11" onClick={onClose}>
-              {t('welcome.modals.cancel')}
             </Button>
           </div>
 

@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Button,
   SectionStatus,
@@ -13,10 +13,15 @@ import type { ProfileSetupPayload } from "@/components/modal/ProfileSetupModal";
 import { useModalState } from "@/hooks/useModalState";
 import { useGlobalContext } from "@/hooks/useGlobalContext";
 import * as authService from "@/services/authService";
-import { getHttpErrorKind } from "@/services/httpError";
+import { getApiErrorCode } from "@/services/httpError";
+import { validateLoginInput, validateRegisterInput } from "@/utils/authValidation";
 import defaultAvatarSrc from "@/assets/images/default-avatar.svg";
 
 type AuthModalMode = "login" | "register" | "forgotPassword" | "profileSetup";
+
+type HomeNavigationState = {
+  openProfileSetup?: boolean;
+};
 
 function normalizeAvatar(avatar: string | null): string {
   if (!avatar) {
@@ -29,6 +34,8 @@ function normalizeAvatar(avatar: string | null): string {
 export function HomePage() {
   const { t } = useTranslation("common");
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const currentYear = new Date().getFullYear();
   const { user, setUser } = useGlobalContext();
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -39,15 +46,30 @@ export function HomePage() {
     openModal,
     closeModal,
   } = useModalState<AuthModalMode>();
+  const navigationState = useMemo(
+    () => (location.state as HomeNavigationState | null) ?? null,
+    [location.state],
+  );
+
+  useEffect(() => {
+    if (!navigationState?.openProfileSetup) {
+      return;
+    }
+
+    openModal("profileSetup");
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+  }, [location.pathname, location.search, navigate, navigationState, openModal]);
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoginError(null);
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim();
+    const rawEmail = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
+    const { email, errorCode } = validateLoginInput(rawEmail, password);
 
-    if (!email || !password) {
+    if (errorCode) {
+      setLoginError(t(`errors.${errorCode}`));
       return;
     }
 
@@ -65,18 +87,7 @@ export function HomePage() {
 
       closeModal();
     } catch (error) {
-      const errorKind = getHttpErrorKind(error);
-      if (errorKind === "timeout") {
-        setLoginError(t("welcome.modals.errors.timeout"));
-        return;
-      }
-
-      if (errorKind === "network") {
-        setLoginError(t("welcome.modals.errors.network"));
-        return;
-      }
-
-      setLoginError(t("welcome.modals.errors.generic"));
+      setLoginError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
 
@@ -84,12 +95,19 @@ export function HomePage() {
     event.preventDefault();
     setRegisterError(null);
     const formData = new FormData(event.currentTarget);
-    const username = String(formData.get("username") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
+    const rawUsername = String(formData.get("username") ?? "");
+    const rawEmail = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const { username, email, errorCode } = validateRegisterInput(
+      rawUsername,
+      rawEmail,
+      password,
+      confirmPassword,
+    );
 
-    if (!username || !email || !password || password !== confirmPassword) {
+    if (errorCode) {
+      setRegisterError(t(`errors.${errorCode}`));
       return;
     }
 
@@ -108,36 +126,53 @@ export function HomePage() {
 
       openModal("profileSetup");
     } catch (error) {
-      const errorKind = getHttpErrorKind(error);
-      if (errorKind === "timeout") {
-        setRegisterError(t("welcome.modals.errors.timeout"));
-        return;
-      }
-
-      if (errorKind === "network") {
-        setRegisterError(t("welcome.modals.errors.network"));
-        return;
-      }
-
-      setRegisterError(t("welcome.modals.errors.generic"));
+      setRegisterError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
 
-  const handleSubmitProfileSetup = (payload: ProfileSetupPayload) => {
-    setUser({ username: payload.username, avatarSrc: payload.avatarSrc, signature: payload.signature || null });
-    closeModal();
+  const handleSubmitProfileSetup = async (
+    payload: ProfileSetupPayload,
+  ): Promise<string | null> => {
+    try {
+      const response = await authService.updateProfile({
+        username: payload.username,
+        signature: payload.signature,
+        password: payload.password,
+        avatarFile: payload.avatarFile,
+      });
+
+      setUser({
+        username: response.user.username,
+        avatarSrc: normalizeAvatar(response.user.avatar),
+        signature: response.user.signature,
+      });
+      closeModal();
+
+      return null;
+    } catch (error) {
+      return t(`errors.${getApiErrorCode(error)}`);
+    }
   };
 
   const handleSubmitForgotPassword = (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
   };
 
-  const username = searchParams.get("username")?.trim() || t("home.playerStatus.defaultUsername");
+  const username =
+    user?.username?.trim() ||
+    searchParams.get("username")?.trim() ||
+    t("home.playerStatus.defaultUsername");
   const isAnonymous = searchParams.get("status") === "anonymous";
-  const status =
-    isAnonymous
-      ? t("home.playerStatus.anonymous")
-      : t("home.playerStatus.commander", { username });
+  const commanderText = t("home.playerStatus.commander", { username });
+  const commanderTextParts = commanderText.split(username);
+  const isProfileSetupOpen = isModalOpen && authModalMode === "profileSetup";
+  const profileSetupModalKey = [
+    "profileSetup",
+    isProfileSetupOpen ? "open" : "closed",
+    user?.username ?? '',
+    user?.signature ?? '',
+    user?.avatarSrc ?? '',
+  ].join(":");
 
   const menuItems = [
     {
@@ -191,7 +226,22 @@ export function HomePage() {
           </h1>
 
           <p className="mt-4 text-xs font-semibold tracking-[0.22em] text-[#5f7da1] uppercase">
-            {t("home.playerStatus.label")}: {status}
+            {t("home.playerStatus.label")}:{" "}
+            {isAnonymous || !user ? (
+              t("home.playerStatus.anonymous")
+            ) : (
+              <>
+                <span>{commanderTextParts[0] ?? ""}</span>
+                <button
+                  type="button"
+                  onClick={() => openModal("profileSetup")}
+                  className="cursor-pointer font-semibold text-[#365b87] underline underline-offset-3 transition-colors hover:text-[#1f426b]"
+                >
+                  {username}
+                </button>
+                <span>{commanderTextParts.slice(1).join(username)}</span>
+              </>
+            )}
           </p>
 
           <div className="mt-10 flex w-full max-w-105 flex-col gap-3">
@@ -200,26 +250,28 @@ export function HomePage() {
                 {item.label}
               </Button>
             ))}
-            <div className="flex gap-2">
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setLoginError(null);
-                  openModal("login");
-                }}
-              >
-                {t("home.menu.login")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setRegisterError(null);
-                  openModal("register");
-                }}
-              >
-                {t("home.menu.register")}
-              </Button>
-            </div>
+            {!user && (
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setLoginError(null);
+                    openModal("login");
+                  }}
+                >
+                  {t("home.menu.login")}
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setRegisterError(null);
+                    openModal("register");
+                  }}
+                >
+                  {t("home.menu.register")}
+                </Button>
+              </div>
+            )}
           </div>
 
           {isAnonymous && (
@@ -244,6 +296,7 @@ export function HomePage() {
         onClose={closeModal}
         onSubmit={handleSubmitLogin}
         onForgotPassword={() => openModal("forgotPassword")}
+        onFieldsChange={() => setLoginError(null)}
         errorMessage={loginError ?? undefined}
       />
 
@@ -251,6 +304,7 @@ export function HomePage() {
         isOpen={isModalOpen && authModalMode === "register"}
         onClose={closeModal}
         onSubmit={handleSubmitRegister}
+        onFieldsChange={() => setRegisterError(null)}
         errorMessage={registerError ?? undefined}
       />
 
@@ -261,11 +315,13 @@ export function HomePage() {
       />
 
       <ProfileSetupModal
-        key={authModalMode}
-        isOpen={isModalOpen && authModalMode === "profileSetup"}
+        key={profileSetupModalKey}
+        isOpen={isProfileSetupOpen}
         onClose={closeModal}
         onSubmit={handleSubmitProfileSetup}
         username={user?.username ?? ""}
+        signature={user?.signature}
+        avatarSrc={user?.avatarSrc}
       />
     </main>
   );

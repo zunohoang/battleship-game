@@ -58,6 +58,7 @@
             "submitRegister": "Tạo tài khoản",
             "submitForgotPassword": "Gửi liên kết đặt lại",
             "cancel": "Hủy",
+            "later": "Để khi khác",
             "profileSetupTitle": "Thiết lập hồ sơ",
             "signature": "Chữ ký",
             "signatureHint": "Tối đa 200 ký tự",
@@ -66,11 +67,6 @@
             "placeholder": {
                 "password": "Đổi mật khẩu",
                 "signature": "Viết gì đó về bản thân…"
-            },
-            "errors": {
-                "timeout": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
-                "network": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
-                "generic": "Có lỗi xảy ra. Vui lòng thử lại."
             }
         },
         "features": {
@@ -82,6 +78,22 @@
     },
     "errors": {
         "notFound": "Không tìm thấy trang",
-        "goHome": "Quay về trang chủ"
+        "goHome": "Quay về trang chủ",
+        "TIMEOUT": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
+        "NETWORK_ERROR": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
+        "INVALID_EMAIL": "Vui lòng nhập email hợp lệ.",
+        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
+        "USERNAME_REQUIRED": "Tên người dùng là bắt buộc.",
+        "USERNAME_TOO_LONG": "Tên người dùng tối đa 20 ký tự.",
+        "USERNAME_INVALID_FORMAT": "Tên người dùng chỉ được chứa chữ cái và số.",
+        "EMAIL_ALREADY_EXISTS": "Email này đã được đăng ký.",
+        "USERNAME_ALREADY_EXISTS": "Tên người dùng này đã được sử dụng.",
+        "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
+        "PASSWORD_TOO_LONG": "Mật khẩu tối đa 72 ký tự.",
+        "PASSWORD_MISMATCH": "Mật khẩu xác nhận không khớp.",
+        "SIGNATURE_TOO_LONG": "Chữ ký tối đa 200 ký tự.",
+        "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
+        "USER_NOT_FOUND": "Không tìm thấy người dùng.",
+        "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
     }
 }
