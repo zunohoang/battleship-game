@@ -57,7 +57,21 @@
             "submitLogin": "Đăng nhập",
             "submitRegister": "Tạo tài khoản",
             "submitForgotPassword": "Gửi liên kết đặt lại",
-            "cancel": "Hủy"
+            "cancel": "Hủy",
+            "profileSetupTitle": "Thiết lập hồ sơ",
+            "signature": "Chữ ký",
+            "signatureHint": "Tối đa 200 ký tự",
+            "changeAvatar": "Đổi ảnh đại diện",
+            "submitProfile": "Lưu hồ sơ",
+            "placeholder": {
+                "password": "Đổi mật khẩu",
+                "signature": "Viết gì đó về bản thân…"
+            },
+            "errors": {
+                "timeout": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
+                "network": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
+                "generic": "Có lỗi xảy ra. Vui lòng thử lại."
+            }
         },
         "features": {
             "webgame": "Chơi mà không phải cài đặt.",

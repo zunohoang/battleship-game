@@ -57,7 +57,21 @@
             "submitLogin": "Login",
             "submitRegister": "Create account",
             "submitForgotPassword": "Send reset link",
-            "cancel": "Cancel"
+            "cancel": "Cancel",
+            "profileSetupTitle": "Set up your profile",
+            "signature": "Signature",
+            "signatureHint": "Max 200 characters",
+            "changeAvatar": "Change avatar",
+            "submitProfile": "Save profile",
+            "placeholder": {
+                "password": "Set a password",
+                "signature": "Write something about yourself…"
+            },
+            "errors": {
+                "timeout": "Request timed out. Please try again.",
+                "network": "Network error. Please check your internet connection.",
+                "generic": "Something went wrong. Please try again."
+            }
         },
         "features": {
             "webgame": "Play without installation.",

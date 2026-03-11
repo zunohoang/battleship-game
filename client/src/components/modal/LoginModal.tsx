@@ -8,9 +8,10 @@ type LoginModalProps = {
     onClose: () => void;
     onSubmit: (event: FormEvent<HTMLFormElement>) => void;
     onForgotPassword: () => void;
+    errorMessage?: string;
 };
 
-export function LoginModal({ isOpen, onClose, onSubmit, onForgotPassword }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSubmit, onForgotPassword, errorMessage }: LoginModalProps) {
     const { t } = useTranslation("common");
 
     return (
@@ -20,6 +21,7 @@ export function LoginModal({ isOpen, onClose, onSubmit, onForgotPassword }: Logi
                     {t("welcome.modals.email")}
                     <input
                         type="email"
+                        name="email"
                         required
                         className="h-11 rounded-xl border border-[#7dbde0] bg-white/85 px-3 text-[#24425f] outline-none focus:border-[#3f77b2]"
                     />
@@ -29,6 +31,7 @@ export function LoginModal({ isOpen, onClose, onSubmit, onForgotPassword }: Logi
                     {t("welcome.modals.password")}
                     <input
                         type="password"
+                        name="password"
                         required
                         className="h-11 rounded-xl border border-[#7dbde0] bg-white/85 px-3 text-[#24425f] outline-none focus:border-[#3f77b2]"
                     />
@@ -41,6 +44,12 @@ export function LoginModal({ isOpen, onClose, onSubmit, onForgotPassword }: Logi
                 >
                     {t("welcome.modals.forgotPassword")}
                 </button>
+
+                {errorMessage && (
+                    <p className="rounded-xl border border-[#d36b6b] bg-[#ffe8e8] px-3 py-2 text-sm font-semibold text-[#8f2f2f]">
+                        {errorMessage}
+                    </p>
+                )}
 
                 <div className="mt-2 flex gap-3">
                     <Button variant="primary" type="submit" className="h-11">
