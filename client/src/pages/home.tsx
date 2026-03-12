@@ -13,7 +13,7 @@ import type { ProfileSetupPayload } from "@/components/modal/ProfileSetupModal";
 import { useModalState } from "@/hooks/useModalState";
 import { useGlobalContext } from "@/hooks/useGlobalContext";
 import * as authService from "@/services/authService";
-import { getApiErrorCode } from "@/services/httpError";
+import { getApiErrorCode, isGloballyHandledApiError } from "@/services/httpError";
 import { validateLoginInput, validateRegisterInput } from "@/utils/authValidation";
 
 type AuthModalMode = "login" | "register" | "forgotPassword" | "profileSetup";
@@ -28,7 +28,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentYear = new Date().getFullYear();
-  const { user, setUser } = useGlobalContext();
+  const { user, setUser, logout } = useGlobalContext();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const {
@@ -78,6 +78,9 @@ export function HomePage() {
 
       closeModal();
     } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return;
+      }
       setLoginError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
@@ -117,6 +120,9 @@ export function HomePage() {
 
       openModal("profileSetup");
     } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return;
+      }
       setRegisterError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
@@ -141,7 +147,19 @@ export function HomePage() {
 
       return null;
     } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return null;
+      }
       return t(`errors.${getApiErrorCode(error)}`);
+    }
+  };
+
+  const handleLogoutProfile = async (): Promise<void> => {
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      closeModal();
     }
   };
 
@@ -310,6 +328,7 @@ export function HomePage() {
         isOpen={isProfileSetupOpen}
         onClose={closeModal}
         onSubmit={handleSubmitProfileSetup}
+        onLogout={handleLogoutProfile}
         username={user?.username ?? ""}
         signature={user?.signature}
         avatar={user?.avatar}

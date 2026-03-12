@@ -11,8 +11,10 @@
 
 ### 2) Cơ Chế Force Logout Từ Tầng Network Lên Tầng UI
 - Thêm `forceLogoutCallback` trong interceptor để thông báo cho UI khi refresh thất bại.
-- `GlobalProvider` đăng ký callback qua `setForceLogoutCallback(logout)`.
-- Hành vi `logout`: xóa access token localStorage + reset `user` về `null`.
+- Callback hiện nhận thêm `reasonCode` (ví dụ: `INVALID_REFRESH_TOKEN`) để UI quyết định cách xử lý.
+- Nếu là lỗi phiên hết hạn (`INVALID_REFRESH_TOKEN`): giữ nguyên UI state hiện tại, bật modal thông báo ở giữa màn hình.
+- Khi người dùng bấm OK/đóng modal: force redirect về welcome (`/`).
+- Với các lý do khác: vẫn logout ngay (xóa access token localStorage + reset `user` về `null`).
 
 ### 3) Cập Nhật Service API Frontend
 - Thêm `logout()` trong `authService` để gọi `POST /auth/logout` và luôn clear access token local.
@@ -30,12 +32,30 @@
 - `setUser(...)` trên `welcome` và `home` lưu `avatar: response.user.avatar` thay vì lưu link đã normalize.
 - `ProfileSetupModal` trên `home` nhận `avatar={user?.avatar}`.
 
-### 6) File Frontend Đã Thay Đổi
+### 6) Hoàn Thiện Luồng Session Hết Hạn Trên Client
+- Bỏ auto-timeout redirect trong modal session hết hạn; chuyển sang xác nhận thủ công bằng nút OK.
+- Chặn lỗi `INVALID_REFRESH_TOKEN` ở tầng global để không đẩy xuống các `catch` local của form/page.
+- `home.tsx` và `welcome.tsx` bỏ render thông báo lỗi local cho các mã lỗi đã được đánh dấu xử lý global.
+- Bổ sung helper `isGloballyHandledApiError(...)` trong `httpError.ts` để gom logic nhận diện lỗi xử lý tập trung.
+
+### 7) Cập Nhật UX Trong Profile Modal
+- Thêm nút `Logout` nằm cạnh nút `Save` trong `ProfileSetupModal`.
+- Nút Logout gọi `POST /auth/logout`, sau đó luôn clear state local và đóng modal.
+
+### 8) Hardening Auth Request/Response Interceptor
+- Không tự gắn `Authorization` cho các endpoint auth public (`/auth/login`, `/auth/register`, `/auth/refresh`).
+- Tránh vòng lặp refresh/retry cho các endpoint auth public.
+- Mục tiêu: giảm rủi ro dùng nhầm token stale sau khi server restart hoặc session bị revoke hàng loạt.
+
+### 9) File Frontend Đã Thay Đổi
 - `client/.env.example`
 - `client/src/services/axios.ts`
 - `client/src/services/interceptors.ts`
 - `client/src/services/authService.ts`
+- `client/src/services/httpError.ts`
 - `client/src/store/globalContext.tsx`
 - `client/src/pages/welcome.tsx`
 - `client/src/pages/home.tsx`
 - `client/src/components/modal/ProfileSetupModal.tsx`
+- `client/src/i18n/locales/en/common.json`
+- `client/src/i18n/locales/vi/common.json`

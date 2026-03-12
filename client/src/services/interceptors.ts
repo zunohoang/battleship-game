@@ -3,9 +3,9 @@ import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axio
 import { buildAuthorizationHeader, clearAccessToken, getAccessToken, setAccessToken } from './authToken'
 
 /** Modules register a callback here; called when refresh itself fails (session fully expired). */
-let forceLogoutCallback: (() => void) | null = null
+let forceLogoutCallback: ((reasonCode?: string) => void) | null = null
 
-export function setForceLogoutCallback(fn: () => void): void {
+export function setForceLogoutCallback(fn: (reasonCode?: string) => void): void {
   forceLogoutCallback = fn
 }
 
@@ -48,6 +48,29 @@ function clearAuthorizationHeader(instance: AxiosInstance): void {
   delete instance.defaults.headers.common.Authorization
 }
 
+function readApiErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined
+
+  const response = (error as { response?: { data?: unknown } }).response
+  if (!response || typeof response !== 'object') return undefined
+
+  const data = response.data
+  if (!data || typeof data !== 'object') return undefined
+
+  const code = (data as { error?: unknown }).error
+  return typeof code === 'string' ? code : undefined
+}
+
+function isPublicAuthRequest(url?: string): boolean {
+  if (!url) return false
+
+  return (
+    url.includes('/auth/login') ||
+    url.includes('/auth/register') ||
+    url.includes('/auth/refresh')
+  )
+}
+
 export function setupInterceptors(instance: AxiosInstance): void {
   const existingToken = getAccessToken()
   if (existingToken) {
@@ -58,7 +81,7 @@ export function setupInterceptors(instance: AxiosInstance): void {
   instance.interceptors.request.use(
     (config) => {
       const token = getAccessToken()
-      if (!token) return config
+      if (!token || isPublicAuthRequest(config.url)) return config
 
       const authorization = buildAuthorizationHeader(token)
       if (config.headers && typeof config.headers.set === 'function') {
@@ -94,8 +117,7 @@ export function setupInterceptors(instance: AxiosInstance): void {
         error.response?.status !== 401 ||
         !original ||
         original._retried ||
-        original.url?.includes('/auth/refresh') ||
-        original.url?.includes('/auth/login')
+        isPublicAuthRequest(original.url)
       ) {
         return Promise.reject(error)
       }
@@ -135,7 +157,7 @@ export function setupInterceptors(instance: AxiosInstance): void {
         clearAccessToken()
         clearAuthorizationHeader(instance)
         flushRefreshFailure(refreshError)
-        forceLogoutCallback?.()
+        forceLogoutCallback?.(readApiErrorCode(refreshError))
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false

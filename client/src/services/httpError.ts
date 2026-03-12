@@ -1,5 +1,7 @@
 import { isAxiosError } from 'axios'
 
+export const GLOBALLY_HANDLED_ERROR_CODES = new Set(['INVALID_REFRESH_TOKEN'])
+
 export function getApiErrorCode(error: unknown): string {
   if (!isAxiosError(error)) {
     return 'UNKNOWN_ERROR'
@@ -19,4 +21,8 @@ export function getApiErrorCode(error: unknown): string {
   }
 
   return 'UNKNOWN_ERROR'
+}
+
+export function isGloballyHandledApiError(error: unknown): boolean {
+  return GLOBALLY_HANDLED_ERROR_CODES.has(getApiErrorCode(error))
 }

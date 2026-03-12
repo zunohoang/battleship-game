@@ -1,99 +1,101 @@
 {
-    "appName": "Battleship",
-    "home": {
-        "title": "Live to fight. Fight to live",
-        "description": "Frontend foundation is ready.",
-        "copyright": "Team 10 · IT2 K64 UTC",
-        "menu": {
-            "playOnline": "Play online",
-            "playBot": "Play with bot",
-            "botVsBot": "Bot vs bot",
-            "settings": "Settings",
-            "login": "Login",
-            "register": "Register"
-        },
-        "status": {
-            "sectors": "Sectors: 7-9 active",
-            "coordinates": "Lat: 45.32 | Long: -12.44",
-            "system": "System status: nominal",
-            "radar": "Radar sweep: enabled"
-        },
-        "playerStatus": {
-            "label": "Welcome",
-            "anonymous": "Anonymous",
-            "commander": "Commander {{username}}",
-            "defaultUsername": "Player"
-        },
-        "accessRules": {
-            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
-        }
+  "appName": "Battleship",
+  "home": {
+    "title": "Live to fight. Fight to live",
+    "description": "Frontend foundation is ready.",
+    "copyright": "Team 10 · IT2 K64 UTC",
+    "menu": {
+      "playOnline": "Play online",
+      "playBot": "Play with bot",
+      "botVsBot": "Bot vs bot",
+      "settings": "Settings",
+      "login": "Login",
+      "register": "Register"
     },
-    "welcome": {
-        "subtitle": "Enter the fierce Naval warfares",
-        "title": "Welcome Commander",
-        "gameName": "BATTLESHIP:COMMAND",
-        "featureLabels": {
-            "webgame": "Instant access",
-            "matchmaking": "Fast matchmaking",
-            "ai": "Adaptive AI training",
-            "progress": "Career tracking"
-        },
-        "actions": {
-            "playAnonymous": "Play as anonymous",
-            "register": "Register",
-            "hasAccount": "Already have an account?",
-            "login": "Login"
-        },
-        "modals": {
-            "loginTitle": "Login",
-            "registerTitle": "Register",
-            "forgotPasswordTitle": "Forgot password",
-            "username": "Username",
-            "email": "Email",
-            "password": "Password",
-            "confirmPassword": "Confirm password",
-            "forgotPassword": "Forgot password?",
-            "forgotPasswordDescription": "Enter your email and we will send password reset instructions.",
-            "submitLogin": "Login",
-            "submitRegister": "Create account",
-            "submitForgotPassword": "Send reset link",
-            "cancel": "Cancel",
-            "later": "Maybe later",
-            "profileSetupTitle": "Set up your profile",
-            "signature": "Signature",
-            "signatureHint": "Max 200 characters",
-            "changeAvatar": "Change avatar",
-            "submitProfile": "Save profile",
-            "placeholder": {
-                "password": "Set a password",
-                "signature": "Write something about yourself…"
-            }
-        },
-        "features": {
-            "webgame": "Play without installation.",
-            "matchmaking": "Quick matchmaking for online skirmishes.",
-            "ai": "Practice mode against adaptive bot difficulty.",
-            "progress": "Track match history and player progression."
-        }
+    "status": {
+      "sectors": "Sectors: 7-9 active",
+      "coordinates": "Lat: 45.32 | Long: -12.44",
+      "system": "System status: nominal",
+      "radar": "Radar sweep: enabled"
     },
-    "errors": {
-        "notFound": "Page not found",
-        "goHome": "Back to home",
-        "TIMEOUT": "Request timed out. Please try again.",
-        "NETWORK_ERROR": "Network error. Please check your internet connection.",
-        "INVALID_EMAIL": "Please enter a valid email address.",
-        "INVALID_CREDENTIALS": "Invalid email or password.",
-        "USERNAME_REQUIRED": "Username is required.",
-        "USERNAME_TOO_LONG": "Username must be at most 20 characters.",
-        "USERNAME_INVALID_FORMAT": "Username can only contain letters and numbers.",
-        "EMAIL_ALREADY_EXISTS": "This email is already registered.",
-        "USERNAME_ALREADY_EXISTS": "This username is already taken.",
-        "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
-        "PASSWORD_TOO_LONG": "Password must be at most 72 characters.",
-        "PASSWORD_MISMATCH": "Passwords do not match.",
-        "SIGNATURE_TOO_LONG": "Signature must be at most 200 characters.",
-        "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
-        "USER_NOT_FOUND": "User not found.",
-        "UNKNOWN_ERROR": "Something went wrong. Please try again."
+    "playerStatus": {
+      "label": "Welcome",
+      "anonymous": "Anonymous",
+      "commander": "Commander {{username}}",
+      "defaultUsername": "Player"
+    },
+    "accessRules": {
+      "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
     }
+  },
+  "welcome": {
+    "subtitle": "Enter the fierce Naval warfares",
+    "title": "Welcome Commander",
+    "gameName": "BATTLESHIP:COMMAND",
+    "featureLabels": {
+      "webgame": "Instant access",
+      "matchmaking": "Fast matchmaking",
+      "ai": "Adaptive AI training",
+      "progress": "Career tracking"
+    },
+    "actions": {
+      "playAnonymous": "Play as anonymous",
+      "register": "Register",
+      "hasAccount": "Already have an account?",
+      "login": "Login"
+    },
+    "modals": {
+      "loginTitle": "Login",
+      "registerTitle": "Register",
+      "forgotPasswordTitle": "Forgot password",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "forgotPassword": "Forgot password?",
+      "forgotPasswordDescription": "Enter your email and we will send password reset instructions.",
+      "submitLogin": "Login",
+      "submitRegister": "Create account",
+      "submitForgotPassword": "Send reset link",
+      "cancel": "Cancel",
+      "later": "Maybe later",
+      "profileSetupTitle": "Set up your profile",
+      "signature": "Signature",
+      "signatureHint": "Max 200 characters",
+      "changeAvatar": "Change avatar",
+      "logout": "Logout",
+      "submitProfile": "Save profile",
+      "placeholder": {
+        "password": "Set a password",
+        "signature": "Write something about yourself…"
+      }
+    },
+    "features": {
+      "webgame": "Play without installation.",
+      "matchmaking": "Quick matchmaking for online skirmishes.",
+      "ai": "Practice mode against adaptive bot difficulty.",
+      "progress": "Track match history and player progression."
+    }
+  },
+  "errors": {
+    "SESSION_EXPIRED_TITLE": "Session expired",
+    "notFound": "Page not found",
+    "goHome": "Back to home",
+    "TIMEOUT": "Request timed out. Please try again.",
+    "NETWORK_ERROR": "Network error. Please check your internet connection.",
+    "INVALID_EMAIL": "Please enter a valid email address.",
+    "INVALID_CREDENTIALS": "Invalid email or password.",
+    "USERNAME_REQUIRED": "Username is required.",
+    "USERNAME_TOO_LONG": "Username must be at most 20 characters.",
+    "USERNAME_INVALID_FORMAT": "Username can only contain letters and numbers.",
+    "EMAIL_ALREADY_EXISTS": "This email is already registered.",
+    "USERNAME_ALREADY_EXISTS": "This username is already taken.",
+    "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
+    "PASSWORD_TOO_LONG": "Password must be at most 72 characters.",
+    "PASSWORD_MISMATCH": "Passwords do not match.",
+    "SIGNATURE_TOO_LONG": "Signature must be at most 200 characters.",
+    "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
+    "USER_NOT_FOUND": "User not found.",
+    "UNKNOWN_ERROR": "Something went wrong. Please try again."
+  }
 }

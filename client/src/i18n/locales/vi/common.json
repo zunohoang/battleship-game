@@ -1,99 +1,101 @@
 {
-    "appName": "Battleship",
-    "home": {
-        "title": "Sống là để chiến đấu, chiến đấu là để sống",
-        "description": "Đã khởi tạo xong nền tảng frontend.",
-        "copyright": "Nhóm 10 · IT2 K64 UTC",
-        "menu": {
-            "playOnline": "Chơi online",
-            "playBot": "Chơi với bot",
-            "botVsBot": "Bot vs bot",
-            "settings": "Cài đặt",
-            "login": "Đăng nhập",
-            "register": "Đăng kí"
-        },
-        "status": {
-            "sectors": "Sectors: 7-9 active",
-            "coordinates": "Lat: 45.32 | Long: -12.44",
-            "system": "System status: nominal",
-            "radar": "Radar sweep: enabled"
-        },
-        "playerStatus": {
-            "label": "Chào mừng",
-            "anonymous": "Ẩn danh",
-            "commander": "Chỉ huy {{username}}",
-            "defaultUsername": "Người chơi"
-        },
-        "accessRules": {
-            "anonymous": "Người chơi ẩn danh chỉ có thể chơi với bot hoặc bot vs bot. Cần đăng nhập để chơi online."
-        }
+  "appName": "Battleship",
+  "home": {
+    "title": "Sống là để chiến đấu, chiến đấu là để sống",
+    "description": "Đã khởi tạo xong nền tảng frontend.",
+    "copyright": "Nhóm 10 · IT2 K64 UTC",
+    "menu": {
+      "playOnline": "Chơi online",
+      "playBot": "Chơi với bot",
+      "botVsBot": "Bot vs bot",
+      "settings": "Cài đặt",
+      "login": "Đăng nhập",
+      "register": "Đăng kí"
     },
-    "welcome": {
-        "subtitle": "Lao vào những trận hải chiến ác liệt",
-        "title": "Chào mừng chỉ huy",
-        "gameName": "BATTLESHIP:COMMAND",
-        "featureLabels": {
-            "webgame": "Truy cập tức thì",
-            "matchmaking": "Ghép trận nhanh",
-            "ai": "Luyện tập AI thích ứng",
-            "progress": "Theo dõi tiến trình"
-        },
-        "actions": {
-            "playAnonymous": "Chơi ẩn danh",
-            "register": "Đăng ký",
-            "hasAccount": "Đã có tài khoản?",
-            "login": "Đăng nhập"
-        },
-        "modals": {
-            "loginTitle": "Đăng nhập",
-            "registerTitle": "Đăng ký",
-            "forgotPasswordTitle": "Quên mật khẩu",
-            "username": "Tên người dùng",
-            "email": "Email",
-            "password": "Mật khẩu",
-            "confirmPassword": "Xác nhận mật khẩu",
-            "forgotPassword": "Quên mật khẩu?",
-            "forgotPasswordDescription": "Nhập email để nhận hướng dẫn đặt lại mật khẩu.",
-            "submitLogin": "Đăng nhập",
-            "submitRegister": "Tạo tài khoản",
-            "submitForgotPassword": "Gửi liên kết đặt lại",
-            "cancel": "Hủy",
-            "later": "Để khi khác",
-            "profileSetupTitle": "Thiết lập hồ sơ",
-            "signature": "Chữ ký",
-            "signatureHint": "Tối đa 200 ký tự",
-            "changeAvatar": "Đổi ảnh đại diện",
-            "submitProfile": "Lưu hồ sơ",
-            "placeholder": {
-                "password": "Đổi mật khẩu",
-                "signature": "Viết gì đó về bản thân…"
-            }
-        },
-        "features": {
-            "webgame": "Chơi mà không phải cài đặt.",
-            "matchmaking": "Ghép trận nhanh cho các trận chiến online.",
-            "ai": "Luyện tập với bot có độ khó thích ứng.",
-            "progress": "Theo dõi lịch sử trận đấu và tiến trình người chơi."
-        }
+    "status": {
+      "sectors": "Sectors: 7-9 active",
+      "coordinates": "Lat: 45.32 | Long: -12.44",
+      "system": "System status: nominal",
+      "radar": "Radar sweep: enabled"
     },
-    "errors": {
-        "notFound": "Không tìm thấy trang",
-        "goHome": "Quay về trang chủ",
-        "TIMEOUT": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
-        "NETWORK_ERROR": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
-        "INVALID_EMAIL": "Vui lòng nhập email hợp lệ.",
-        "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
-        "USERNAME_REQUIRED": "Tên người dùng là bắt buộc.",
-        "USERNAME_TOO_LONG": "Tên người dùng tối đa 20 ký tự.",
-        "USERNAME_INVALID_FORMAT": "Tên người dùng chỉ được chứa chữ cái và số.",
-        "EMAIL_ALREADY_EXISTS": "Email này đã được đăng ký.",
-        "USERNAME_ALREADY_EXISTS": "Tên người dùng này đã được sử dụng.",
-        "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
-        "PASSWORD_TOO_LONG": "Mật khẩu tối đa 72 ký tự.",
-        "PASSWORD_MISMATCH": "Mật khẩu xác nhận không khớp.",
-        "SIGNATURE_TOO_LONG": "Chữ ký tối đa 200 ký tự.",
-        "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
-        "USER_NOT_FOUND": "Không tìm thấy người dùng.",
-        "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
+    "playerStatus": {
+      "label": "Chào mừng",
+      "anonymous": "Ẩn danh",
+      "commander": "Chỉ huy {{username}}",
+      "defaultUsername": "Người chơi"
+    },
+    "accessRules": {
+      "anonymous": "Người chơi ẩn danh chỉ có thể chơi với bot hoặc bot vs bot. Cần đăng nhập để chơi online."
     }
+  },
+  "welcome": {
+    "subtitle": "Lao vào những trận hải chiến ác liệt",
+    "title": "Chào mừng chỉ huy",
+    "gameName": "BATTLESHIP:COMMAND",
+    "featureLabels": {
+      "webgame": "Truy cập tức thì",
+      "matchmaking": "Ghép trận nhanh",
+      "ai": "Luyện tập AI thích ứng",
+      "progress": "Theo dõi tiến trình"
+    },
+    "actions": {
+      "playAnonymous": "Chơi ẩn danh",
+      "register": "Đăng ký",
+      "hasAccount": "Đã có tài khoản?",
+      "login": "Đăng nhập"
+    },
+    "modals": {
+      "loginTitle": "Đăng nhập",
+      "registerTitle": "Đăng ký",
+      "forgotPasswordTitle": "Quên mật khẩu",
+      "username": "Tên người dùng",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "forgotPassword": "Quên mật khẩu?",
+      "forgotPasswordDescription": "Nhập email để nhận hướng dẫn đặt lại mật khẩu.",
+      "submitLogin": "Đăng nhập",
+      "submitRegister": "Tạo tài khoản",
+      "submitForgotPassword": "Gửi liên kết đặt lại",
+      "cancel": "Hủy",
+      "later": "Để khi khác",
+      "profileSetupTitle": "Thiết lập hồ sơ",
+      "signature": "Chữ ký",
+      "signatureHint": "Tối đa 200 ký tự",
+      "changeAvatar": "Đổi ảnh đại diện",
+      "logout": "Đăng xuất",
+      "submitProfile": "Lưu hồ sơ",
+      "placeholder": {
+        "password": "Đổi mật khẩu",
+        "signature": "Viết gì đó về bản thân…"
+      }
+    },
+    "features": {
+      "webgame": "Chơi mà không phải cài đặt.",
+      "matchmaking": "Ghép trận nhanh cho các trận chiến online.",
+      "ai": "Luyện tập với bot có độ khó thích ứng.",
+      "progress": "Theo dõi lịch sử trận đấu và tiến trình người chơi."
+    }
+  },
+  "errors": {
+    "SESSION_EXPIRED_TITLE": "Phiên đăng nhập hết hạn",
+    "notFound": "Không tìm thấy trang",
+    "goHome": "Quay về trang chủ",
+    "TIMEOUT": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
+    "NETWORK_ERROR": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
+    "INVALID_EMAIL": "Vui lòng nhập email hợp lệ.",
+    "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
+    "USERNAME_REQUIRED": "Tên người dùng là bắt buộc.",
+    "USERNAME_TOO_LONG": "Tên người dùng tối đa 20 ký tự.",
+    "USERNAME_INVALID_FORMAT": "Tên người dùng chỉ được chứa chữ cái và số.",
+    "EMAIL_ALREADY_EXISTS": "Email này đã được đăng ký.",
+    "USERNAME_ALREADY_EXISTS": "Tên người dùng này đã được sử dụng.",
+    "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
+    "PASSWORD_TOO_LONG": "Mật khẩu tối đa 72 ký tự.",
+    "PASSWORD_MISMATCH": "Mật khẩu xác nhận không khớp.",
+    "SIGNATURE_TOO_LONG": "Chữ ký tối đa 200 ký tự.",
+    "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
+    "USER_NOT_FOUND": "Không tìm thấy người dùng.",
+    "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
+  }
 }

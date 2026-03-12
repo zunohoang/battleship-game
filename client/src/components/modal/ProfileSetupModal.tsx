@@ -16,6 +16,7 @@ type ProfileSetupModalProps = {
   isOpen: boolean
   onClose: () => void
   onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>
+  onLogout: () => Promise<void>
   username: string
   signature?: string | null
   avatar?: string | null
@@ -25,6 +26,7 @@ export function ProfileSetupModal({
   isOpen,
   onClose,
   onSubmit,
+  onLogout,
   username: initialUsername,
   signature: initialSignature,
   avatar: initialAvatar,
@@ -181,7 +183,16 @@ export function ProfileSetupModal({
             </p>
           )}
 
-          <div className="mt-2 flex justify-center">
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              className="h-11 border-[#c67e7e] text-[#8f2f2f] hover:bg-[#ffeaea]"
+              onClick={() => {
+                void onLogout()
+              }}
+            >
+              {t('welcome.modals.logout')}
+            </Button>
             <Button variant="primary" type="submit" className="h-11" disabled={!isChanged}>
               {t('welcome.modals.submitProfile')}
             </Button>

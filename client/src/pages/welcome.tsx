@@ -10,7 +10,7 @@ import {
 import { useModalState } from "@/hooks/useModalState";
 import { useGlobalContext } from "@/hooks/useGlobalContext";
 import * as authService from "@/services/authService";
-import { getApiErrorCode } from "@/services/httpError";
+import { getApiErrorCode, isGloballyHandledApiError } from "@/services/httpError";
 import {
   validateLoginInput,
   validateRegisterInput,
@@ -63,6 +63,9 @@ export function WelcomePage() {
 
       navigate("/home");
     } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return;
+      }
       setLoginError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
@@ -103,6 +106,9 @@ export function WelcomePage() {
 
       navigate("/home", { state: { openProfileSetup: true } });
     } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return;
+      }
       setRegisterError(t(`errors.${getApiErrorCode(error)}`));
     }
   };
