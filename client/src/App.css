@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
@@ -7,6 +8,9 @@
   ========================= */
 
   :root {
+
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'Space Mono', monospace;
 
     /* background */
     --bg-main: #f3f6fa;

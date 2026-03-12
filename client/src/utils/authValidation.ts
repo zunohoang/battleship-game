@@ -1,0 +1,153 @@
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const USERNAME_REGEX = /^[A-Za-z0-9]+$/
+export const SIGNATURE_REGEX = /^[^<>]*$/
+
+export type AuthValidationCode =
+  | 'INVALID_EMAIL'
+  | 'USERNAME_REQUIRED'
+  | 'USERNAME_TOO_LONG'
+  | 'USERNAME_INVALID_FORMAT'
+  | 'PASSWORD_TOO_SHORT'
+  | 'PASSWORD_TOO_LONG'
+  | 'SIGNATURE_TOO_LONG'
+  | 'SIGNATURE_INVALID_FORMAT'
+  | 'PASSWORD_MISMATCH'
+
+export type LoginValidationResult = {
+  email: string
+  password: string
+  errorCode: AuthValidationCode | null
+}
+
+export type RegisterValidationResult = {
+  username: string
+  email: string
+  password: string
+  confirmPassword: string
+  errorCode: AuthValidationCode | null
+}
+
+export type ProfileValidationResult = {
+  username: string
+  signature: string
+  password: string
+  errorCode: AuthValidationCode | null
+}
+
+function normalizeText(value: string): string {
+  return value.trim()
+}
+
+export function validateEmail(email: string): AuthValidationCode | null {
+  const normalizedEmail = normalizeText(email)
+  return EMAIL_REGEX.test(normalizedEmail) ? null : 'INVALID_EMAIL'
+}
+
+export function validateUsername(
+  username: string,
+  required = true,
+): AuthValidationCode | null {
+  const normalizedUsername = normalizeText(username)
+
+  if (normalizedUsername.length === 0) {
+    return required ? 'USERNAME_REQUIRED' : null
+  }
+
+  if (normalizedUsername.length > 20) {
+    return 'USERNAME_TOO_LONG'
+  }
+
+  if (!USERNAME_REGEX.test(normalizedUsername)) {
+    return 'USERNAME_INVALID_FORMAT'
+  }
+
+  return null
+}
+
+export function validatePassword(
+  password: string,
+  required = true,
+): AuthValidationCode | null {
+  if (password.length === 0) {
+    return required ? 'PASSWORD_TOO_SHORT' : null
+  }
+
+  if (password.length < 8) {
+    return 'PASSWORD_TOO_SHORT'
+  }
+
+  if (password.length > 72) {
+    return 'PASSWORD_TOO_LONG'
+  }
+
+  return null
+}
+
+export function validateSignature(signature: string): AuthValidationCode | null {
+  const normalizedSignature = normalizeText(signature)
+
+  if (normalizedSignature.length > 200) {
+    return 'SIGNATURE_TOO_LONG'
+  }
+
+  if (!SIGNATURE_REGEX.test(normalizedSignature)) {
+    return 'SIGNATURE_INVALID_FORMAT'
+  }
+
+  return null
+}
+
+export function validateLoginInput(
+  email: string,
+  password: string,
+): LoginValidationResult {
+  const normalizedEmail = normalizeText(email)
+
+  return {
+    email: normalizedEmail,
+    password,
+    errorCode: validateEmail(normalizedEmail) ?? validatePassword(password),
+  }
+}
+
+export function validateRegisterInput(
+  username: string,
+  email: string,
+  password: string,
+  confirmPassword: string,
+): RegisterValidationResult {
+  const normalizedUsername = normalizeText(username)
+  const normalizedEmail = normalizeText(email)
+  const errorCode =
+    validateUsername(normalizedUsername) ??
+    validateEmail(normalizedEmail) ??
+    validatePassword(password) ??
+    (password !== confirmPassword ? 'PASSWORD_MISMATCH' : null)
+
+  return {
+    username: normalizedUsername,
+    email: normalizedEmail,
+    password,
+    confirmPassword,
+    errorCode,
+  }
+}
+
+export function validateProfileInput(
+  username: string,
+  signature: string,
+  password: string,
+): ProfileValidationResult {
+  const normalizedUsername = normalizeText(username)
+  const normalizedSignature = normalizeText(signature)
+
+  return {
+    username: normalizedUsername,
+    signature: normalizedSignature,
+    password,
+    errorCode:
+      validateUsername(normalizedUsername) ??
+      validateSignature(normalizedSignature) ??
+      validatePassword(password, false),
+  }
+}

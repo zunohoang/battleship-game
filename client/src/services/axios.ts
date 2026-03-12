@@ -1,14 +1,16 @@
 import axios from 'axios'
 import { setupInterceptors } from './interceptors'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const baseURL = import.meta.env.VITE_API_BASE_URL
+
+if (!baseURL) {
+  throw new Error('VITE_API_BASE_URL is required')
+}
 
 export const apiClient = axios.create({
   baseURL,
   timeout: 10_000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  withCredentials: true,
 })
 
 setupInterceptors(apiClient)
