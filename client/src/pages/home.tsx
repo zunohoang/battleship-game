@@ -15,21 +15,12 @@ import { useGlobalContext } from "@/hooks/useGlobalContext";
 import * as authService from "@/services/authService";
 import { getApiErrorCode } from "@/services/httpError";
 import { validateLoginInput, validateRegisterInput } from "@/utils/authValidation";
-import defaultAvatarSrc from "@/assets/images/default-avatar.svg";
 
 type AuthModalMode = "login" | "register" | "forgotPassword" | "profileSetup";
 
 type HomeNavigationState = {
   openProfileSetup?: boolean;
 };
-
-function normalizeAvatar(avatar: string | null): string {
-  if (!avatar) {
-    return defaultAvatarSrc;
-  }
-
-  return avatar;
-}
 
 export function HomePage() {
   const { t } = useTranslation("common");
@@ -81,7 +72,7 @@ export function HomePage() {
 
       setUser({
         username: response.user.username,
-        avatarSrc: normalizeAvatar(response.user.avatar),
+        avatar: response.user.avatar,
         signature: response.user.signature,
       });
 
@@ -120,7 +111,7 @@ export function HomePage() {
 
       setUser({
         username: response.user.username,
-        avatarSrc: defaultAvatarSrc,
+        avatar: response.user.avatar,
         signature: null,
       });
 
@@ -143,7 +134,7 @@ export function HomePage() {
 
       setUser({
         username: response.user.username,
-        avatarSrc: normalizeAvatar(response.user.avatar),
+        avatar: response.user.avatar,
         signature: response.user.signature,
       });
       closeModal();
@@ -171,7 +162,7 @@ export function HomePage() {
     isProfileSetupOpen ? "open" : "closed",
     user?.username ?? '',
     user?.signature ?? '',
-    user?.avatarSrc ?? '',
+    user?.avatar ?? '',
   ].join(":");
 
   const menuItems = [
@@ -321,7 +312,7 @@ export function HomePage() {
         onSubmit={handleSubmitProfileSetup}
         username={user?.username ?? ""}
         signature={user?.signature}
-        avatarSrc={user?.avatarSrc}
+        avatar={user?.avatar}
       />
     </main>
   );

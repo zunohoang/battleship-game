@@ -1,4 +1,5 @@
 import apiClient from './axios'
+import { clearAccessToken } from './authToken'
 
 export interface RegisterRequest {
   username: string
@@ -17,6 +18,8 @@ export interface RegisterResponse {
     id: string
     username: string
     email: string
+    avatar: string | null
+    signature: string | null
   }
 }
 
@@ -59,6 +62,14 @@ export async function login(payload: LoginRequest): Promise<LoginResponse> {
   return response.data
 }
 
+export async function logout(): Promise<void> {
+  try {
+    await apiClient.post('/auth/logout')
+  } finally {
+    clearAccessToken()
+  }
+}
+
 export async function updateProfile(
   payload: UpdateProfileRequest,
 ): Promise<UpdateProfileResponse> {
@@ -75,7 +86,7 @@ export async function updateProfile(
   }
 
   const response = await apiClient.patch<UpdateProfileResponse>(
-    '/auth/profile',
+    '/users/me',
     formData,
   )
 

@@ -1,53 +1,41 @@
-# Client Features Summary
+## Frontend - Tóm Tắt Thay Đổi So Với Commit Trước
 
-### Cập Nhật So Với Commit Trước
+### 1) Auth Client Chuyển Sang Mô Hình Refresh Token (HTTP-only Cookie)
+- `axios` bắt buộc đọc API base URL từ env (`VITE_API_BASE_URL`) và bỏ fallback localhost.
+- Thêm `withCredentials: true` để browser gửi/nhận refresh cookie.
+- Response interceptor được nâng cấp để tự động xử lý `401`:
+- Gọi `POST /auth/refresh` để lấy access token mới.
+- Retry lại request bị fail sau khi refresh thành công.
+- Dùng cơ chế queue khi có nhiều request cùng `401`, đảm bảo chỉ có 1 lần refresh đang chạy.
+- Nếu refresh thất bại: xóa token local, xóa default auth header, reject tất cả request đang chờ.
 
-#### Tổng quan diff (client)
-- 10 file đã sửa trong `client/src/**`
-- 1 thư mục/file mới: `client/src/utils/authValidation.ts`
+### 2) Cơ Chế Force Logout Từ Tầng Network Lên Tầng UI
+- Thêm `forceLogoutCallback` trong interceptor để thông báo cho UI khi refresh thất bại.
+- `GlobalProvider` đăng ký callback qua `setForceLogoutCallback(logout)`.
+- Hành vi `logout`: xóa access token localStorage + reset `user` về `null`.
 
-#### Thay đổi chính theo tính năng
+### 3) Cập Nhật Service API Frontend
+- Thêm `logout()` trong `authService` để gọi `POST /auth/logout` và luôn clear access token local.
+- `updateProfile()` đổi endpoint từ `/auth/profile` sang `/users/me` để đồng bộ backend.
+- `RegisterResponse` cập nhật type `user` thêm `avatar` và `signature` để khớp contract backend.
 
-1. Validation & error handling được chuẩn hóa theo error code
-- Chuyển từ phân loại lỗi cũ sang `getApiErrorCode()` tại `services/httpError.ts`.
-- Bổ sung utility validate dùng chung tại `utils/authValidation.ts`:
-  - email, username, password, signature
-  - trả về `errorCode` thống nhất để map i18n.
-- `welcome.tsx` và `home.tsx` đều dùng chung validate utility trước khi gọi API.
+### 4) Chuẩn Hóa Dữ Liệu Avatar Trên Client
+- Đổi global user shape từ `avatarSrc` sang `avatar` (`string | null`) để phân biệt rõ:
+- `avatar` là dữ liệu thực tế từ backend.
+- default avatar chỉ dùng để render, không ghi đè vào state data.
+- `ProfileSetupPayload` bỏ trường `avatarSrc` vì không cần gửi lên backend.
+- `ProfileSetupModal` đổi prop `avatarSrc` -> `avatar` và render fallback bằng default image nếu giá trị rỗng/null.
 
-2. Luồng auth trên UI được điều chỉnh
-- Login/Register thành công từ `WelcomePage` điều hướng sang `HomePage`.
-- Sau signup, `HomePage` tự mở `ProfileSetupModal` bằng `location.state` (`openProfileSetup`).
-- Ẩn nút login/register trên Home khi đã có user trong global context.
+### 5) Cập Nhật Trang Welcome/Home Theo Model Mới
+- `setUser(...)` trên `welcome` và `home` lưu `avatar: response.user.avatar` thay vì lưu link đã normalize.
+- `ProfileSetupModal` trên `home` nhận `avatar={user?.avatar}`.
 
-3. Profile setup đã đi qua API thật
-- Thêm `updateProfile()` trong `services/authService.ts` (multipart/form-data, `PATCH /auth/profile`).
-- `ProfileSetupModal` submit async, nhận lỗi trả về từ `onSubmit` và hiển thị ngay trong modal.
-- `home.tsx` cập nhật global user theo response server sau khi lưu profile.
-
-4. UX modal auth/profile được cải thiện
-- `LoginModal`/`RegisterModal` thêm `noValidate` + `onFieldsChange` để lỗi chỉ hiện khi submit và tự tắt khi người dùng gõ lại.
-- `ForgotPasswordModal` được đồng bộ format/indent và cấu trúc hiển thị.
-- `ProfileSetupModal`:
-  - chỉ giữ nút “Lưu hồ sơ” ở giữa
-  - dùng `noValidate`
-  - hỗ trợ cập nhật avatar/username/signature/password theo luồng validate mới.
-
-5. i18n mở rộng theo error code chuẩn
-- Cập nhật `i18n/locales/en/common.json` và `i18n/locales/vi/common.json`.
-- Thêm bộ key lỗi chuẩn hóa như:
-  - `INVALID_EMAIL`, `USERNAME_*`, `PASSWORD_*`, `SIGNATURE_*`, `UNKNOWN_ERROR`, ...
-- Loại bỏ phụ thuộc vào chuỗi lỗi hardcode trong modal cũ.
-
-#### File thay đổi chính
+### 6) File Frontend Đã Thay Đổi
+- `client/.env.example`
+- `client/src/services/axios.ts`
+- `client/src/services/interceptors.ts`
+- `client/src/services/authService.ts`
+- `client/src/store/globalContext.tsx`
 - `client/src/pages/welcome.tsx`
 - `client/src/pages/home.tsx`
-- `client/src/components/modal/LoginModal.tsx`
-- `client/src/components/modal/RegisterModal.tsx`
-- `client/src/components/modal/ForgotPasswordModal.tsx`
 - `client/src/components/modal/ProfileSetupModal.tsx`
-- `client/src/services/httpError.ts`
-- `client/src/services/authService.ts`
-- `client/src/utils/authValidation.ts` (mới)
-- `client/src/i18n/locales/en/common.json`
-- `client/src/i18n/locales/vi/common.json`

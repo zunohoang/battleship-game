@@ -7,7 +7,6 @@ import { validateProfileInput } from '@/utils/authValidation'
 
 export type ProfileSetupPayload = {
   avatarFile: File | null
-  avatarSrc: string
   username: string
   signature: string
   password: string
@@ -19,7 +18,7 @@ type ProfileSetupModalProps = {
   onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>
   username: string
   signature?: string | null
-  avatarSrc?: string | null
+  avatar?: string | null
 }
 
 export function ProfileSetupModal({
@@ -28,12 +27,12 @@ export function ProfileSetupModal({
   onSubmit,
   username: initialUsername,
   signature: initialSignature,
-  avatarSrc: initialAvatarSrc,
+  avatar: initialAvatar,
 }: ProfileSetupModalProps) {
   const { t } = useTranslation('common')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [avatarSrc, setAvatarSrc] = useState(initialAvatarSrc ?? defaultAvatarSrc)
+  const [avatarSrc, setAvatarSrc] = useState(initialAvatar ?? defaultAvatarSrc)
   const [username, setUsername] = useState(initialUsername)
   const [signature, setSignature] = useState(initialSignature ?? '')
   const [password, setPassword] = useState('')
@@ -72,7 +71,6 @@ export function ProfileSetupModal({
 
     const payload: ProfileSetupPayload = {
       avatarFile,
-      avatarSrc,
       username: validation.username,
       signature: validation.signature,
       password: validation.password,
@@ -87,6 +85,9 @@ export function ProfileSetupModal({
   const inputClassName =
     'h-11 rounded-xl border border-[#7dbde0] bg-white/85 px-3 text-[#24425f] outline-none focus:border-[#3f77b2]'
 
+  // Only affects rendering; it does not overwrite user data in global state.
+  const renderAvatarSrc = avatarSrc || defaultAvatarSrc
+
   return (
     <>
       <Modal isOpen={isOpen} title={t('welcome.modals.profileSetupTitle')} onClose={onClose}>
@@ -100,7 +101,7 @@ export function ProfileSetupModal({
               aria-label="Preview avatar"
               className="cursor-pointer overflow-hidden rounded-full w-20 h-20 border-2 border-[#7dbde0] hover:border-[#3f77b2] transition-colors"
             >
-              <img src={avatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={renderAvatarSrc} alt="Avatar" className="w-full h-full object-cover" />
             </button>
             <button
               type="button"
@@ -199,7 +200,7 @@ export function ProfileSetupModal({
           aria-label="Avatar preview"
         >
           <img
-            src={avatarSrc}
+            src={renderAvatarSrc}
             alt="Avatar preview"
             className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}

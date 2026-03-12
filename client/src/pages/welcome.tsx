@@ -15,17 +15,8 @@ import {
   validateLoginInput,
   validateRegisterInput,
 } from "@/utils/authValidation";
-import defaultAvatarSrc from "@/assets/images/default-avatar.svg";
 
 type AuthModalMode = "login" | "register" | "forgotPassword";
-
-function normalizeAvatar(avatar: string | null): string {
-  if (!avatar) {
-    return defaultAvatarSrc;
-  }
-
-  return avatar;
-}
 
 export function WelcomePage() {
   const { t } = useTranslation("common");
@@ -66,7 +57,7 @@ export function WelcomePage() {
 
       setUser({
         username: response.user.username,
-        avatarSrc: normalizeAvatar(response.user.avatar),
+        avatar: response.user.avatar,
         signature: response.user.signature,
       });
 
@@ -106,7 +97,7 @@ export function WelcomePage() {
 
       setUser({
         username: response.user.username,
-        avatarSrc: defaultAvatarSrc,
+        avatar: response.user.avatar,
         signature: null,
       });
 
