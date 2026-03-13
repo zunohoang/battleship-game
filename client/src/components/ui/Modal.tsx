@@ -14,12 +14,12 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#061a2c]/65 p-4"
+            className="ui-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
         >
-            <div className="w-full max-w-md rounded-2xl border border-[#7dbde0] bg-[#edf4fb] p-5 text-[#1e3654] shadow-2xl">
+            <div className="ui-modal-surface w-full max-w-md rounded-2xl border p-5 shadow-2xl">
                 <div className="flex items-center justify-between">
                     <h2 id="modal-title" className="text-xl font-black italic">
                         {title}
@@ -28,7 +28,7 @@ export function Modal({ isOpen, title, onClose, children }: ModalProps) {
                         type="button"
                         aria-label="Close modal"
                         onClick={onClose}
-                        className="cursor-pointer rounded-md border border-[#7dbde0] px-2 py-1 text-sm font-semibold text-[#3d5472] hover:bg-white/70"
+                        className="ui-button-default cursor-pointer rounded-md border px-2 py-1 text-sm font-semibold"
                     >
                         ✕
                     </button>

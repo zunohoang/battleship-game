@@ -8,6 +8,7 @@ import {
     LoginModal,
     RegisterModal,
     ProfileSetupModal,
+    SettingsModal,
 } from "@/components";
 import type { ProfileSetupPayload } from "@/components/modal/ProfileSetupModal";
 import { useModalState } from "@/hooks/useModalState";
@@ -22,7 +23,12 @@ import {
     validateRegisterInput,
 } from "@/utils/authValidation";
 
-type AuthModalMode = "login" | "register" | "forgotPassword" | "profileSetup";
+type AuthModalMode =
+    | "login"
+    | "register"
+    | "forgotPassword"
+    | "profileSetup"
+    | "settings";
 
 type HomeNavigationState = {
     openProfileSetup?: boolean;
@@ -228,6 +234,11 @@ export function HomePage() {
     };
 
     const handleGameMode = (id: string) => {
+        if (id === "settings") {
+            openModal("settings");
+            return;
+        }
+
         const mode = gameModeMap[id];
         if (mode) {
             navigate('/game/setup', { state: { mode } });
@@ -375,6 +386,11 @@ export function HomePage() {
                 username={user?.username ?? ""}
                 signature={user?.signature}
                 avatar={user?.avatar}
+            />
+
+            <SettingsModal
+                isOpen={isModalOpen && authModalMode === "settings"}
+                onClose={closeModal}
             />
         </main>
     );

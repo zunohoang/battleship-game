@@ -128,6 +128,20 @@
             "randomPlacementFailed": "Random placement failed. Try increasing board size or reducing fleet density."
         }
     },
+    "settings": {
+        "title": "Settings",
+        "masterVolume": "Master Volume",
+        "backgroundMusic": "Background Music",
+        "sfx": "SFX",
+        "uiVolume": "UI Volume",
+        "language": "Language",
+        "theme": "Theme",
+        "en": "EN",
+        "vi": "VI",
+        "light": "Light",
+        "dark": "Dark",
+        "close": "Close"
+    },
     "errors": {
         "SESSION_EXPIRED_TITLE": "Session expired",
         "notFound": "Page not found",

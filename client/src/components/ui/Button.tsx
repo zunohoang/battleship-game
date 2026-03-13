@@ -13,8 +13,8 @@ const baseClassName =
 const disabledClassName = "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-inherit";
 
 const variantClassName: Record<ButtonVariant, string> = {
-    default: "border-[#7dbde0] bg-white/70 text-[#3d5472] hover:bg-gray-100/90",
-    primary: "border-[#3f77b2] bg-[#3f77b2]/85 text-white hover:bg-[#3f77b2]",
+    default: "ui-button-default",
+    primary: "ui-button-primary",
 };
 
 export function Button({
