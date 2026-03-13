@@ -32,7 +32,7 @@ export function WelcomePage() {
   } = useModalState<AuthModalMode>();
 
   const handlePlayAnonymous = () => {
-    navigate("/home?status=anonymous");
+    navigate("/home");
   };
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {

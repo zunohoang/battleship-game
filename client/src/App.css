@@ -1,88 +1,112 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 @layer base {
-
-  /* =========================
+    /* =========================
      LIGHT THEME (default)
   ========================= */
 
-  :root {
+    :root {
+        --font-body: "DM Sans", sans-serif;
+        --font-mono: "Space Mono", monospace;
 
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'Space Mono', monospace;
+        /* background */
+        --bg-main: #f3f6fa;
+        --bg-panel: #ffffff;
+        --bg-card: #f8fbff;
 
-    /* background */
-    --bg-main: #f3f6fa;
-    --bg-panel: #ffffff;
-    --bg-card: #f8fbff;
+        /* text */
+        --text-main: #1e2a38;
+        --text-muted: #6b7a8c;
 
-    /* text */
-    --text-main: #1e2a38;
-    --text-muted: #6b7a8c;
+        /* borders */
+        --border-main: #d7e3f0;
 
-    /* borders */
-    --border-main: #d7e3f0;
+        /* accent */
+        --accent-primary: #3b82f6;
+        --accent-hover: #2563eb;
 
-    /* accent */
-    --accent-primary: #3b82f6;
-    --accent-hover: #2563eb;
+        /* states */
+        --accent-danger: #ef4444;
+        --accent-warning: #f59e0b;
+        --accent-success: #10b981;
 
-    /* states */
-    --accent-danger: #ef4444;
-    --accent-warning: #f59e0b;
-    --accent-success: #10b981;
+        /* battleship specific */
+        --grid-line: #cfe0f0;
+        --grid-hover: #93c5fd;
 
-    /* battleship specific */
-    --grid-line: #cfe0f0;
-    --grid-hover: #93c5fd;
+        --ship-color: #38bdf8;
+        --hit-color: #ef4444;
+        --miss-color: #9ca3af;
 
-    --ship-color: #38bdf8;
-    --hit-color: #ef4444;
-    --miss-color: #9ca3af;
+        /* glow */
+        --hud-glow: rgba(59, 130, 246, 0.35);
+    }
 
-    /* glow */
-    --hud-glow: rgba(59,130,246,0.35);
-  }
-
-
-  /* =========================
+    /* =========================
      DARK THEME
   ========================= */
 
-  .dark {
+    .dark {
+        /* background */
+        --bg-main: #020a12;
+        --bg-panel: #061926;
+        --bg-card: #0a2432;
 
-    /* background */
-    --bg-main: #020a12;
-    --bg-panel: #061926;
-    --bg-card: #0a2432;
+        /* text */
+        --text-main: #d7f4ff;
+        --text-muted: #6fa9bd;
 
-    /* text */
-    --text-main: #d7f4ff;
-    --text-muted: #6fa9bd;
+        /* borders */
+        --border-main: #0e3c4f;
 
-    /* borders */
-    --border-main: #0e3c4f;
+        /* accent */
+        --accent-primary: #22d3ee;
+        --accent-hover: #06b6d4;
 
-    /* accent */
-    --accent-primary: #22d3ee;
-    --accent-hover: #06b6d4;
+        /* states */
+        --accent-danger: #ff5a5a;
+        --accent-warning: #ff8a3d;
+        --accent-success: #34d399;
 
-    /* states */
-    --accent-danger: #ff5a5a;
-    --accent-warning: #ff8a3d;
-    --accent-success: #34d399;
+        /* battleship specific */
+        --grid-line: #0b3a4c;
+        --grid-hover: #164e63;
 
-    /* battleship specific */
-    --grid-line: #0b3a4c;
-    --grid-hover: #164e63;
+        --ship-color: #22d3ee;
+        --hit-color: #ff5a5a;
+        --miss-color: #64748b;
 
-    --ship-color: #22d3ee;
-    --hit-color: #ff5a5a;
-    --miss-color: #64748b;
+        /* glow */
+        --hud-glow: rgba(0, 229, 255, 0.35);
+    }
 
-    /* glow */
-    --hud-glow: rgba(0,229,255,0.35);
-  }
+    /* =========================
+     CUSTOM SCROLLBAR
+  ========================= */
 
+    .themed-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #7dbde0 rgba(255, 255, 255, 0.25);
+    }
+
+    .themed-scrollbar::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    .themed-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.35);
+        border-radius: 999px;
+    }
+
+    .themed-scrollbar::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #7dbde0 0%, #3f77b2 100%);
+        border: 2px solid rgba(255, 255, 255, 0.75);
+        border-radius: 999px;
+    }
+
+    .themed-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, #6fb2d8 0%, #2f6398 100%);
+    }
 }
