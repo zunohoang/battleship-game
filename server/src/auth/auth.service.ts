@@ -11,11 +11,15 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import type { IUserRepository } from './infrastructure/persistence/user.repository';
 import { USER_REPOSITORY } from './infrastructure/persistence/user.repository';
-import type { ITokenService } from './infrastructure/token.service';
-import { TOKEN_SERVICE } from './infrastructure/token.service';
-import type { IPasswordHasher } from './infrastructure/password-hasher';
-import { PASSWORD_HASHER } from './infrastructure/password-hasher';
-import type { AuthUser } from './shared/auth-response.interface';
+import {
+  PASSWORD_HASHER_REPOSITORY,
+  type IPasswordHasherRepository,
+} from './infrastructure/security/password-hasher.repository';
+import { AuthUser } from './dto/auth-response.dto';
+import {
+  TOKEN_REPOSITORY,
+  type ITokenRepository,
+} from './infrastructure/security/token.repository';
 
 export interface AuthServiceResult {
   accessToken: string;
@@ -28,10 +32,10 @@ export class AuthService {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
-    @Inject(TOKEN_SERVICE)
-    private readonly tokenService: ITokenService,
-    @Inject(PASSWORD_HASHER)
-    private readonly passwordHasher: IPasswordHasher,
+    @Inject(TOKEN_REPOSITORY)
+    private readonly tokenService: ITokenRepository,
+    @Inject(PASSWORD_HASHER_REPOSITORY)
+    private readonly passwordHasher: IPasswordHasherRepository,
     private readonly configService: ConfigService,
   ) {}
 

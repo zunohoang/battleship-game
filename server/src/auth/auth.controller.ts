@@ -13,12 +13,12 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { AuthResponse } from './dto/auth-response.dto';
 import {
   clearRefreshCookie,
   getRefreshCookieName,
   setRefreshCookie,
-} from './infrastructure/cookie.helper';
-import type { AuthResponse } from './shared/auth-response.interface';
+} from './infrastructure/utils/cookie.util';
 
 @Controller('auth')
 export class AuthController {

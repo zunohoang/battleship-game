@@ -5,7 +5,7 @@ export interface RefreshTokenPayload {
   absoluteExpiry: number;
 }
 
-export interface ITokenService {
+export interface ITokenRepository {
   generate(payload: { sub: string; email: string }): Promise<string>;
   validate(token: string): Promise<{ sub: string; email: string } | null>;
   generateRefreshToken(
@@ -17,4 +17,4 @@ export interface ITokenService {
   decodeRefreshToken(token: string): Promise<RefreshTokenPayload | null>;
 }
 
-export const TOKEN_SERVICE = Symbol('TOKEN_SERVICE');
+export const TOKEN_REPOSITORY = Symbol('TOKEN_REPOSITORY');

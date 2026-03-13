@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import type { ITokenService, RefreshTokenPayload } from '../../token.service';
+import { ITokenRepository, RefreshTokenPayload } from '../token.repository';
 import type { StringValue } from 'ms';
 
 @Injectable()
-export class JwtTokenService implements ITokenService {
+export class JwtTokenRepository implements ITokenRepository {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,

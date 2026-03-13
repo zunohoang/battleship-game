@@ -31,7 +31,7 @@ export class UpdateProfileDto {
   signature?: string;
 
   @IsOptional()
-  @IsString({ message: 'PASSWORD_TOO_SHORT' })
+  @IsString({ message: 'PASSWORD_INVAID_FORMAT' })
   @MinLength(8, { message: 'PASSWORD_TOO_SHORT' })
   @MaxLength(72, { message: 'PASSWORD_TOO_LONG' })
   password?: string;

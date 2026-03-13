@@ -7,11 +7,11 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { USER_REPOSITORY } from './infrastructure/persistence/user.repository';
-import { TOKEN_SERVICE } from './infrastructure/token.service';
-import { PASSWORD_HASHER } from './infrastructure/password-hasher';
-import { InMemoryUserRepository } from './infrastructure/persistence/adapters/in-memory-user.repository';
-import { JwtTokenService } from './infrastructure/persistence/adapters/jwt-token.service';
-import { BcryptPasswordHasher } from './infrastructure/persistence/adapters/bcrypt-password-hasher';
+import { TOKEN_REPOSITORY } from './infrastructure/security/token.repository';
+import { PASSWORD_HASHER_REPOSITORY } from './infrastructure/security/password-hasher.repository';
+import { InMemoryUserRepository } from './infrastructure/persistence/repositories/in-memory-user.repository';
+import { BcryptPasswordHasherRepository } from './infrastructure/security/repositories/bcrypt-password-hasher.repository';
+import { JwtTokenRepository } from './infrastructure/security/repositories/jwt-token.repository';
 
 @Module({
   imports: [
@@ -37,14 +37,19 @@ import { BcryptPasswordHasher } from './infrastructure/persistence/adapters/bcry
       useClass: InMemoryUserRepository,
     },
     {
-      provide: TOKEN_SERVICE,
-      useClass: JwtTokenService,
+      provide: TOKEN_REPOSITORY,
+      useClass: JwtTokenRepository,
     },
     {
-      provide: PASSWORD_HASHER,
-      useClass: BcryptPasswordHasher,
+      provide: PASSWORD_HASHER_REPOSITORY,
+      useClass: BcryptPasswordHasherRepository,
     },
   ],
-  exports: [AuthService, USER_REPOSITORY, TOKEN_SERVICE, PASSWORD_HASHER],
+  exports: [
+    AuthService,
+    USER_REPOSITORY,
+    TOKEN_REPOSITORY,
+    PASSWORD_HASHER_REPOSITORY,
+  ],
 })
 export class AuthModule {}
