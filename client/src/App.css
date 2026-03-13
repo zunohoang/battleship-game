@@ -41,6 +41,16 @@
 
         /* glow */
         --hud-glow: rgba(59, 130, 246, 0.35);
+
+        /* shared UI tokens */
+        --modal-overlay: rgba(6, 26, 44, 0.65);
+        --modal-bg: #edf4fb;
+        --button-default-bg: rgba(255, 255, 255, 0.72);
+        --button-default-bg-hover: rgba(243, 247, 252, 0.95);
+        --button-default-text: #3d5472;
+        --button-primary-bg: rgba(63, 119, 178, 0.85);
+        --button-primary-bg-hover: rgba(47, 99, 152, 0.95);
+        --button-primary-text: #ffffff;
     }
 
     /* =========================
@@ -79,6 +89,60 @@
 
         /* glow */
         --hud-glow: rgba(0, 229, 255, 0.35);
+
+        /* shared UI tokens */
+        --modal-overlay: rgba(2, 9, 16, 0.76);
+        --modal-bg: #0a2432;
+        --button-default-bg: rgba(10, 36, 50, 0.8);
+        --button-default-bg-hover: rgba(15, 54, 73, 0.95);
+        --button-default-text: #d7f4ff;
+        --button-primary-bg: rgba(34, 211, 238, 0.2);
+        --button-primary-bg-hover: rgba(34, 211, 238, 0.34);
+        --button-primary-text: #d7f4ff;
+    }
+
+    html,
+    body,
+    #root {
+        min-height: 100%;
+    }
+
+    body {
+        margin: 0;
+        font-family: var(--font-body);
+        background: var(--bg-main);
+        color: var(--text-main);
+        transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    .ui-modal-overlay {
+        background: var(--modal-overlay);
+    }
+
+    .ui-modal-surface {
+        border-color: var(--border-main);
+        background: var(--modal-bg);
+        color: var(--text-main);
+    }
+
+    .ui-button-default {
+        border-color: var(--border-main);
+        background: var(--button-default-bg);
+        color: var(--button-default-text);
+    }
+
+    .ui-button-default:hover {
+        background: var(--button-default-bg-hover);
+    }
+
+    .ui-button-primary {
+        border-color: var(--accent-primary);
+        background: var(--button-primary-bg);
+        color: var(--button-primary-text);
+    }
+
+    .ui-button-primary:hover {
+        background: var(--button-primary-bg-hover);
     }
 
     /* =========================

@@ -17,6 +17,7 @@ const validationMessages: Record<string, string> = {
   USERNAME_INVALID_FORMAT: 'Username can only contain letters and numbers',
   PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
   PASSWORD_TOO_LONG: 'Password must be at most 72 characters',
+  PASSWORD_INVAID_FORMAT: 'Password must be a string',
   SIGNATURE_TOO_LONG: 'Signature must be at most 200 characters',
   SIGNATURE_INVALID_FORMAT: 'Signature must not contain HTML tags',
 };
@@ -64,12 +65,12 @@ async function bootstrap() {
     const startedAt = Date.now();
     const { method, originalUrl } = request;
 
-    logger.log(`incoming ${method} ${originalUrl}`, 'HTTP');
+    logger.log(`Incoming req: ${method} ${originalUrl}`, 'HTTP');
 
     response.on('finish', () => {
       const durationMs = Date.now() - startedAt;
       logger.log(
-        `done ${method} ${originalUrl} ${response.statusCode} ${durationMs}ms`,
+        `Finished req: ${method} ${originalUrl} ${response.statusCode} ${durationMs}ms`,
         'HTTP',
       );
     });

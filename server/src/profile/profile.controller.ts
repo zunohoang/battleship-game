@@ -16,7 +16,7 @@ import { diskStorage } from 'multer';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/domain/entities/user';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { AuthResponse } from '../auth/shared/auth-response.interface';
+import { AuthResponse } from '../auth/dto/auth-response.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 

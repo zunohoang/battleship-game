@@ -128,6 +128,20 @@
             "randomPlacementFailed": "Đặt ngẫu nhiên không thành công. Hãy thử tăng kích thước bàn cờ hoặc giảm mật độ đội tàu."
         }
     },
+    "settings": {
+        "title": "Cài đặt",
+        "masterVolume": "Master Volume",
+        "backgroundMusic": "Background Music",
+        "sfx": "SFX",
+        "uiVolume": "UI Volume",
+        "language": "Ngôn ngữ",
+        "theme": "Theme",
+        "en": "EN",
+        "vi": "VI",
+        "light": "Light",
+        "dark": "Dark",
+        "close": "Đóng"
+    },
     "errors": {
         "SESSION_EXPIRED_TITLE": "Phiên đăng nhập hết hạn",
         "notFound": "Không tìm thấy trang",

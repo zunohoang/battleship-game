@@ -5,24 +5,28 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '../auth/domain/entities/user';
-import type { AuthResponse } from '../auth/shared/auth-response.interface';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { IUserRepository } from '../auth/infrastructure/persistence/user.repository';
 import { USER_REPOSITORY } from '../auth/infrastructure/persistence/user.repository';
-import type { ITokenService } from '../auth/infrastructure/token.service';
-import { TOKEN_SERVICE } from '../auth/infrastructure/token.service';
-import type { IPasswordHasher } from '../auth/infrastructure/password-hasher';
-import { PASSWORD_HASHER } from '../auth/infrastructure/password-hasher';
+import {
+  PASSWORD_HASHER_REPOSITORY,
+  type IPasswordHasherRepository,
+} from '../auth/infrastructure/security/password-hasher.repository';
+import {
+  TOKEN_REPOSITORY,
+  type ITokenRepository,
+} from '../auth/infrastructure/security/token.repository';
+import { AuthResponse } from '../auth/dto/auth-response.dto';
 
 @Injectable()
 export class ProfileService {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
-    @Inject(TOKEN_SERVICE)
-    private readonly tokenService: ITokenService,
-    @Inject(PASSWORD_HASHER)
-    private readonly passwordHasher: IPasswordHasher,
+    @Inject(TOKEN_REPOSITORY)
+    private readonly tokenService: ITokenRepository,
+    @Inject(PASSWORD_HASHER_REPOSITORY)
+    private readonly passwordHasher: IPasswordHasherRepository,
   ) {}
 
   async updateProfile(
