@@ -3,7 +3,7 @@ import {
   type AppLanguage,
   type AppSettings,
   type AppTheme,
-} from '@/types/settings'
+} from '@/store/settingsContext'
 
 const SETTINGS_STORAGE_KEY = 'app.settings'
 

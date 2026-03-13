@@ -1,25 +1,25 @@
-import { useTranslation } from "react-i18next";
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Button,
   ForgotPasswordModal,
   LoginModal,
   RegisterModal,
-} from "@/components";
-import { useModalState } from "@/hooks/useModalState";
-import { useGlobalContext } from "@/hooks/useGlobalContext";
-import * as authService from "@/services/authService";
-import { getApiErrorCode, isGloballyHandledApiError } from "@/services/httpError";
+} from '@/components';
+import { useModalState } from '@/hooks/useModalState';
+import { useGlobalContext } from '@/hooks/useGlobalContext';
+import * as authService from '@/services/authService';
+import { getApiErrorCode, isGloballyHandledApiError } from '@/services/httpError';
 import {
   validateLoginInput,
   validateRegisterInput,
-} from "@/utils/authValidation";
+} from '@/utils/authValidation';
 
-type AuthModalMode = "login" | "register" | "forgotPassword";
+type AuthModalMode = 'login' | 'register' | 'forgotPassword';
 
 export function WelcomePage() {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { setUser } = useGlobalContext();
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function WelcomePage() {
   } = useModalState<AuthModalMode>();
 
   const handlePlayAnonymous = () => {
-    navigate("/home");
+    navigate('/home');
   };
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -40,8 +40,8 @@ export function WelcomePage() {
     setLoginError(null);
 
     const formData = new FormData(event.currentTarget);
-    const rawEmail = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
+    const rawEmail = String(formData.get('email') ?? '');
+    const password = String(formData.get('password') ?? '');
     const { email, errorCode } = validateLoginInput(rawEmail, password);
 
     if (errorCode) {
@@ -61,7 +61,7 @@ export function WelcomePage() {
         signature: response.user.signature,
       });
 
-      navigate("/home");
+      navigate('/home');
     } catch (error) {
       if (isGloballyHandledApiError(error)) {
         return;
@@ -75,10 +75,10 @@ export function WelcomePage() {
     setRegisterError(null);
 
     const formData = new FormData(event.currentTarget);
-    const rawUsername = String(formData.get("username") ?? "");
-    const rawEmail = String(formData.get("email") ?? "");
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const rawUsername = String(formData.get('username') ?? '');
+    const rawEmail = String(formData.get('email') ?? '');
+    const password = String(formData.get('password') ?? '');
+    const confirmPassword = String(formData.get('confirmPassword') ?? '');
     const { username, email, errorCode } = validateRegisterInput(
       rawUsername,
       rawEmail,
@@ -104,7 +104,7 @@ export function WelcomePage() {
         signature: null,
       });
 
-      navigate("/home", { state: { openProfileSetup: true } });
+      navigate('/home', { state: { openProfileSetup: true } });
     } catch (error) {
       if (isGloballyHandledApiError(error)) {
         return;
@@ -119,82 +119,82 @@ export function WelcomePage() {
 
   const featureItems = [
     {
-      label: t("welcome.featureLabels.webgame"),
-      description: t("welcome.features.webgame"),
+      label: t('welcome.featureLabels.webgame'),
+      description: t('welcome.features.webgame'),
     },
     {
-      label: t("welcome.featureLabels.matchmaking"),
-      description: t("welcome.features.matchmaking"),
+      label: t('welcome.featureLabels.matchmaking'),
+      description: t('welcome.features.matchmaking'),
     },
     {
-      label: t("welcome.featureLabels.ai"),
-      description: t("welcome.features.ai"),
+      label: t('welcome.featureLabels.ai'),
+      description: t('welcome.features.ai'),
     },
     {
-      label: t("welcome.featureLabels.progress"),
-      description: t("welcome.features.progress"),
+      label: t('welcome.featureLabels.progress'),
+      description: t('welcome.features.progress'),
     },
   ];
 
   return (
-    <main className="relative min-h-screen overflow-hidden  text-(--text-main)">
+    <main className='relative min-h-screen overflow-hidden  text-(--text-main)'>
       <div
-        className="absolute inset-0 -z-20 bg-cover bg-center"
+        className='absolute inset-0 -z-20 bg-cover bg-center'
         style={{
           backgroundImage:
             'linear-gradient(to bottom, rgba(228, 238, 249, 0.62), rgba(241, 246, 252, 0.78)), url("/theme-battleship.jpg")',
         }}
       />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_55%)]" />
+      <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_55%)]' />
 
-      <section className="grid min-h-screen min-w-screen max-w-7xl overflow-hidden rounded-2xl border border-white/55 bg-white/18 backdrop-blur-[2px] md:grid-cols-6">
-        <div className="flex flex-col items-center justify-center bg-[#1e3654]/88 p-6 text-[#d9ebff] md:col-span-2 sm:p-8">
-          <p className="text-[11px] font-semibold tracking-[0.35em] text-[#9fc3eb] uppercase">
-            {t("welcome.subtitle")}
+      <section className='grid min-h-screen min-w-screen max-w-7xl overflow-hidden rounded-md border border-white/55 bg-white/18 backdrop-blur-[2px] md:grid-cols-6'>
+        <div className='flex flex-col items-center justify-center bg-[#1e3654]/88 p-6 text-[#d9ebff] md:col-span-2 sm:p-8'>
+          <p className='text-[11px] font-semibold tracking-[0.35em] text-[#9fc3eb] uppercase'>
+            {t('welcome.subtitle')}
           </p>
-          <h1 className="mt-4 text-2xl leading-[0.95] font-black text-white italic sm:text-3xl">
-            {t("welcome.title")}
+          <h1 className='mt-4 text-2xl leading-[0.95] font-black text-white italic sm:text-3xl'>
+            {t('welcome.title')}
           </h1>
 
-          <div className=" mt-10 flex w-full max-w-90 flex-col gap-3">
+          <div className=' mt-10 flex w-full max-w-90 flex-col gap-3'>
             <Button onClick={handlePlayAnonymous}>
-              {t("welcome.actions.playAnonymous")}
+              {t('welcome.actions.playAnonymous')}
             </Button>
-            <Button variant="primary" onClick={() => openModal("register")}>
-              {t("welcome.actions.register")}
+            <Button variant='primary' onClick={() => openModal('register')}>
+              {t('welcome.actions.register')}
             </Button>
           </div>
 
-          <p className="mt-5 text-sm text-[#c1dbf8]">
-            {t("welcome.actions.hasAccount")}{" "}
+          <p className='mt-5 text-sm text-[#c1dbf8]'>
+            {t('welcome.actions.hasAccount')}{' '}
             <a
-              href="#"
+              href='#'
               onClick={(event) => {
                 event.preventDefault();
                 setLoginError(null);
-                openModal("login");
+                openModal('login');
               }}
-              className="font-semibold text-white underline underline-offset-2 hover:text-[#e8f3ff]"
+              className='font-semibold text-white underline underline-offset-2 hover:text-[#e8f3ff]'
             >
-              {t("welcome.actions.login")}
+              {t('welcome.actions.login')}
             </a>
           </p>
         </div>
 
-        <div className=" flex flex-col items-center justify-center bg-[#edf4fb]/86 p-6 md:col-span-4 sm:p-8">
-          <h1 className="mt-4 text-2xl leading-[0.95] font-black text-[#1c3658] italic sm:text-4xl">
-            {t("welcome.gameName")}
+        <div className=' flex flex-col items-center justify-center bg-[#edf4fb]/86 p-6 md:col-span-4 sm:p-8'>
+          <h1 className='mt-4 text-2xl leading-[0.95] font-black text-[#1c3658] italic sm:text-4xl'>
+            {t('welcome.gameName')}
           </h1>
-          <div className="mt-6 grid gap-3">
+          <div className='mt-6 grid gap-3'>
             {featureItems.map((featureItem) => (
               <article
                 key={featureItem.label}
-                className="border rounded-2xl border-[#7dbde0] bg-white/70 p-4 text-[#3d5472]"
+                className='border rounded-sm border-[#7dbde0] bg-white/70 p-4 text-[#3d5472]'
               >
-                <p className="text-xs font-bold tracking-[0.12em] uppercase">
+                <p className='text-xs font-bold tracking-[0.12em] uppercase'>
                   {featureItem.label}
                 </p>
-                <p className="mt-2 text-sm font-semibold">
+                <p className='mt-2 text-sm font-semibold'>
                   {featureItem.description}
                 </p>
               </article>
@@ -204,16 +204,16 @@ export function WelcomePage() {
       </section>
 
       <LoginModal
-        isOpen={isModalOpen && authModalMode === "login"}
+        isOpen={isModalOpen && authModalMode === 'login'}
         onClose={closeModal}
         onSubmit={handleSubmitLogin}
-        onForgotPassword={() => openModal("forgotPassword")}
+        onForgotPassword={() => openModal('forgotPassword')}
         onFieldsChange={() => setLoginError(null)}
         errorMessage={loginError ?? undefined}
       />
 
       <RegisterModal
-        isOpen={isModalOpen && authModalMode === "register"}
+        isOpen={isModalOpen && authModalMode === 'register'}
         onClose={closeModal}
         onSubmit={handleSubmitRegister}
         onFieldsChange={() => setRegisterError(null)}
@@ -221,7 +221,7 @@ export function WelcomePage() {
       />
 
       <ForgotPasswordModal
-        isOpen={isModalOpen && authModalMode === "forgotPassword"}
+        isOpen={isModalOpen && authModalMode === 'forgotPassword'}
         onClose={closeModal}
         onSubmit={handleSubmitForgotPassword}
       />

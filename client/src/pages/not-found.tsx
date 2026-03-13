@@ -1,5 +1,6 @@
-import Lottie from "lottie-react"
-import { lotties } from "../assets"
+import Lottie from 'lottie-react'
+import { useTranslation } from 'react-i18next'
+import { lotties } from '../assets'
 
 // Chưa sử dụng, không động vào
 
@@ -11,6 +12,8 @@ export function NotFound({
   info?: { componentStack: string }
   reset: () => void
 }) {
+  const { t } = useTranslation()
+
   return (
     <div
       className='min-h-screen flex flex-col justify-center items-center gap-6 text-center px-4'
@@ -23,7 +26,7 @@ export function NotFound({
       />
 
       <h1 className="font-['Space_Mono'] text-xl sm:text-2xl font-bold text-white">
-        Oops! Something went wrong.
+        {t('errors.unexpected')}
       </h1>
 
       {error.message && (
@@ -38,7 +41,7 @@ export function NotFound({
         onClick={reset}
         className="cursor-pointer font-['Space_Mono'] text-xs tracking-widest uppercase px-6 py-3 border border-[#22d3ee]/50 text-[#22d3ee] hover:bg-[#22d3ee]/10 hover:border-[#22d3ee] transition-all duration-200"
       >
-        Try again
+        {t('errors.tryAgain')}
       </button>
     </div>
   )

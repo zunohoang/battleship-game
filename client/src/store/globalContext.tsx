@@ -5,6 +5,8 @@ import { Modal } from '@/components/ui/Modal'
 import { clearAccessToken } from '@/services/authToken'
 import { setForceLogoutCallback } from '@/services/interceptors'
 
+const AUTH_USER_STORAGE_KEY = 'auth.user'
+
 export interface GlobalUser {
   username: string
   avatar: string | null
@@ -21,10 +23,56 @@ export interface GlobalContextValue {
 // eslint-disable-next-line react-refresh/only-export-components
 export const GlobalContext = createContext<GlobalContextValue | null>(null)
 
+const isGlobalUser = (value: unknown): value is GlobalUser => {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const candidate = value as Record<string, unknown>
+  const { username, avatar, signature } = candidate
+
+  return (
+    typeof username === 'string' &&
+    (typeof avatar === 'string' || avatar === null) &&
+    (typeof signature === 'string' || signature === null)
+  )
+}
+
+const loadStoredUser = (): GlobalUser | null => {
+  try {
+    const raw = localStorage.getItem(AUTH_USER_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const parsed = JSON.parse(raw)
+    return isGlobalUser(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const saveStoredUser = (user: GlobalUser | null): void => {
+  try {
+    if (!user) {
+      localStorage.removeItem(AUTH_USER_STORAGE_KEY)
+      return
+    }
+
+    localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
+  } catch {
+    // Ignore storage errors and keep auth state in memory.
+  }
+}
+
 export function GlobalProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation('common')
-  const [user, setUserState] = useState<GlobalUser | null>(null)
+  const [user, setUserState] = useState<GlobalUser | null>(() => loadStoredUser())
   const [isSessionExpiredModalOpen, setSessionExpiredModalOpen] = useState(false)
+
+  useEffect(() => {
+    saveStoredUser(user)
+  }, [user])
 
   const logout = useCallback(() => {
     clearAccessToken()
@@ -59,8 +107,8 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
         title={t('errors.SESSION_EXPIRED_TITLE')}
         onClose={redirectToWelcome}
       >
-        <div className="mt-4">
-          <Button variant="primary" onClick={redirectToWelcome}>
+        <div className='mt-4'>
+          <Button variant='primary' onClick={redirectToWelcome}>
             {t('errors.goHome')}
           </Button>
         </div>

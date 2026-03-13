@@ -4,13 +4,19 @@ type SectionStatusProps = {
     className?: string;
 };
 
-export function SectionStatus({ leftText, rightText, className = "" }: SectionStatusProps) {
-    return (
-        <div
-            className={`flex items-center justify-between text-[10px] font-semibold tracking-[0.18em] text-[#7ea3ce] uppercase ${className}`.trim()}
-        >
-            <p>{leftText}</p>
-            <p>{rightText}</p>
-        </div>
-    );
+export function SectionStatus({
+  leftText,
+  rightText,
+  className = '',
+}: SectionStatusProps) {
+  return (
+    <div
+      className={`ui-statusbar rounded-sm px-4 py-3 ${className}`}
+    >
+      <div className='relative z-10 flex items-center justify-between gap-4 text-[10px] font-semibold tracking-[0.22em] text-(--text-subtle) uppercase'>
+        <p>{leftText}</p>
+        <p>{rightText}</p>
+      </div>
+    </div>
+  );
 }

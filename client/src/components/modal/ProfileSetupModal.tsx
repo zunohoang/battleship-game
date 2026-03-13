@@ -85,7 +85,7 @@ export function ProfileSetupModal({
   }
 
   const inputClassName =
-    'h-11 rounded-xl border border-[#7dbde0] bg-white/85 px-3 text-[#24425f] outline-none focus:border-[#3f77b2]'
+    'ui-input h-11 rounded-sm px-3'
 
   // Only affects rendering; it does not overwrite user data in global state.
   const renderAvatarSrc = avatarSrc || defaultAvatarSrc
@@ -93,42 +93,42 @@ export function ProfileSetupModal({
   return (
     <>
       <Modal isOpen={isOpen} title={t('welcome.modals.profileSetupTitle')} onClose={onClose}>
-        <form className="grid gap-4" noValidate onSubmit={handleSubmit}>
+        <form className='grid gap-4' noValidate onSubmit={handleSubmit}>
 
           {/* Avatar */}
-          <div className="flex flex-col items-center gap-2">
+          <div className='flex flex-col items-center gap-2'>
             <button
-              type="button"
+              type='button'
               onClick={() => setShowPreview(true)}
-              aria-label="Preview avatar"
-              className="cursor-pointer overflow-hidden rounded-full w-20 h-20 border-2 border-[#7dbde0] hover:border-[#3f77b2] transition-colors"
+              aria-label={t('welcome.modals.previewAvatar')}
+              className='h-20 w-20 cursor-pointer overflow-hidden rounded-full border-2 border-(--border-strong) bg-(--accent-soft) transition-colors hover:border-(--accent-secondary)'
             >
-              <img src={renderAvatarSrc} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={renderAvatarSrc} alt={t('welcome.modals.avatar')} className='w-full h-full object-cover' />
             </button>
             <button
-              type="button"
+              type='button'
               onClick={() => fileInputRef.current?.click()}
-              className="cursor-pointer text-xs font-semibold text-[#2f5f98] underline underline-offset-2 hover:text-[#1f4d84]"
+              className='cursor-pointer text-xs font-semibold text-(--accent-secondary) underline underline-offset-4 hover:text-white'
             >
               {t('welcome.modals.changeAvatar')}
             </button>
             <input
               ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
+              type='file'
+              accept='image/*'
+              className='hidden'
               onChange={handleFileChange}
             />
           </div>
 
           {/* Username */}
-          <label className="grid gap-1 text-sm font-semibold text-[#3d5472]">
-            <div className="flex justify-between">
+          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+            <div className='flex justify-between'>
               <span>{t('welcome.modals.username')}</span>
-              <span className="font-normal text-[#6b8aac]">{username.length}/20</span>
+              <span className='font-normal text-(--text-subtle)'>{username.length}/20</span>
             </div>
             <input
-              type="text"
+              type='text'
               required
               maxLength={20}
               value={username}
@@ -141,10 +141,10 @@ export function ProfileSetupModal({
           </label>
 
           {/* Signature */}
-          <label className="grid gap-1 text-sm font-semibold text-[#3d5472]">
-            <div className="flex justify-between">
+          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+            <div className='flex justify-between'>
               <span>{t('welcome.modals.signature')}</span>
-              <span className="font-normal text-[#6b8aac]">{signature.length}/200</span>
+              <span className='font-normal text-(--text-subtle)'>{signature.length}/200</span>
             </div>
             <textarea
               maxLength={200}
@@ -155,16 +155,16 @@ export function ProfileSetupModal({
                 setSignature(e.target.value)
               }}
               placeholder={t('welcome.modals.placeholder.signature')}
-              className="rounded-xl border border-[#7dbde0] bg-white/85 px-3 py-2 text-[#24425f] outline-none focus:border-[#3f77b2] resize-none text-sm"
+              className='ui-input resize-none rounded-sm px-3 py-2 text-sm'
             />
           </label>
 
           {/* Password */}
-          <label className="grid gap-1 text-sm font-semibold text-[#3d5472]">
+          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
             {t('welcome.modals.password')}
             <input
-              type="password"
-              autoComplete="new-password"
+              type='password'
+              autoComplete='new-password'
               placeholder={t('welcome.modals.placeholder.password')}
               value={password}
               onChange={(e) => {
@@ -178,22 +178,23 @@ export function ProfileSetupModal({
           </label>
 
           {errorMessage && (
-            <p className="rounded-xl border border-[#d36b6b] bg-[#ffe8e8] px-3 py-2 text-sm font-semibold text-[#8f2f2f]">
+            <p className='rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]'>
               {errorMessage}
             </p>
           )}
 
-          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2'>
             <Button
-              type="button"
-              className="h-11 border-[#c67e7e] text-[#8f2f2f] hover:bg-[#ffeaea]"
+              type='button'
+              variant='danger'
+              className='h-11'
               onClick={() => {
                 void onLogout()
               }}
             >
               {t('welcome.modals.logout')}
             </Button>
-            <Button variant="primary" type="submit" className="h-11" disabled={!isChanged}>
+            <Button variant='primary' type='submit' className='h-11' disabled={!isChanged}>
               {t('welcome.modals.submitProfile')}
             </Button>
           </div>
@@ -204,16 +205,16 @@ export function ProfileSetupModal({
       {/* Lightbox */}
       {showPreview && (
         <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/80"
+          className='fixed inset-0 z-60 flex items-center justify-center bg-[#020912]/88 backdrop-blur-sm'
           onClick={() => setShowPreview(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Avatar preview"
+          role='dialog'
+          aria-modal='true'
+          aria-label={t('welcome.modals.avatarPreview')}
         >
           <img
             src={renderAvatarSrc}
-            alt="Avatar preview"
-            className="max-w-[90vw] max-h-[90vh] rounded-2xl shadow-2xl"
+            alt={t('welcome.modals.avatarPreview')}
+            className='max-h-[90vh] max-w-[90vw] rounded-md border border-(--border-strong) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
             onClick={(e) => e.stopPropagation()}
           />
         </div>

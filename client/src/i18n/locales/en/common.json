@@ -1,5 +1,9 @@
 {
     "appName": "Battleship",
+    "modal": {
+        "secureChannel": "Secure Channel",
+        "close": "Close modal"
+    },
     "home": {
         "title": "Live to fight. Fight to live",
         "description": "Frontend foundation is ready.",
@@ -26,6 +30,35 @@
         },
         "accessRules": {
             "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
+        },
+        "gameTitle": "Battleship Command",
+        "gameSubtitle": "Tactical interface online",
+        "lore1": "Calibrate fleet behavior, configure tactical scenarios, and launch directly into battle setup from a single command surface.",
+        "lore2": "Fleet controls synchronized. Mission presets and settings are available from the command queue.",
+        "commanderLink": "Commander Link",
+        "systemFeed": "System Feed",
+        "signalLabel": "Signal",
+        "signalStatus": "Secure uplink stable",
+        "operationLabel": "Operation",
+        "operationStatus": "Awaiting deployment order",
+        "missionQueue": "Mission Queue",
+        "commandDeck": "Command Deck",
+        "commandDeckDesc": "Select a scenario, adjust system settings, or authenticate to unlock online operations.",
+        "stats": {
+            "rank": "Rank",
+            "status": "Status",
+            "grid": "Grid",
+            "rankCadet": "Cadet",
+            "rankFleetAdmiral": "Fleet Admiral",
+            "statusStandby": "Standby",
+            "statusReady": "Ready",
+            "gridDefault": "10 x 10"
+        },
+        "profile": {
+            "username": "Username",
+            "signature": "Signature",
+            "rank": "Rank",
+            "elo": "Elo"
         }
     },
     "welcome": {
@@ -62,6 +95,9 @@
             "profileSetupTitle": "Set up your profile",
             "signature": "Signature",
             "signatureHint": "Max 200 characters",
+            "previewAvatar": "Preview avatar",
+            "avatar": "Avatar",
+            "avatarPreview": "Avatar preview",
             "changeAvatar": "Change avatar",
             "logout": "Logout",
             "submitProfile": "Save profile",
@@ -83,6 +119,21 @@
             "title_placement": "Place Your Ships",
             "step1Label": "Fleet & Map",
             "step2Label": "Place Ships",
+            "phase": "Phase",
+            "placementPhaseActive": "Placement phase active",
+            "mode": "Mode {{mode}}",
+            "modes": {
+                "bot": "Bot",
+                "online": "Online",
+                "botvbot": "Bot vs Bot"
+            },
+            "commanderName": "Commander Alpha",
+            "deploymentSectorConfigured": "Deployment sector configured for a {{rows}} x {{cols}} grid",
+            "ships": "Ships",
+            "cellsUsed": "Cells Used",
+            "systemLogWaiting": "System log: waiting for fleet confirmation",
+            "secureLinkEstablished": "Secure link established",
+            "secureLinkPending": "Secure link pending",
             "back": "Back",
             "backToConfig": "Back to Config",
             "nextStep": "Next: Place Ships",
@@ -90,10 +141,16 @@
         },
         "step1": {
             "boardSizeTitle": "Board Size",
+            "configureGridHint": "Configure the tactical grid before finalizing fleet composition.",
+            "presetSize": "{{rows}} rows · {{cols}} columns",
             "rowsLabel": "Rows",
             "columnsLabel": "Columns",
             "boardInfo": "Board: {{rows}} {{cols}} = {{cells}} cells",
+            "deploymentCapacity": "Deployment Capacity",
+            "fleetLoad": "Fleet Load",
+            "limit": "Limit",
             "fleetTitle": "Fleet",
+            "fleetTypes": "Fleet Types",
             "totalCellsInfo": "Total cells occupied: {{used}} / {{max}} max (50% of board)",
             "noShips": "No ships defined. Add at least one.",
             "shipName": "Name",
@@ -108,10 +165,13 @@
         },
         "step2": {
             "boardInfo": "Board: {{rows}} {{cols}}",
-            "fleetInfo": "Fleet: {{ships}}"
+            "fleetInfo": "Fleet: {{ships}}",
+            "deployment": "Deployment"
         },
         "placement": {
             "shipInstances": "Ship Instances",
+            "fleetInventory": "Fleet Inventory",
+            "orientation": "Orientation",
             "size": "Size",
             "placed": "Placed",
             "notPlaced": "Not placed",
@@ -125,7 +185,8 @@
             "cannotPlaceHere": "Cannot place here: out of board or colliding with another ship.",
             "allShipsPlaced": "All ships placed. You are ready to start.",
             "placementInstructions": "Select a ship instance, then click a board cell to place it.",
-            "randomPlacementFailed": "Random placement failed. Try increasing board size or reducing fleet density."
+            "randomPlacementFailed": "Random placement failed. Try increasing board size or reducing fleet density.",
+            "hullDeployHint": "Select a hull and deploy it on the tactical grid."
         }
     },
     "settings": {
@@ -140,14 +201,22 @@
         "vi": "VI",
         "light": "Light",
         "dark": "Dark",
+        "muteVolume": "Mute {{channel}}",
+        "unmuteVolume": "Unmute {{channel}}",
         "close": "Close"
     },
     "errors": {
         "SESSION_EXPIRED_TITLE": "Session expired",
         "notFound": "Page not found",
+        "unexpected": "Oops! Something went wrong.",
+        "tryAgain": "Try again",
         "goHome": "Back to home",
         "TIMEOUT": "Request timed out. Please try again.",
         "NETWORK_ERROR": "Network error. Please check your internet connection.",
+        "apiBaseUrlRequired": "VITE_API_BASE_URL is required.",
+        "spriteLoadFailed": "Failed to load sprite sheet: {{src}}",
+        "spriteContextUnavailable": "Could not create a 2D canvas context for sprite extraction.",
+        "spriteDirectionCountInvalid": "Expected 5 ship sprites for direction {{direction}}, but found {{count}}.",
         "INVALID_EMAIL": "Please enter a valid email address.",
         "INVALID_CREDENTIALS": "Invalid email or password.",
         "USERNAME_REQUIRED": "Username is required.",

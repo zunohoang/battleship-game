@@ -4,6 +4,7 @@ import { WelcomePage } from '@/pages/welcome'
 import { NotFound } from '@/pages/not-found'
 import { GameSetupPage } from '@/pages/game-setup'
 import { GameSetupProvider } from '@/store/gameSetupContext'
+import i18n from '@/i18n'
 
 export const appRouter = createBrowserRouter([
   {
@@ -24,6 +25,6 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '*',
-    element: <NotFound reset={() => { throw redirect('/') }} error={new Error('Page not found')} />,
+    element: <NotFound reset={() => { throw redirect('/') }} error={new Error(i18n.t('errors.notFound'))} />,
   },
 ])

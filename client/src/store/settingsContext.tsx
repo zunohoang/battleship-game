@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -14,12 +15,33 @@ import {
   sanitizeVolumeValue,
   saveAppSettings,
 } from '@/services/settingsStorage'
-import {
-  type AppLanguage,
-  type AppSettings,
-  type AppTheme,
-  type AppVolumeSettings,
-} from '@/types/settings'
+
+export type AppLanguage = 'en' | 'vi'
+export type AppTheme = 'light' | 'dark'
+
+export type AppVolumeSettings = {
+  master: number
+  backgroundMusic: number
+  sfx: number
+  ui: number
+}
+
+export type AppSettings = {
+  volume: AppVolumeSettings
+  language: AppLanguage
+  theme: AppTheme
+}
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  volume: {
+    master: 30,
+    backgroundMusic: 30,
+    sfx: 80,
+    ui: 80,
+  },
+  language: 'vi',
+  theme: 'light',
+}
 
 type VolumeChannel = keyof AppVolumeSettings
 
@@ -41,20 +63,20 @@ type SettingsContextValue = {
   setTheme: (theme: AppTheme) => void
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => loadAppSettings())
+
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null)
   const uiClickRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    const backgroundMusic = new Audio(sounds.documentaryMusic)
+    const backgroundMusic = new Audio()
     backgroundMusic.loop = true
     backgroundMusic.preload = 'auto'
 
-    const uiClick = new Audio(sounds.uiClickSound)
+    const uiClick = new Audio(sounds.buttonSound)
     uiClick.preload = 'auto'
 
     backgroundMusicRef.current = backgroundMusic
@@ -133,7 +155,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         })
       }
 
-      const interactiveElement = target.closest('button, a, [role="button"], [data-ui-click-sound]')
+      const interactiveElement = target.closest('button, [role="button"], [data-ui-click-sound]')
       if (!interactiveElement || isDisabledInteractiveElement(interactiveElement)) {
         return
       }
