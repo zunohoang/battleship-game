@@ -122,6 +122,7 @@
             "phase": "Giai đoạn",
             "placementPhaseActive": "Giai đoạn đặt tàu đang hoạt động",
             "mode": "Chế độ {{mode}}",
+            "gameModeLabel": "CHẾ ĐỘ CHƠI",
             "modes": {
                 "bot": "Bot",
                 "online": "Trực tuyến",
@@ -138,6 +139,12 @@
             "backToConfig": "Quay lại cấu hình",
             "nextStep": "Tiếp theo: Đặt tàu",
             "startGame": "Bắt đầu trò chơi"
+        },
+        "aiDifficulty": {
+            "label": "ĐỘ KHÓ AI",
+            "random": "NGẪU NHIÊN",
+            "learning": "HỌC HỎI",
+            "probability": "XÁC SUẤT"
         },
         "step1": {
             "boardSizeTitle": "Kích thước bàn cờ",
@@ -231,5 +238,56 @@
         "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
         "USER_NOT_FOUND": "Không tìm thấy người dùng.",
         "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
+    },
+    "gameBattle": {
+        "operationLabel": "TÁC VỤ",
+        "operation": "DEEP SEA STRIKE",
+        "yourTurn": "LƯỢT CỦA BẠN",
+        "enemyTurn": "LƯỢT ĐỊCH",
+        "botATurn": "BOT A TẤNG CÔNG",
+        "botBTurn": "BOT B TẤN CÔNG",
+        "timer": "HẸN GIỜ",
+        "enemyWaters": "VÙNG BIỂN ĐỊCH",
+        "botBFleet": "HẠM ĐỘI BOT B",
+        "myFleet": "HẠM ĐỘI CỦA TÔI",
+        "botAFleet": "HẠM ĐỘI BOT A",
+        "selectCoordinate": "CHỌN TỌA ĐỘ BẮN TÊN LỬA",
+        "waitingForTurn": "ĐỊCH ĐANG NHẮM MỤC TIÊU...",
+        "botAAttacking": "BOT A ĐANG TẤN CÔNG...",
+        "fleetIntact": "HẠM ĐỘI NGUYÊN VẸN",
+        "compromised": "BỊ TỔN THẤT",
+        "missionLog": "NHẬT KÝ NHIỆM VỤ",
+        "quitMission": "RỜI NHIỆM VỤ",
+        "tacticalMap": "BẢN ĐỒ CHIẾN THUẬT",
+        "statistics": "THỐNG KÊ",
+        "minimize": "Thu nhỏ",
+        "stats": {
+            "title": "THỐNG KÊ CHIẾN ĐẤU",
+            "shots": "ĐÃ BẮN",
+            "hits": "TRÚNG",
+            "misses": "TRƯỢT",
+            "accuracy": "ĐỘ CHÍNH XÁC",
+            "youLabel": "TẤN CÔNG CỦA BẠN",
+            "enemyLabel": "TẤN CÔNG CỦA ĐỊCH"
+        },
+        "encryptedChannel": "KÊNH MÃ HÓA",
+        "systemVersion": "HỆ_THỐNG_v4.0.2_HOẠT_ĐỘNG",
+        "logInit": "Hệ thống khởi tạo hoàn tất.",
+        "logYouHit": "Bạn phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logYouMiss": "Bạn phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "logEnemyHit": "Địch phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logEnemyMiss": "Địch phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "logBotAHit": "Bot A phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logBotAMiss": "Bot A phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "result": {
+            "victorySubtitle": "TRẠNG THÁI NHIỆM VỤ",
+            "defeatSubtitle": "TRẠNG THÁI NHIỆM VỤ",
+            "victory": "NHIỆM VỤ HOÀN THÀNH",
+            "defeat": "NHIỆM VỤ THẤT BẠI",
+            "victoryDesc": "Toàn bộ tàu địch đã bị đánh chìm. Biển cả là của chúng ta.",
+            "defeatDesc": "Hạm đội của bạn đã bị tiêu diệt. Rút lui và tái tổ chức.",
+            "playAgain": "TRIỂN KHAI LẠI",
+            "returnBase": "QUAY VỀ CĂN CỨ"
+        }
     }
 }

@@ -122,6 +122,7 @@
             "phase": "Phase",
             "placementPhaseActive": "Placement phase active",
             "mode": "Mode {{mode}}",
+            "gameModeLabel": "GAME MODE",
             "modes": {
                 "bot": "Bot",
                 "online": "Online",
@@ -138,6 +139,12 @@
             "backToConfig": "Back to Config",
             "nextStep": "Next: Place Ships",
             "startGame": "Start Game"
+        },
+        "aiDifficulty": {
+            "label": "AI DIFFICULTY",
+            "random": "RANDOM",
+            "learning": "LEARNING",
+            "probability": "PROBABILITY"
         },
         "step1": {
             "boardSizeTitle": "Board Size",
@@ -231,5 +238,56 @@
         "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
         "USER_NOT_FOUND": "User not found.",
         "UNKNOWN_ERROR": "Something went wrong. Please try again."
+    },
+    "gameBattle": {
+        "operationLabel": "OPERATION",
+        "operation": "DEEP SEA STRIKE",
+        "yourTurn": "YOUR TURN",
+        "enemyTurn": "ENEMY TURN",
+        "botATurn": "BOT A TURN",
+        "botBTurn": "BOT B TURN",
+        "timer": "TIMER",
+        "enemyWaters": "ENEMY WATERS",
+        "botBFleet": "BOT B FLEET",
+        "myFleet": "MY FLEET",
+        "botAFleet": "BOT A FLEET",
+        "selectCoordinate": "SELECT COORDINATE TO FIRE MISSILE",
+        "waitingForTurn": "ENEMY IS TARGETING...",
+        "botAAttacking": "BOT A ATTACKING...",
+        "fleetIntact": "FLEET INTACT",
+        "compromised": "COMPROMISED",
+        "missionLog": "MISSION LOG",
+        "quitMission": "QUIT MISSION",
+        "tacticalMap": "TACTICAL MAP",
+        "statistics": "STATISTICS",
+        "minimize": "Minimize",
+        "stats": {
+            "title": "BATTLE STATISTICS",
+            "shots": "SHOTS FIRED",
+            "hits": "HITS",
+            "misses": "MISSES",
+            "accuracy": "ACCURACY",
+            "youLabel": "YOUR OFFENSE",
+            "enemyLabel": "ENEMY OFFENSE"
+        },
+        "encryptedChannel": "ENCRYPTED CHANNEL",
+        "systemVersion": "SYSTEM_v4.0.2_ACTIVE",
+        "logInit": "System initialization complete.",
+        "logYouHit": "You launched missile at {{coord}}... HIT!",
+        "logYouMiss": "You launched missile at {{coord}}... MISS!",
+        "logEnemyHit": "Enemy launched missile at {{coord}}... HIT!",
+        "logEnemyMiss": "Enemy launched missile at {{coord}}... MISS!",
+        "logBotAHit": "Bot A launched missile at {{coord}}... HIT!",
+        "logBotAMiss": "Bot A launched missile at {{coord}}... MISS!",
+        "result": {
+            "victorySubtitle": "MISSION STATUS",
+            "defeatSubtitle": "MISSION STATUS",
+            "victory": "MISSION ACCOMPLISHED",
+            "defeat": "MISSION FAILED",
+            "victoryDesc": "All enemy ships have been sunk. The seas are ours.",
+            "defeatDesc": "Your fleet has been destroyed. Retreat and regroup.",
+            "playAgain": "DEPLOY AGAIN",
+            "returnBase": "RETURN TO BASE"
+        }
     }
 }

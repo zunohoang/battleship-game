@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
+import { buildRandomPlacements, buildShipInstances } from '@/utils/placementUtils';
 import {
   Button,
   SectionStatus,
@@ -116,6 +118,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        isAnonymous: false,
       });
 
       closeModal();
@@ -158,6 +161,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: null,
+        isAnonymous: false,
       });
 
       openModal('profileSetup');
@@ -184,6 +188,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        isAnonymous: false,
       });
       closeModal();
 
@@ -210,7 +215,7 @@ export function HomePage() {
     event.preventDefault();
   };
 
-  const isAnonymous = !user;
+  const isAnonymous = user?.isAnonymous ?? true;
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
     'profileSetup',
@@ -253,6 +258,23 @@ export function HomePage() {
   const handleGameMode = (id: string) => {
     if (id === 'settings') {
       openModal('settings');
+      return;
+    }
+
+    if (id === 'botVsBot') {
+      const { boardConfig, ships } = DEFAULT_GAME_CONFIG;
+      const instances = buildShipInstances(ships);
+      const sbMap = new Map(ships.map((s) => [s.id, s]));
+      const placementsA = buildRandomPlacements(instances, boardConfig, sbMap) ?? [];
+      const placementsB = buildRandomPlacements(instances, boardConfig, sbMap) ?? [];
+      navigate('/game/play', {
+        state: {
+          mode: 'botvbot',
+          config: DEFAULT_GAME_CONFIG,
+          placements: placementsA,
+          botPlacements: placementsB,
+        },
+      });
       return;
     }
 
@@ -350,7 +372,7 @@ export function HomePage() {
                     {t('home.playerStatus.label')}
                   </p>
 
-                  {isAnonymous || !user ? (
+                  {!user ? (
                     <>
                       <p className='mt-3 font-mono text-sm text-(--text-muted)'>
                         {t('home.playerStatus.anonymous')}
@@ -363,13 +385,19 @@ export function HomePage() {
                     <div className='mt-3 grid gap-2'>
                       <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
                         <span className='ui-data-label text-right'>{t('home.profile.username')}</span>
-                        <button
-                          type='button'
-                          onClick={() => openModal('profileSetup')}
-                          className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
-                        >
-                          {user.username}
-                        </button>
+                        {isAnonymous ? (
+                          <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                            {user.username}
+                          </span>
+                        ) : (
+                          <button
+                            type='button'
+                            onClick={() => openModal('profileSetup')}
+                            className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
+                          >
+                            {user.username}
+                          </button>
+                        )}
                         <span className='ui-data-label text-right'>{t('home.profile.signature')}</span>
                         <span className='font-mono text-sm text-(--text-main)'>
                           {user.signature ?? '—'}
@@ -447,7 +475,7 @@ export function HomePage() {
                 ))}
               </div>
 
-              {user ? (
+              {user && !isAnonymous ? (
                 <Button
                   variant='danger'
                   onClick={() => {

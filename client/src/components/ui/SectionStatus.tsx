@@ -1,7 +1,7 @@
 type SectionStatusProps = {
-    leftText: string;
-    rightText: string;
-    className?: string;
+  leftText: string;
+  rightText: string;
+  className?: string;
 };
 
 export function SectionStatus({

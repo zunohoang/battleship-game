@@ -10,6 +10,7 @@ import {
   instanceKey,
 } from '@/utils/placementUtils';
 import type {
+  AiDifficulty,
   BoardConfig,
   Orientation,
   PlacedShip,
@@ -23,6 +24,8 @@ interface ShipPlacementStageProps {
   orientation: Orientation;
   onOrientationChange: (next: Orientation) => void;
   onPlacementsChange: (placements: PlacedShip[]) => void;
+  aiDifficulty?: AiDifficulty;
+  onAiDifficultyChange?: (d: AiDifficulty) => void;
 }
 
 export function ShipPlacementStage({
@@ -32,6 +35,8 @@ export function ShipPlacementStage({
   orientation,
   onOrientationChange,
   onPlacementsChange,
+  aiDifficulty,
+  onAiDifficultyChange,
 }: ShipPlacementStageProps) {
   const { t } = useTranslation();
   const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(null);
@@ -245,6 +250,8 @@ export function ShipPlacementStage({
           totalRequiredShips={totalRequiredShips}
           statusText={statusText}
           hasError={Boolean(errorText)}
+          aiDifficulty={aiDifficulty}
+          onAiDifficultyChange={onAiDifficultyChange}
         />
       </div>
     </div>

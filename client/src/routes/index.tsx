@@ -3,6 +3,7 @@ import { HomePage } from '@/pages/home'
 import { WelcomePage } from '@/pages/welcome'
 import { NotFound } from '@/pages/not-found'
 import { GameSetupPage } from '@/pages/game-setup'
+import { GamePlayPage } from '@/pages/game-play'
 import { GameSetupProvider } from '@/store/gameSetupContext'
 import i18n from '@/i18n'
 
@@ -22,6 +23,10 @@ export const appRouter = createBrowserRouter([
         <GameSetupPage />
       </GameSetupProvider>
     ),
+  },
+  {
+    path: '/game/play',
+    element: <GamePlayPage />,
   },
   {
     path: '*',

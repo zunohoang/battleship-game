@@ -15,6 +15,7 @@ import {
   validateLoginInput,
   validateRegisterInput,
 } from '@/utils/authValidation';
+import { ANONYMOUS_USER } from '@/store/globalContext';
 
 type AuthModalMode = 'login' | 'register' | 'forgotPassword';
 
@@ -32,6 +33,7 @@ export function WelcomePage() {
   } = useModalState<AuthModalMode>();
 
   const handlePlayAnonymous = () => {
+    setUser(ANONYMOUS_USER);
     navigate('/home');
   };
 
@@ -59,6 +61,7 @@ export function WelcomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        isAnonymous: false,
       });
 
       navigate('/home');
@@ -102,6 +105,7 @@ export function WelcomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: null,
+        isAnonymous: false,
       });
 
       navigate('/home', { state: { openProfileSetup: true } });

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
@@ -11,6 +12,14 @@ export interface GlobalUser {
   username: string
   avatar: string | null
   signature: string | null
+  isAnonymous: boolean
+}
+
+export const ANONYMOUS_USER: GlobalUser = {
+  username: 'Alpha',
+  avatar: null,
+  signature: '- - -',
+  isAnonymous: true,
 }
 
 export interface GlobalContextValue {
@@ -29,13 +38,42 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { username, avatar, signature } = candidate
+  const { username, avatar, signature, isAnonymous } = candidate
 
   return (
     typeof username === 'string' &&
     (typeof avatar === 'string' || avatar === null) &&
-    (typeof signature === 'string' || signature === null)
+    (typeof signature === 'string' || signature === null) &&
+    typeof isAnonymous === 'boolean'
   )
+}
+
+const normalizeStoredUser = (value: unknown): GlobalUser | null => {
+  if (isGlobalUser(value)) {
+    return value
+  }
+
+  if (typeof value !== 'object' || value === null) {
+    return null
+  }
+
+  const candidate = value as Record<string, unknown>
+  const { username, avatar, signature } = candidate
+
+  if (
+    typeof username !== 'string' ||
+    (typeof avatar !== 'string' && avatar !== null) ||
+    (typeof signature !== 'string' && signature !== null)
+  ) {
+    return null
+  }
+
+  return {
+    username,
+    avatar,
+    signature,
+    isAnonymous: false,
+  }
 }
 
 const loadStoredUser = (): GlobalUser | null => {
@@ -46,7 +84,7 @@ const loadStoredUser = (): GlobalUser | null => {
     }
 
     const parsed = JSON.parse(raw)
-    return isGlobalUser(parsed) ? parsed : null
+    return normalizeStoredUser(parsed)
   } catch {
     return null
   }
@@ -100,7 +138,14 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   }, [handleForceLogout])
 
   return (
-    <GlobalContext.Provider value={{ user, isLoggedIn: user !== null, setUser: setUserState, logout }}>
+    <GlobalContext.Provider
+      value={{
+        user,
+        isLoggedIn: user !== null && !user.isAnonymous,
+        setUser: setUserState,
+        logout,
+      }}
+    >
       {children}
       <Modal
         isOpen={isSessionExpiredModalOpen}

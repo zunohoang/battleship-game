@@ -7,7 +7,7 @@ import { BOARD_PRESETS, CONFIG_LIMITS } from '@/constants/gameDefaults';
 import { Button } from '@/components/ui/Button';
 import { SectionStatus } from '@/components/ui/SectionStatus';
 import { ShipPlacementStage } from '@/components/game-setup/ShipPlacementStage';
-import type { GameMode, Orientation, ShipDefinition } from '@/types/game';
+import type { AiDifficulty, GameMode, Orientation, ShipDefinition } from '@/types/game';
 
 type LocationState = { mode?: GameMode };
 
@@ -85,6 +85,7 @@ export function GameSetupPage() {
 
   const [step, setStep] = useState<1 | 2>(1);
   const [placementOrientation, setPlacementOrientation] = useState<Orientation>('horizontal');
+  const [aiDifficulty, setAiDifficulty] = useState<AiDifficulty>('random');
   const [newShipName, setNewShipName] = useState('');
   const [newShipSize, setNewShipSize] = useState(3);
   const [newShipCount, setNewShipCount] = useState(1);
@@ -163,14 +164,13 @@ export function GameSetupPage() {
     [ships],
   );
   const allShipsPlaced =
-        requiredShipCount > 0 && state.placements.length === requiredShipCount;
+    requiredShipCount > 0 && state.placements.length === requiredShipCount;
   useEffect(() => {
     setReady(allShipsPlaced);
   }, [allShipsPlaced, setReady]);
 
   const inputCls = 'ui-input h-8 w-full rounded-sm px-3 text-sm';
-  const labelCls =
-      'grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)';
+  const labelCls = 'grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)';
   const panelTitleCls = 'ui-panel-title';
 
   return (
@@ -184,7 +184,7 @@ export function GameSetupPage() {
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]' />
 
       <section className='ui-hud-shell mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col rounded-md p-3 sm:p-4'>
-        <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
+        <div className={`grid gap-3 lg:items-center ${step === 2 ? 'lg:grid-cols-[minmax(0,1fr)_auto_auto]' : 'lg:grid-cols-[minmax(0,1fr)_auto]'}`}>
           <div className='ui-panel ui-panel-glow flex items-center rounded-md px-5 py-3'>
             <div className='relative z-10 flex min-w-0 flex-1 flex-wrap items-center gap-4'>
               <div className='text-(--accent-secondary) flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)] font-mono text-lg font-black'>
@@ -201,10 +201,23 @@ export function GameSetupPage() {
                 </h1>
               </div>
             </div>
-            <div className='ml-4 whitespace-nowrap text-right'>
-              {t(`gameSetup.header.modes.${mode}`)}
-            </div>
           </div>
+
+          {step === 2 ? (
+            <motion.div
+              key='mode-badge'
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className='ui-panel rounded-md px-4 py-3'
+            >
+              <p className='ui-data-label mb-2'>{t('gameSetup.header.gameModeLabel')}</p>
+              <p className='font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)'>
+                {t(`gameSetup.header.modes.${mode}`)}
+              </p>
+            </motion.div>
+          ) : null}
 
           <div className='flex flex-wrap items-center gap-2 lg:justify-end'>
             <StepPill
@@ -238,6 +251,7 @@ export function GameSetupPage() {
                       mode,
                       config: state.config,
                       placements: state.placements,
+                      aiDifficulty,
                     },
                   })
                 }
@@ -550,6 +564,8 @@ export function GameSetupPage() {
                       orientation={placementOrientation}
                       onOrientationChange={setPlacementOrientation}
                       onPlacementsChange={setPlacements}
+                      aiDifficulty={mode === 'bot' ? aiDifficulty : undefined}
+                      onAiDifficultyChange={mode === 'bot' ? setAiDifficulty : undefined}
                     />
                   </div>
                 </section>
