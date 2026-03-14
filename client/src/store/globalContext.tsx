@@ -29,7 +29,6 @@ export interface GlobalContextValue {
   logout: () => void
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const GlobalContext = createContext<GlobalContextValue | null>(null)
 
 const isGlobalUser = (value: unknown): value is GlobalUser => {

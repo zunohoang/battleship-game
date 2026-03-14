@@ -1,7 +1,7 @@
 import lottieNotFound404 from '@/assets/lotties/404errorpagewithcutecat.json';
 import defaultAvatar from '@/assets/images/default-avatar.svg';
 import battleShipSheet from '@/assets/game_assets/BattleShipSheet_final.png';
-import documentaryMusic from '@/assets/sounds/Documentary-chosic.com_.mp3';
+import background1 from '@/assets/sounds/BG1.mp3';
 import buttonSound from '@/assets/sounds/ButtonClick.mp3';
 import typingSfx from '@/assets/sounds/TypingSFX.mp3';
 
@@ -15,7 +15,7 @@ export const images = {
 };
 
 export const sounds = {
-  documentaryMusic,
+  background1,
   buttonSound,
   typingSfx,
 };

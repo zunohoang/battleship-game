@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { SlidersHorizontal } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { SettingsModal } from '@/components/modal';
 import { Button } from '@/components/ui/Button';
 import { BattleBoard } from '@/components/game/BattleBoard';
+import { useModalState } from '@/hooks/useModalState';
+import { useSettings } from '@/hooks/useSettings';
 import type {
   AiDifficulty,
   BoardConfig,
@@ -427,6 +431,8 @@ function StatsOverlay({
 export function GamePlayPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { playBackgroundMusic, stopBackgroundMusic, fadeOutBackgroundMusic } = useSettings();
+  const { modalMode, isModalOpen, openModal, closeModal } = useModalState<'settings'>();
   const location = useLocation();
   const state = location.state as LocationState | null;
 
@@ -680,6 +686,7 @@ export function GamePlayPage() {
   const timerDisplay = `${padTime(Math.floor(timer / 60))}:${padTime(timer % 60)}`;
 
   const isBotThinking = turn === 'bot' && phase === 'playing';
+  const isSettingsModalOpen = isModalOpen && modalMode === 'settings';
   const turnLabel = isBotVBot
     ? turn === 'player'
       ? t('gameBattle.botATurn')
@@ -688,7 +695,31 @@ export function GamePlayPage() {
       ? t('gameBattle.yourTurn')
       : t('gameBattle.enemyTurn');
 
-  const handleQuit = () => navigate('/home');
+  // Keep gameplay music scoped to active matches only.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (phase === 'playing' && result === null) {
+      void playBackgroundMusic();
+      return;
+    }
+
+    if (phase === 'gameover') {
+      fadeOutBackgroundMusic(500);
+    }
+  }, [fadeOutBackgroundMusic, phase, playBackgroundMusic, result]);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(
+    () => () => {
+      stopBackgroundMusic();
+    },
+    [stopBackgroundMusic],
+  );
+
+  const handleQuit = () => {
+    stopBackgroundMusic();
+    navigate('/home');
+  };
   const handlePlayAgain = () =>
     navigate('/game/setup', { state: { mode } });
 
@@ -704,9 +735,9 @@ export function GamePlayPage() {
 
       <section className='ui-hud-shell mx-auto flex min-h-full w-full max-w-7xl flex-col rounded-md p-2 sm:p-4'>
         {/* ── Row 1: HUD header ── */}
-        <div className='grid grid-cols-2 items-start gap-2 sm:flex sm:items-center sm:justify-between sm:gap-3'>
+        <div className='grid grid-cols-2 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3'>
           {/* Left: operation name */}
-          <div className='order-1 min-w-0'>
+          <div className='order-1 min-w-0 sm:order-0 sm:justify-self-start'>
             <p className='ui-data-label'>{t('gameBattle.operationLabel')}</p>
             <p className='font-mono text-sm font-black uppercase tracking-[0.12em] text-(--accent-secondary) sm:text-base sm:tracking-widest'>
               {t('gameBattle.operation')}
@@ -719,7 +750,7 @@ export function GamePlayPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.22 }}
-            className={`order-3 col-span-2 mx-auto flex items-center gap-2 rounded-full border px-4 py-2 sm:order-2 sm:col-span-1 sm:mx-0 sm:px-5 ${
+            className={`order-3 col-span-2 mx-auto flex items-center gap-2 rounded-full border px-4 py-2 sm:order-0 sm:col-span-1 sm:justify-self-center sm:px-5 ${
               isBotThinking
                 ? 'border-[rgba(255,140,50,0.6)] bg-[rgba(140,60,0,0.2)] text-[rgba(255,180,80,0.95)]'
                 : 'border-[rgba(117,235,255,0.7)] bg-[rgba(34,211,238,0.12)] text-(--text-main)'
@@ -738,7 +769,7 @@ export function GamePlayPage() {
           </motion.div>
 
           {/* Right: timer */}
-          <div className='order-2 justify-self-end text-right sm:order-3'>
+          <div className='order-2 justify-self-end text-right sm:order-0 sm:justify-self-end'>
             <p className='ui-data-label'>{t('gameBattle.timer')}</p>
             <p
               className={`font-mono text-lg font-black tracking-[0.14em] sm:text-xl sm:tracking-widest ${
@@ -886,11 +917,22 @@ export function GamePlayPage() {
               <p className='font-mono text-[9px] tracking-[0.14em] text-(--text-subtle) uppercase sm:tracking-[0.18em]'>
                 {t('gameBattle.encryptedChannel')} 77.2
               </p>
+              <button
+                type='button'
+                aria-label={t('settings.title')}
+                title={t('settings.title')}
+                onClick={() => openModal('settings')}
+                className='cursor-pointer flex h-7 w-7 items-center justify-center rounded-sm border border-(--border-main) text-(--accent-secondary) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)'
+              >
+                <SlidersHorizontal size={14} />
+              </button>
               <div className='h-3 w-6 rounded-full bg-[rgba(34,211,238,0.7)] shadow-[0_0_6px_rgba(34,211,238,0.4)]' />
             </div>
           </div>
         </div>
       </section>
+
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={closeModal} />
     </motion.main>
   );
 }

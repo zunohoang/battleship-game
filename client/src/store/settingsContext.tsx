@@ -61,18 +61,33 @@ type SettingsContextValue = {
   setVolume: (channel: VolumeChannel, value: number) => void
   setLanguage: (language: AppLanguage) => void
   setTheme: (theme: AppTheme) => void
+  playBackgroundMusic: () => Promise<void>
+  stopBackgroundMusic: (options?: { resetTime?: boolean }) => void
+  fadeOutBackgroundMusic: (durationMs?: number) => void
 }
 
 export const SettingsContext = createContext<SettingsContextValue | null>(null)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => loadAppSettings())
+  const [shouldPlayBackgroundMusic, setShouldPlayBackgroundMusic] = useState(false)
 
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null)
   const uiClickRef = useRef<HTMLAudioElement | null>(null)
+  const fadeAnimationFrameRef = useRef<number | null>(null)
+  const isBackgroundMusicFadingRef = useRef(false)
+
+  const clearBackgroundFadeAnimation = useCallback(() => {
+    if (fadeAnimationFrameRef.current === null) {
+      return
+    }
+
+    window.cancelAnimationFrame(fadeAnimationFrameRef.current)
+    fadeAnimationFrameRef.current = null
+  }, [])
 
   useEffect(() => {
-    const backgroundMusic = new Audio()
+    const backgroundMusic = new Audio(sounds.background1)
     backgroundMusic.loop = true
     backgroundMusic.preload = 'auto'
 
@@ -83,11 +98,107 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     uiClickRef.current = uiClick
 
     return () => {
+      clearBackgroundFadeAnimation()
       backgroundMusic.pause()
       backgroundMusicRef.current = null
       uiClickRef.current = null
     }
-  }, [])
+  }, [clearBackgroundFadeAnimation])
+
+  const playBackgroundMusic = useCallback(async () => {
+    const backgroundMusic = backgroundMusicRef.current
+    if (!backgroundMusic) {
+      return
+    }
+
+    clearBackgroundFadeAnimation()
+    isBackgroundMusicFadingRef.current = false
+    setShouldPlayBackgroundMusic(true)
+
+    const volume = getNormalizedVolume(settings.volume.master, settings.volume.backgroundMusic)
+    backgroundMusic.volume = volume
+
+    if (volume <= 0) {
+      backgroundMusic.pause()
+      return
+    }
+
+    try {
+      await backgroundMusic.play()
+    } catch {
+      // Autoplay can fail until the first user gesture.
+    }
+  }, [clearBackgroundFadeAnimation, settings.volume.backgroundMusic, settings.volume.master])
+
+  const stopBackgroundMusic = useCallback(
+    (options?: { resetTime?: boolean }) => {
+      const backgroundMusic = backgroundMusicRef.current
+      if (!backgroundMusic) {
+        return
+      }
+
+      clearBackgroundFadeAnimation()
+      isBackgroundMusicFadingRef.current = false
+      setShouldPlayBackgroundMusic(false)
+
+      backgroundMusic.pause()
+      if (options?.resetTime ?? true) {
+        backgroundMusic.currentTime = 0
+      }
+    },
+    [clearBackgroundFadeAnimation],
+  )
+
+  const fadeOutBackgroundMusic = useCallback(
+    (durationMs = 500) => {
+      const backgroundMusic = backgroundMusicRef.current
+      if (!backgroundMusic) {
+        return
+      }
+
+      clearBackgroundFadeAnimation()
+      isBackgroundMusicFadingRef.current = true
+      setShouldPlayBackgroundMusic(false)
+
+      const safeDuration = Math.max(100, durationMs)
+      const startVolume = backgroundMusic.volume
+
+      if (startVolume <= 0 || backgroundMusic.paused) {
+        backgroundMusic.pause()
+        backgroundMusic.currentTime = 0
+        backgroundMusic.volume = getNormalizedVolume(
+          settings.volume.master,
+          settings.volume.backgroundMusic,
+        )
+        isBackgroundMusicFadingRef.current = false
+        return
+      }
+
+      const startedAt = performance.now()
+      const tick = (now: number) => {
+        const elapsed = now - startedAt
+        const progress = Math.min(1, elapsed / safeDuration)
+        backgroundMusic.volume = startVolume * (1 - progress)
+
+        if (progress >= 1) {
+          backgroundMusic.pause()
+          backgroundMusic.currentTime = 0
+          backgroundMusic.volume = getNormalizedVolume(
+            settings.volume.master,
+            settings.volume.backgroundMusic,
+          )
+          isBackgroundMusicFadingRef.current = false
+          fadeAnimationFrameRef.current = null
+          return
+        }
+
+        fadeAnimationFrameRef.current = window.requestAnimationFrame(tick)
+      }
+
+      fadeAnimationFrameRef.current = window.requestAnimationFrame(tick)
+    },
+    [clearBackgroundFadeAnimation, settings.volume.backgroundMusic, settings.volume.master],
+  )
 
   useEffect(() => {
     saveAppSettings(settings)
@@ -114,9 +225,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       settings.volume.backgroundMusic,
     )
 
+    if (isBackgroundMusicFadingRef.current) {
+      return
+    }
+
     backgroundMusic.volume = backgroundVolume
 
-    if (backgroundVolume <= 0) {
+    if (!shouldPlayBackgroundMusic || backgroundVolume <= 0) {
       backgroundMusic.pause()
       return
     }
@@ -124,7 +239,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     void backgroundMusic.play().catch(() => {
       // Autoplay can fail until the first user gesture.
     })
-  }, [settings.volume.backgroundMusic, settings.volume.master])
+  }, [settings.volume.backgroundMusic, settings.volume.master, shouldPlayBackgroundMusic])
 
   useEffect(() => {
     const uiClick = uiClickRef.current
@@ -148,7 +263,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         settings.volume.backgroundMusic,
       )
 
-      if (backgroundMusic && backgroundVolume > 0 && backgroundMusic.paused) {
+      if (
+        shouldPlayBackgroundMusic &&
+        !isBackgroundMusicFadingRef.current &&
+        backgroundMusic &&
+        backgroundVolume > 0 &&
+        backgroundMusic.paused
+      ) {
         backgroundMusic.volume = backgroundVolume
         void backgroundMusic.play().catch(() => {
           // Ignore gesture or browser playback failures.
@@ -179,7 +300,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown, true)
     }
-  }, [settings.volume.backgroundMusic, settings.volume.master, settings.volume.ui])
+  }, [settings.volume.backgroundMusic, settings.volume.master, settings.volume.ui, shouldPlayBackgroundMusic])
 
   const setVolume = useCallback((channel: VolumeChannel, value: number) => {
     setSettings((prev) => ({
@@ -205,8 +326,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setVolume,
       setLanguage,
       setTheme,
+      playBackgroundMusic,
+      stopBackgroundMusic,
+      fadeOutBackgroundMusic,
     }),
-    [settings, setLanguage, setTheme, setVolume],
+    [
+      fadeOutBackgroundMusic,
+      playBackgroundMusic,
+      settings,
+      setLanguage,
+      setTheme,
+      setVolume,
+      stopBackgroundMusic,
+    ],
   )
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
