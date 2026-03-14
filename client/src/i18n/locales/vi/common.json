@@ -128,6 +128,54 @@
             "randomPlacementFailed": "Đặt ngẫu nhiên không thành công. Hãy thử tăng kích thước bàn cờ hoặc giảm mật độ đội tàu."
         }
     },
+    "gamePlay": {
+        "header": {
+            "modeLabel": "Chế độ chiến đấu",
+            "title": "Boong chỉ huy",
+            "description": "Hai bàn cờ hoạt động song song, đồng hồ 30 giây cho mỗi lượt, và danh sách tàu cập nhật trực tiếp. Ô đỏ là bắn trúng, ô trắng là bắn trượt.",
+            "turnLabel": "Điều khiển lượt",
+            "timerLabel": "Đếm ngược lượt",
+            "timerHint": "Đặt lại sau mỗi {{seconds}} giây",
+            "playerTurn": "Lượt của bạn",
+            "botTurn": "Lượt của bot",
+            "playerWon": "Bạn đã thắng trận",
+            "botWon": "Bot đã giành chiến thắng",
+            "playerTurnHint": "Chọn mục tiêu trên bàn cờ đối thủ trước khi hết giờ.",
+            "botTurnHint": "Bot đang chọn phát bắn tiếp theo.",
+            "finished": "Trận đấu đã kết thúc. Bạn có thể triển khai lại hoặc quay về cấu hình."
+        },
+        "boards": {
+            "playerTitle": "Vùng biển của bạn",
+            "playerSubtitle": "Tàu bị phá hủy: {{destroyed}} / {{total}}",
+            "playerTurnLabel": "Hạm đội người chơi",
+            "botTitle": "Vùng biển của bot",
+            "botSubtitle": "Tàu bị phá hủy: {{destroyed}} / {{total}}",
+            "botTurnLabel": "Hạm đội đối thủ"
+        },
+        "fleet": {
+            "playerLabel": "Danh sách tàu của bạn",
+            "botLabel": "Danh sách tàu của bot"
+        },
+        "status": {
+            "label": "Nhật ký chiến đấu",
+            "ready": "Đội hình đã sẵn sàng. Hãy khai hỏa phát đầu tiên.",
+            "playerTimeout": "Lượt của bạn đã hết giờ. Bot giành quyền bắn.",
+            "playerHit": "Bắn trúng tại ô {{cell}}.",
+            "playerMiss": "Bắn trượt tại ô {{cell}}.",
+            "playerWins": "Phát bắn cuối tại ô {{cell}} đã tiêu diệt toàn bộ hạm đội đối phương.",
+            "botHit": "Bot đã bắn trúng tại ô {{cell}}.",
+            "botMiss": "Bot đã bắn trượt tại ô {{cell}}.",
+            "botWins": "Phát bắn của bot tại ô {{cell}} đã kết liễu hạm đội của bạn."
+        },
+        "actions": {
+            "playAgain": "Chơi lại",
+            "backToSetup": "Về cấu hình"
+        },
+        "missingState": {
+            "title": "Không tìm thấy cấu hình trận đấu",
+            "description": "Hãy bắt đầu từ phần cấu hình để kích thước bàn cờ, đội tàu và vị trí đặt tàu được chuyển sang trận đấu."
+        }
+    },
     "settings": {
         "title": "Cài đặt",
         "masterVolume": "Master Volume",

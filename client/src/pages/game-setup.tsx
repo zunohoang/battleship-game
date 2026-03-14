@@ -1,21 +1,12 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+﻿import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useGameSetup } from "@/store/gameSetupContext";
 import { BOARD_PRESETS, CONFIG_LIMITS } from "@/constants/gameDefaults";
 import { Button } from "@/components/ui/Button";
 import { ShipPlacementStage } from "@/components/game-setup/ShipPlacementStage";
-import type { GameMode, ShipDefinition } from "@/types/game";
+import type { GameMode } from "@/types/game";
+import { useGameSetupEngine } from "@/hooks/useGameSetupEngine";
 
 type LocationState = { mode?: GameMode };
-
-function clamp(value: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, value));
-}
-
-function generateId() {
-    return Math.random().toString(36).slice(2, 8);
-}
 
 interface StepPillProps {
     number: number;
@@ -57,113 +48,30 @@ export function GameSetupPage() {
     const mode = (location.state as LocationState | null)?.mode ?? "bot";
 
     const {
+        step,
+        newShipName,
+        newShipSize,
+        newShipCount,
         state,
-        setBoardConfig,
+        boardConfig,
+        ships,
+        totalCells,
+        boardCells,
+        isConfigValid,
+        allShipsPlaced,
+        setNewShipName,
         setPlacements,
-        addShipDefinition,
-        updateShipDefinition,
         removeShipDefinition,
-        clearPlacements,
-        setReady,
         resetConfig,
-    } = useGameSetup();
-
-    const [step, setStep] = useState<1 | 2>(1);
-    const [newShipName, setNewShipName] = useState("");
-    const [newShipSize, setNewShipSize] = useState(3);
-    const [newShipCount, setNewShipCount] = useState(1);
-
-    const { boardConfig, ships } = state.config;
-
-    const handleBoardPreset = (rows: number, cols: number) => {
-        setBoardConfig({ rows, cols });
-    };
-
-    const handleBoardInput = (field: "rows" | "cols", raw: string) => {
-        const val = parseInt(raw, 10);
-        if (Number.isNaN(val)) return;
-        setBoardConfig({
-            ...boardConfig,
-            [field]: clamp(
-                val,
-                field === "rows"
-                    ? CONFIG_LIMITS.board.minRows
-                    : CONFIG_LIMITS.board.minCols,
-                field === "rows"
-                    ? CONFIG_LIMITS.board.maxRows
-                    : CONFIG_LIMITS.board.maxCols,
-            ),
-        });
-    };
-
-    const handleAddShip = useCallback(() => {
-        const name = newShipName.trim();
-        if (!name) return;
-        addShipDefinition({
-            id: generateId(),
-            name,
-            size: newShipSize,
-            count: newShipCount,
-        });
-        setNewShipName("");
-        setNewShipSize(3);
-        setNewShipCount(1);
-    }, [addShipDefinition, newShipName, newShipSize, newShipCount]);
-
-    const handleShipField = (
-        id: string,
-        field: keyof Omit<ShipDefinition, "id">,
-        raw: string,
-    ) => {
-        if (field === "name") {
-            updateShipDefinition(id, { name: raw });
-            return;
-        }
-        const val = parseInt(raw, 10);
-        if (Number.isNaN(val)) return;
-        if (field === "size")
-            updateShipDefinition(id, {
-                size: clamp(
-                    val,
-                    CONFIG_LIMITS.ship.minSize,
-                    CONFIG_LIMITS.ship.maxSize,
-                ),
-            });
-        if (field === "count")
-            updateShipDefinition(id, {
-                count: clamp(
-                    val,
-                    CONFIG_LIMITS.ship.minCount,
-                    CONFIG_LIMITS.ship.maxCount,
-                ),
-            });
-    };
-
-    // Advance to placement  clear any stale placements first
-    const handleNext = () => {
-        clearPlacements();
-        setStep(2);
-    };
-
-    // Go back to config  placements are invalid after config changes anyway
-    const handleBackToConfig = () => {
-        clearPlacements();
-        setStep(1);
-    };
-
-    const totalCells = ships.reduce((n, s) => n + s.size * s.count, 0);
-    const boardCells = boardConfig.rows * boardConfig.cols;
-    const isConfigValid = ships.length > 0 && totalCells <= boardCells * 0.5;
-    const requiredShipCount = useMemo(
-        () => ships.reduce((total, ship) => total + ship.count, 0),
-        [ships],
-    );
-    const allShipsPlaced =
-        requiredShipCount > 0 && state.placements.length === requiredShipCount;
-
-    useEffect(() => {
-        setReady(allShipsPlaced);
-    }, [allShipsPlaced, setReady]);
+        handleBoardPreset,
+        handleBoardInput,
+        handleAddShip,
+        handleShipField,
+        handleNewShipSizeInput,
+        handleNewShipCountInput,
+        handleNext,
+        handleBackToConfig,
+    } = useGameSetupEngine();
 
     const inputCls =
         "h-9 w-full rounded-xl border border-[#7dbde0] bg-white/85 px-3 text-sm text-[#24425f] outline-none focus:border-[#3f77b2]";
@@ -438,17 +346,8 @@ export function GameSetupPage() {
                                                 max={CONFIG_LIMITS.ship.maxSize}
                                                 value={newShipSize}
                                                 onChange={(e) =>
-                                                    setNewShipSize(
-                                                        clamp(
-                                                            parseInt(
-                                                                e.target.value,
-                                                                10,
-                                                            ),
-                                                            CONFIG_LIMITS.ship
-                                                                .minSize,
-                                                            CONFIG_LIMITS.ship
-                                                                .maxSize,
-                                                        ),
+                                                    handleNewShipSizeInput(
+                                                        e.target.value,
                                                     )
                                                 }
                                                 className="h-9 rounded-lg border border-[#7dbde0] bg-white/85 px-3 text-sm text-[#24425f] outline-none focus:border-[#3f77b2]"
@@ -464,16 +363,8 @@ export function GameSetupPage() {
                                                 }
                                                 value={newShipCount}
                                                 onChange={(e) =>
-                                                    setNewShipCount(
-                                                        clamp(
-                                                            parseInt(
-                                                                e.target.value,
-                                                                10,
-                                                            ),
-                                                            1,
-                                                            CONFIG_LIMITS.ship
-                                                                .maxCount,
-                                                        ),
+                                                    handleNewShipCountInput(
+                                                        e.target.value,
                                                     )
                                                 }
                                                 className="h-9 rounded-lg border border-[#7dbde0] bg-white/85 px-3 text-sm text-[#24425f] outline-none focus:border-[#3f77b2]"
