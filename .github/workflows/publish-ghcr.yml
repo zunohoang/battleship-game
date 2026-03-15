@@ -47,7 +47,7 @@ jobs:
           file: ./client/Dockerfile
           push: true
           build-args: |
-            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || 'http://localhost:3000' }}
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL || format('http://{0}:3000', secrets.SERVER_HOST) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
