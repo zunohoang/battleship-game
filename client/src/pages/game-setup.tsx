@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -7,9 +7,15 @@ import { BOARD_PRESETS, CONFIG_LIMITS } from '@/constants/gameDefaults';
 import { Button } from '@/components/ui/Button';
 import { SectionStatus } from '@/components/ui/SectionStatus';
 import { ShipPlacementStage } from '@/components/game-setup/ShipPlacementStage';
+import { useOnlineRoom } from '@/hooks/useOnlineRoom';
+import { useGlobalContext } from '@/hooks/useGlobalContext';
 import type { AiDifficulty, GameMode, Orientation, ShipDefinition } from '@/types/game';
 
-type LocationState = { mode?: GameMode };
+type LocationState = {
+  mode?: GameMode;
+  roomId?: string;
+  matchId?: string;
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -69,10 +75,16 @@ export function GameSetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const mode = (location.state as LocationState | null)?.mode ?? 'bot';
+  const locationState = (location.state as LocationState | null) ?? null;
+  const mode = locationState?.mode ?? 'bot';
+  const roomId = locationState?.roomId;
+  const matchId = locationState?.matchId;
+  const { user } = useGlobalContext();
+  const currentUserId = user?.id ?? null;
 
   const {
     state,
+    setConfig,
     setBoardConfig,
     setPlacements,
     addShipDefinition,
@@ -82,6 +94,13 @@ export function GameSetupPage() {
     setReady,
     resetConfig,
   } = useGameSetup();
+
+  const { room, match, reconnect, markReady } = useOnlineRoom(
+    roomId,
+    mode === 'online',
+  );
+
+  const hasInitializedOnlineConfig = useRef(false);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [placementOrientation, setPlacementOrientation] = useState<Orientation>('horizontal');
@@ -169,6 +188,68 @@ export function GameSetupPage() {
     setReady(allShipsPlaced);
   }, [allShipsPlaced, setReady]);
 
+  useEffect(() => {
+    if (mode !== 'online') return;
+
+    if (!roomId || !matchId) {
+      navigate('/game/rooms');
+      return;
+    }
+
+    reconnect({ roomId, matchId });
+    const timer = window.setInterval(() => {
+      reconnect({ roomId, matchId });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [matchId, mode, navigate, reconnect, roomId]);
+
+  useEffect(() => {
+    if (mode !== 'online' || !match) return;
+    if (hasInitializedOnlineConfig.current) return;
+
+    hasInitializedOnlineConfig.current = true;
+    setConfig({
+      boardConfig: match.boardConfig,
+      ships: match.ships,
+    });
+    setStep(2);
+  }, [match, mode, setConfig]);
+
+  useEffect(() => {
+    if (mode !== 'online' || !room || !match) return;
+
+    if (room.status === 'in_game' && match.status === 'in_progress') {
+      const onlinePlacements =
+        currentUserId === match.player1Id
+          ? match.player1Placements
+          : currentUserId === match.player2Id
+            ? match.player2Placements
+            : state.placements;
+
+      navigate('/game/play', {
+        state: {
+          mode: 'online',
+          roomId,
+          matchId: match.id,
+          config: {
+            boardConfig: match.boardConfig,
+            ships: match.ships,
+          },
+          placements: onlinePlacements ?? state.placements,
+        },
+      });
+    }
+  }, [currentUserId, match, mode, navigate, room, state.placements]);
+
+  const onlineSetupSecondsLeft = useMemo(() => {
+    if (mode !== 'online' || !match?.setupDeadlineAt) return null;
+    const diffMs = new Date(match.setupDeadlineAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / 1000));
+  }, [match?.setupDeadlineAt, mode, room?.updatedAt]);
+
   const inputCls = 'ui-input h-8 w-full rounded-sm px-3 text-sm';
   const labelCls = 'grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)';
   const panelTitleCls = 'ui-panel-title';
@@ -216,6 +297,11 @@ export function GameSetupPage() {
               <p className='font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)'>
                 {t(`gameSetup.header.modes.${mode}`)}
               </p>
+              {mode === 'online' ? (
+                <p className='mt-2 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-(--text-main)'>
+                  Setup Timer: {onlineSetupSecondsLeft === null ? '--' : `${onlineSetupSecondsLeft}s`}
+                </p>
+              ) : null}
             </motion.div>
           ) : null}
 
@@ -244,8 +330,21 @@ export function GameSetupPage() {
             {step === 2 ? (
               <Button
                 variant='primary'
-                disabled={!allShipsPlaced}
-                onClick={() =>
+                disabled={
+                  mode === 'online'
+                    ? !allShipsPlaced || !roomId || room?.status !== 'setup'
+                    : !allShipsPlaced
+                }
+                onClick={() => {
+                  if (mode === 'online') {
+                    if (!roomId) return;
+                    markReady({
+                      roomId,
+                      placements: state.placements,
+                    });
+                    return;
+                  }
+
                   navigate('/game/play', {
                     state: {
                       mode,
@@ -253,11 +352,11 @@ export function GameSetupPage() {
                       placements: state.placements,
                       aiDifficulty,
                     },
-                  })
-                }
+                  });
+                }}
                 className='h-10 px-4 sm:w-auto sm:min-w-52'
               >
-                {t('gameSetup.header.startGame')}
+                {mode === 'online' ? 'Ready' : t('gameSetup.header.startGame')}
               </Button>
             ) : null}
           </div>

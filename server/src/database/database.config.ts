@@ -1,4 +1,7 @@
 import { UserEntity } from '../auth/infrastructure/persistence/relational/entities/user.entity';
+import { MatchEntity } from '../game/infrastructure/persistence/relational/entities/match.entity';
+import { MoveEntity } from '../game/infrastructure/persistence/relational/entities/move.entity';
+import { RoomEntity } from '../game/infrastructure/persistence/relational/entities/room.entity';
 import type { DataSourceOptions } from 'typeorm';
 
 type EnvReader = (key: string) => string | undefined;
@@ -19,7 +22,7 @@ export function getDatabaseConfig(readEnv: EnvReader): DataSourceOptions {
 
   const baseConfig: DataSourceOptions = {
     type: 'postgres',
-    entities: [UserEntity],
+    entities: [UserEntity, RoomEntity, MatchEntity, MoveEntity],
     migrations: [`${__dirname}/migrations/*{.ts,.js}`],
     synchronize,
     logging,

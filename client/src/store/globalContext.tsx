@@ -3,12 +3,13 @@ import { createContext, useCallback, useEffect, useState, type ReactNode } from 
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { clearAccessToken } from '@/services/authToken'
+import { clearAccessToken, getAccessTokenUserId } from '@/services/authToken'
 import { setForceLogoutCallback } from '@/services/interceptors'
 
 const AUTH_USER_STORAGE_KEY = 'auth.user'
 
 export interface GlobalUser {
+  id: string | null
   username: string
   avatar: string | null
   signature: string | null
@@ -16,6 +17,7 @@ export interface GlobalUser {
 }
 
 export const ANONYMOUS_USER: GlobalUser = {
+  id: null,
   username: 'Alpha',
   avatar: null,
   signature: '- - -',
@@ -37,9 +39,10 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { username, avatar, signature, isAnonymous } = candidate
+  const { id, username, avatar, signature, isAnonymous } = candidate
 
   return (
+    (typeof id === 'string' || id === null) &&
     typeof username === 'string' &&
     (typeof avatar === 'string' || avatar === null) &&
     (typeof signature === 'string' || signature === null) &&
@@ -57,9 +60,10 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { username, avatar, signature } = candidate
+  const { id, username, avatar, signature } = candidate
 
   if (
+    (typeof id !== 'string' && id !== null && typeof id !== 'undefined') ||
     typeof username !== 'string' ||
     (typeof avatar !== 'string' && avatar !== null) ||
     (typeof signature !== 'string' && signature !== null)
@@ -68,6 +72,7 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
   }
 
   return {
+    id: typeof id === 'string' ? id : getAccessTokenUserId(),
     username,
     avatar,
     signature,

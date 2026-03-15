@@ -7,7 +7,9 @@ import { SettingsModal } from '@/components/modal';
 import { Button } from '@/components/ui/Button';
 import { BattleBoard } from '@/components/game/BattleBoard';
 import { useModalState } from '@/hooks/useModalState';
+import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import { useSettings } from '@/hooks/useSettings';
+import { useGlobalContext } from '@/hooks/useGlobalContext';
 import type {
   AiDifficulty,
   BoardConfig,
@@ -18,8 +20,10 @@ import type {
   PlacedShip,
   ShipDefinition,
   Shot,
+  Shot as BattleShot,
   TurnOwner,
 } from '@/types/game';
+import type { ShotRecord } from '@/types/online';
 import {
   buildOccupiedMap,
   buildRandomPlacements,
@@ -46,6 +50,8 @@ type LogEntry = {
 
 type LocationState = {
   mode?: GameMode;
+  roomId?: string;
+  matchId?: string;
   config?: GameConfig;
   placements?: PlacedShip[];
   botPlacements?: PlacedShip[];
@@ -94,6 +100,22 @@ function checkAllSunk(
     }
   }
   return true;
+}
+
+function formatLogTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '--:--:--';
+  return [date.getHours(), date.getMinutes(), date.getSeconds()]
+    .map((n) => String(n).padStart(2, '0'))
+    .join(':');
+}
+
+function toBattleShots(shots: ShotRecord[]): BattleShot[] {
+  return shots.map((shot) => ({
+    x: shot.x,
+    y: shot.y,
+    isHit: shot.isHit,
+  }));
 }
 
 function StatRow({ label, value }: StatRowProps) {
@@ -425,16 +447,433 @@ function StatsOverlay({
   );
 }
 
+function OnlineGamePlayPage({ state }: { state: LocationState | null }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useGlobalContext();
+  const { playBackgroundMusic, stopBackgroundMusic, fadeOutBackgroundMusic } = useSettings();
+  const { modalMode, isModalOpen, openModal, closeModal } = useModalState<'settings'>();
+  const roomId = state?.roomId;
+  const matchId = state?.matchId;
+  const currentUserId = user?.id ?? null;
+  const [showStats, setShowStats] = useState(false);
+  const logContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const { room, match, connectionState, lastError, reconnect, submitMove } = useOnlineRoom(
+    roomId,
+    true,
+  );
+
+  useEffect(() => {
+    if (!roomId || !matchId) {
+      navigate('/game/rooms', { replace: true });
+      return;
+    }
+
+    reconnect({ roomId, matchId });
+    const timer = window.setInterval(() => {
+      reconnect({ roomId, matchId });
+    }, 1500);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [matchId, navigate, reconnect, roomId]);
+
+  useEffect(() => {
+    if (!roomId || !room) return;
+
+    if (room.status === 'setup') {
+      navigate('/game/setup', {
+        replace: true,
+        state: {
+          mode: 'online',
+          roomId,
+          matchId: match?.id ?? matchId,
+        },
+      });
+      return;
+    }
+
+    if (room.status === 'waiting') {
+      navigate('/game/waiting', {
+        replace: true,
+        state: { roomId },
+      });
+    }
+  }, [match?.id, matchId, navigate, room, roomId]);
+
+  const boardConfig = match?.boardConfig ?? state?.config?.boardConfig;
+  const ships = match?.ships ?? state?.config?.ships ?? [];
+  const shipsById = useMemo(() => new Map(ships.map((ship) => [ship.id, ship])), [ships]);
+
+  const ownPlacements = useMemo(() => {
+    if (!match) return state?.placements ?? [];
+    if (currentUserId === match.player1Id) return match.player1Placements ?? [];
+    if (currentUserId === match.player2Id) return match.player2Placements ?? [];
+    return state?.placements ?? [];
+  }, [currentUserId, match, state?.placements]);
+
+  const opponentPlacements = useMemo(() => {
+    if (!match) return [];
+    if (currentUserId === match.player1Id) return match.player2Placements ?? [];
+    if (currentUserId === match.player2Id) return match.player1Placements ?? [];
+    return [];
+  }, [currentUserId, match]);
+
+  const ownShots = useMemo(() => {
+    if (!match) return [];
+    if (currentUserId === match.player1Id) return toBattleShots(match.player1Shots);
+    if (currentUserId === match.player2Id) return toBattleShots(match.player2Shots);
+    return [];
+  }, [currentUserId, match]);
+
+  const incomingShots = useMemo(() => {
+    if (!match) return [];
+    if (currentUserId === match.player1Id) return toBattleShots(match.player2Shots);
+    if (currentUserId === match.player2Id) return toBattleShots(match.player1Shots);
+    return [];
+  }, [currentUserId, match]);
+
+  const phase: GamePhase = match?.status === 'finished' ? 'gameover' : 'playing';
+  const result: GameResult | null =
+    match?.status === 'finished' && match.winnerId
+      ? match.winnerId === currentUserId
+        ? 'player_wins'
+        : 'bot_wins'
+      : null;
+
+  const canFire =
+    !!match &&
+    phase === 'playing' &&
+    connectionState === 'connected' &&
+    match.turnPlayerId === currentUserId;
+
+  const handlePlayerFire = useCallback(
+    (x: number, y: number) => {
+      if (!match || !canFire) return;
+      if (ownShots.some((shot) => shot.x === x && shot.y === y)) return;
+
+      submitMove({
+        matchId: match.id,
+        x,
+        y,
+        clientMoveId: `${Date.now()}-${x}-${y}`,
+      });
+    },
+    [canFire, match, ownShots, submitMove],
+  );
+
+  const log = useMemo<LogEntry[]>(() => {
+    const entries: LogEntry[] = [makeLog(t('gameBattle.logInit'), 'info')];
+    if (!match) return entries;
+
+    const history = [...match.player1Shots, ...match.player2Shots].sort(
+      (left, right) => left.sequence - right.sequence,
+    );
+
+    return [
+      ...entries,
+      ...history.map((shot) => {
+        const isOwnShot = shot.by === currentUserId;
+        const highlight: LogEntry['highlight'] = shot.isHit ? 'hit' : 'miss';
+        return {
+          id: shot.sequence,
+          timestamp: formatLogTime(shot.at),
+          message: t(
+            isOwnShot
+              ? shot.isHit
+                ? 'gameBattle.logYouHit'
+                : 'gameBattle.logYouMiss'
+              : shot.isHit
+                ? 'gameBattle.logEnemyHit'
+                : 'gameBattle.logEnemyMiss',
+            { coord: toCoordLabel(shot.x, shot.y) },
+          ),
+          highlight,
+        };
+      }),
+    ];
+  }, [currentUserId, match, t]);
+
+  useEffect(() => {
+    const container = logContainerRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
+  }, [log]);
+
+  useEffect(() => {
+    if (phase === 'playing' && result === null) {
+      void playBackgroundMusic();
+      return;
+    }
+
+    if (phase === 'gameover') {
+      fadeOutBackgroundMusic(500);
+    }
+  }, [fadeOutBackgroundMusic, phase, playBackgroundMusic, result]);
+
+  useEffect(
+    () => () => {
+      stopBackgroundMusic();
+    },
+    [stopBackgroundMusic],
+  );
+
+  const isSettingsModalOpen = isModalOpen && modalMode === 'settings';
+  const turnLabel =
+    phase === 'gameover'
+      ? result === 'player_wins'
+        ? t('gameBattle.result.victory')
+        : result === 'bot_wins'
+          ? t('gameBattle.result.defeat')
+          : 'Standby'
+      : canFire
+        ? t('gameBattle.yourTurn')
+        : t('gameBattle.enemyTurn');
+  const connectionLabel =
+    connectionState === 'connected'
+      ? 'ONLINE LINK ACTIVE'
+      : connectionState === 'connecting'
+        ? 'RECONNECTING'
+        : 'LINK DEGRADED';
+
+  const handleQuit = () => {
+    stopBackgroundMusic();
+    navigate('/game/rooms');
+  };
+
+  if (!roomId || !matchId) return null;
+
+  if (!boardConfig || ships.length === 0) {
+    return (
+      <motion.main
+        className='relative h-dvh overflow-hidden px-4 py-4 text-(--text-main)'
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className='ui-page-bg -z-20' />
+        <section className='ui-hud-shell mx-auto flex h-full w-full max-w-3xl items-center justify-center rounded-md p-4'>
+          <div className='ui-panel ui-panel-strong w-full max-w-xl rounded-md p-6 text-center'>
+            <p className='ui-data-label'>ONLINE BATTLE</p>
+            <h1 className='mt-2 font-mono text-xl font-black uppercase tracking-[0.18em] text-(--accent-secondary)'>
+              Syncing match state
+            </h1>
+            <p className='mt-4 text-sm leading-7 text-(--text-muted)'>
+              {lastError ?? 'Waiting for the latest room and match snapshot from the server.'}
+            </p>
+          </div>
+        </section>
+      </motion.main>
+    );
+  }
+
+  return (
+    <motion.main
+      className='relative h-dvh overflow-y-auto overflow-x-hidden px-2 py-2 text-(--text-main) sm:px-4 sm:py-4'
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className='ui-page-bg -z-20' />
+      <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]' />
+
+      <section className='ui-hud-shell mx-auto flex min-h-full w-full max-w-7xl flex-col rounded-md p-2 sm:p-4'>
+        <div className='grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-3'>
+          <div className='min-w-0'>
+            <p className='ui-data-label'>{t('gameBattle.operationLabel')}</p>
+            <p className='font-mono text-sm font-black uppercase tracking-[0.12em] text-(--accent-secondary) sm:text-base sm:tracking-widest'>
+              ONLINE ENGAGEMENT
+            </p>
+          </div>
+
+          <motion.div
+            key={`${match?.version ?? 'pending'}-${turnLabel}`}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22 }}
+            className={`mx-auto flex items-center gap-2 rounded-full border px-4 py-2 sm:px-5 ${
+              canFire
+                ? 'border-[rgba(117,235,255,0.7)] bg-[rgba(34,211,238,0.12)] text-(--text-main)'
+                : 'border-[rgba(255,140,50,0.6)] bg-[rgba(140,60,0,0.2)] text-[rgba(255,180,80,0.95)]'
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                canFire
+                  ? 'bg-[rgba(34,211,238,0.9)] shadow-[0_0_6px_rgba(34,211,238,0.6)]'
+                  : 'bg-[rgba(255,180,80,0.9)] shadow-[0_0_6px_rgba(255,140,50,0.6)]'
+              }`}
+            />
+            <span className='font-mono text-sm font-black uppercase tracking-[0.16em]'>
+              {turnLabel}
+            </span>
+          </motion.div>
+
+          <div className='text-right'>
+            <p className='ui-data-label'>LINK STATUS</p>
+            <p className='font-mono text-sm font-black uppercase tracking-[0.16em] text-(--accent-secondary)'>
+              {connectionLabel}
+            </p>
+          </div>
+        </div>
+
+        <div className='mt-3 grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-visible md:grid-cols-[1fr_auto_1fr] md:overflow-hidden'>
+          <div className='flex min-h-0 flex-col gap-2'>
+            <div className='flex items-center justify-between gap-2'>
+              <div className='flex items-center gap-2'>
+                <span className='text-xs text-(--accent-secondary)'>◈</span>
+                <p className='ui-tactical-caption'>{t('gameBattle.myFleet')}</p>
+              </div>
+              <FleetHealthStrip
+                placements={ownPlacements}
+                shipsById={shipsById}
+                damagingShots={incomingShots}
+                cellSizePx={14}
+              />
+            </div>
+            <div className='relative flex min-h-80 flex-col overflow-hidden rounded-md ui-panel ui-panel-strong p-2 sm:min-h-90 sm:p-3 md:min-h-0 md:flex-1'>
+              <BattleBoard
+                boardConfig={boardConfig}
+                ships={ships}
+                placements={ownPlacements}
+                shots={incomingShots}
+                revealShips
+              />
+              <AnimatePresence>
+                {phase === 'gameover' && result && (
+                  <GameOverOverlay key='online-gameover' result={result} onPlayAgain={handleQuit} />
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className='hidden flex-col items-center justify-center gap-3 px-1 md:flex'>
+            <div className='w-px h-full bg-linear-to-b from-transparent to-slate-800' />
+            <p className='font-mono text-lg font-black tracking-[0.22em] text-(--text-subtle)'>VS</p>
+            <div className='w-px h-full bg-linear-to-b from-slate-800 to-transparent' />
+          </div>
+
+          <div className='flex min-h-0 flex-col gap-2'>
+            <div className='flex items-center gap-2'>
+              <span className='text-xs text-(--accent-secondary)'>⊕</span>
+              <p className='ui-tactical-caption'>{t('gameBattle.enemyWaters')}</p>
+            </div>
+            <div className='relative flex min-h-80 flex-col overflow-hidden rounded-md ui-panel ui-panel-strong p-2 sm:min-h-90 sm:p-3 md:min-h-0 md:flex-1'>
+              <BattleBoard
+                boardConfig={boardConfig}
+                ships={ships}
+                placements={opponentPlacements}
+                shots={ownShots}
+                onFire={handlePlayerFire}
+                isActive={canFire}
+                revealShips={phase === 'gameover'}
+              />
+              <AnimatePresence>
+                {showStats && (
+                  <StatsOverlay
+                    key='online-stats'
+                    playerShots={ownShots}
+                    botShots={incomingShots}
+                    isBotVBot={false}
+                    onClose={() => setShowStats(false)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        <div className='mt-3 ui-panel rounded-md overflow-hidden'>
+          <div className='grid gap-3 border-b border-(--border-main) px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-4'>
+            <div>
+              <p className='font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
+                {t('gameBattle.missionLog')}
+              </p>
+              <div ref={logContainerRef} className='themed-scrollbar mt-2 h-28 overflow-y-auto pr-1'>
+                {log.map((entry, idx) => (
+                  <p key={`${entry.id}-${idx}`} className='font-mono text-[11px] leading-6'>
+                    <span className='text-(--text-subtle)'>[{entry.timestamp}] </span>
+                    <span
+                      className={
+                        entry.highlight === 'hit'
+                          ? 'font-bold text-[rgba(255,110,90,0.95)]'
+                          : entry.highlight === 'miss'
+                            ? 'text-(--text-muted)'
+                            : entry.highlight === 'info'
+                              ? 'text-(--accent-secondary)'
+                              : 'text-(--text-main)'
+                      }
+                    >
+                      {entry.message}
+                    </span>
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            <div className='ui-panel rounded-md px-4 py-3 sm:min-w-72'>
+              <p className='ui-data-label'>MATCH STATUS</p>
+              <div className='mt-2 space-y-1'>
+                <StatRow label='Room' value={room?.roomCode ?? '-----'} />
+                <StatRow label='Turn' value={canFire ? 'You' : 'Opponent'} />
+                <StatRow label='State' value={match?.status ?? 'syncing'} />
+                <StatRow label='Signal' value={connectionState} />
+              </div>
+              {lastError ? (
+                <p className='mt-3 text-xs leading-6 text-[rgba(255,120,100,0.92)]'>{lastError}</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className='flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
+            <div className='grid grid-cols-2 gap-2 md:flex'>
+              <Button onClick={handleQuit} className='h-8 px-3 text-[10px] md:w-auto'>
+                {t('gameBattle.quitMission')}
+              </Button>
+              <Button onClick={() => reconnect({ roomId, matchId })} className='h-8 px-3 text-[10px] md:w-auto'>
+                Refresh Link
+              </Button>
+              <Button
+                onClick={() => setShowStats((value) => !value)}
+                className={`col-span-2 h-8 px-3 text-[10px] md:col-span-1 md:w-auto ${
+                  showStats ? 'border-[rgba(117,235,255,0.7)] text-(--accent-secondary)' : ''
+                }`}
+              >
+                {t('gameBattle.statistics')}
+              </Button>
+            </div>
+
+            <div className='flex items-center justify-end gap-2'>
+              <button
+                type='button'
+                aria-label={t('settings.title')}
+                title={t('settings.title')}
+                onClick={() => openModal('settings')}
+                className='cursor-pointer flex h-7 w-7 items-center justify-center rounded-sm border border-(--border-main) text-(--accent-secondary) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)'
+              >
+                <SlidersHorizontal size={14} />
+              </button>
+              <div className='h-3 w-6 rounded-full bg-[rgba(34,211,238,0.7)] shadow-[0_0_6px_rgba(34,211,238,0.4)]' />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={closeModal} />
+    </motion.main>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
-export function GamePlayPage() {
+function LocalGamePlayPage({ state }: { state: LocationState | null }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { playBackgroundMusic, stopBackgroundMusic, fadeOutBackgroundMusic } = useSettings();
   const { modalMode, isModalOpen, openModal, closeModal } = useModalState<'settings'>();
-  const location = useLocation();
-  const state = location.state as LocationState | null;
 
   // Guard: redirect if no game state
   const hasState = !!(state?.config && state?.placements);
@@ -935,4 +1374,15 @@ export function GamePlayPage() {
       <SettingsModal isOpen={isSettingsModalOpen} onClose={closeModal} />
     </motion.main>
   );
+}
+
+export function GamePlayPage() {
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+
+  if (state?.mode === 'online') {
+    return <OnlineGamePlayPage state={state} />;
+  }
+
+  return <LocalGamePlayPage state={state} />;
 }

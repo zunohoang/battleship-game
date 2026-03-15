@@ -15,3 +15,24 @@ export function clearAccessToken(): void {
 export function buildAuthorizationHeader(token: string): string {
   return `Bearer ${token}`
 }
+
+export function getAccessTokenUserId(): string | null {
+  const token = getAccessToken()
+  if (!token) {
+    return null
+  }
+
+  try {
+    const parts = token.split('.')
+    if (parts.length < 2) {
+      return null
+    }
+
+    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const payload = JSON.parse(window.atob(padded)) as { sub?: unknown }
+    return typeof payload.sub === 'string' ? payload.sub : null
+  } catch {
+    return null
+  }
+}
