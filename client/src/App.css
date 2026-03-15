@@ -2,103 +2,145 @@
 @import "tailwindcss";
 
 @layer base {
-    /* =========================
-     LIGHT THEME (default)
-  ========================= */
-
     :root {
         --font-body: "DM Sans", sans-serif;
         --font-mono: "Space Mono", monospace;
-
-        /* background */
-        --bg-main: #f3f6fa;
-        --bg-panel: #ffffff;
-        --bg-card: #f8fbff;
-
-        /* text */
-        --text-main: #1e2a38;
-        --text-muted: #6b7a8c;
-
-        /* borders */
-        --border-main: #d7e3f0;
-
-        /* accent */
-        --accent-primary: #3b82f6;
-        --accent-hover: #2563eb;
-
-        /* states */
-        --accent-danger: #ef4444;
-        --accent-warning: #f59e0b;
-        --accent-success: #10b981;
-
-        /* battleship specific */
-        --grid-line: #cfe0f0;
-        --grid-hover: #93c5fd;
-
-        --ship-color: #38bdf8;
-        --hit-color: #ef4444;
-        --miss-color: #9ca3af;
-
-        /* glow */
-        --hud-glow: rgba(59, 130, 246, 0.35);
-
-        /* shared UI tokens */
-        --modal-overlay: rgba(6, 26, 44, 0.65);
-        --modal-bg: #edf4fb;
-        --button-default-bg: rgba(255, 255, 255, 0.72);
-        --button-default-bg-hover: rgba(243, 247, 252, 0.95);
-        --button-default-text: #3d5472;
-        --button-primary-bg: rgba(63, 119, 178, 0.85);
-        --button-primary-bg-hover: rgba(47, 99, 152, 0.95);
-        --button-primary-text: #ffffff;
-    }
-
-    /* =========================
-     DARK THEME
-  ========================= */
-
-    .dark {
-        /* background */
-        --bg-main: #020a12;
-        --bg-panel: #061926;
-        --bg-card: #0a2432;
-
-        /* text */
-        --text-main: #d7f4ff;
-        --text-muted: #6fa9bd;
-
-        /* borders */
-        --border-main: #0e3c4f;
-
-        /* accent */
-        --accent-primary: #22d3ee;
-        --accent-hover: #06b6d4;
-
-        /* states */
+        --bg-main: #eef4f8;
+        --bg-panel: rgba(255, 255, 255, 0.9);
+        --bg-card: rgba(245, 250, 255, 0.95);
+        --bg-card-strong: rgba(255, 255, 255, 0.98);
+        --bg-card-soft: rgba(232, 242, 250, 0.74);
+        --bg-grid: rgba(228, 240, 248, 0.86);
+        --text-main: #0e2331;
+        --text-muted: #48697b;
+        --text-subtle: #5f8293;
+        --border-main: rgba(36, 123, 156, 0.34);
+        --border-strong: rgba(17, 138, 184, 0.72);
+        --panel-stroke: rgba(30, 154, 201, 0.46);
+        --accent-primary: #0ea5c6;
+        --accent-hover: #0284a5;
+        --accent-secondary: #0f97bd;
+        --accent-soft: rgba(14, 165, 198, 0.14);
         --accent-danger: #ff5a5a;
         --accent-warning: #ff8a3d;
         --accent-success: #34d399;
+        --grid-line: #7caec2;
+        --grid-hover: #669eb4;
+        --grid-hot: rgba(29, 149, 192, 0.22);
+        --ship-color: #1e91b4;
+        --hit-color: #ff5a5a;
+        --miss-color: #6d8094;
+        --hud-glow: rgba(0, 128, 173, 0.16);
+        --hud-glow-strong: rgba(0, 146, 196, 0.26);
+        --hud-shadow: 0 0 0 1px rgba(23, 140, 186, 0.08), 0 6px 20px rgba(21, 79, 109, 0.08), inset 0 0 12px rgba(37, 151, 196, 0.05);
+        --hud-shadow-strong: 0 0 0 1px rgba(33, 157, 203, 0.22), 0 10px 28px rgba(14, 85, 120, 0.14), inset 0 0 16px rgba(37, 151, 196, 0.08);
+        --modal-overlay: rgba(7, 29, 44, 0.34);
+        --modal-bg: rgba(255, 255, 255, 0.96);
+        --button-default-bg: linear-gradient(180deg, rgba(245, 252, 255, 0.98) 0%, rgba(231, 244, 251, 0.96) 100%);
+        --button-default-bg-hover: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(239, 248, 253, 0.98) 100%);
+        --button-default-text: #0f2d3d;
+        --button-primary-bg: linear-gradient(180deg, rgba(31, 167, 210, 0.9) 0%, rgba(11, 143, 187, 0.92) 100%);
+        --button-primary-bg-hover: linear-gradient(180deg, rgba(49, 185, 227, 0.96) 0%, rgba(15, 159, 209, 0.98) 100%);
+        --button-primary-text: #f4fdff;
+        --button-danger-bg: linear-gradient(180deg, rgba(173, 52, 62, 0.9) 0%, rgba(136, 34, 43, 0.94) 100%);
+        --button-danger-bg-hover: linear-gradient(180deg, rgba(194, 63, 74, 0.94) 0%, rgba(152, 38, 49, 0.98) 100%);
+        --button-danger-text: #ffe4e4;
+        --body-image: radial-gradient(circle at top, rgba(24, 133, 176, 0.14), transparent 34%), linear-gradient(180deg, #f6fbff 0%, #edf4fa 38%, #e4eef6 100%);
+        --hud-shell-bg: linear-gradient(180deg, rgba(246, 252, 255, 0.93) 0%, rgba(235, 246, 252, 0.92) 100%);
+        --panel-bg: linear-gradient(180deg, rgba(249, 253, 255, 0.95) 0%, rgba(238, 248, 253, 0.95) 100%);
+        --panel-strong-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 249, 253, 0.98) 100%);
+        --status-bg: linear-gradient(180deg, rgba(246, 252, 255, 0.92) 0%, rgba(235, 246, 252, 0.96) 100%);
+        --input-bg: rgba(248, 253, 255, 0.96);
+        --input-border: rgba(34, 143, 184, 0.4);
+        --ui-outline: rgba(33, 156, 205, 0.78);
+        --ui-focus-ring: rgba(54, 179, 224, 0.2);
+        --grid-cell-border: rgba(58, 144, 176, 0.48);
+        --grid-cell-bg: linear-gradient(180deg, rgba(239, 249, 255, 0.96) 0%, rgba(223, 240, 250, 0.92) 100%);
+        --grid-cell-hover-border: rgba(23, 161, 206, 0.84);
+        --grid-cell-hover-bg: linear-gradient(180deg, rgba(226, 243, 252, 0.98) 0%, rgba(209, 234, 246, 0.94) 100%);
+        --grid-cell-occupied-border: rgba(18, 145, 188, 0.62);
+        --grid-cell-occupied-bg: linear-gradient(180deg, rgba(200, 232, 245, 0.9) 0%, rgba(186, 222, 238, 0.96) 100%);
+        --grid-cell-selected-shadow: 0 0 18px rgba(46, 175, 217, 0.24), inset 0 0 0 1px rgba(46, 175, 217, 0.32);
+        --page-bg-image: radial-gradient(circle at 20% 0%, rgba(67, 163, 199, 0.2), transparent 30%), radial-gradient(circle at 80% 0%, rgba(94, 185, 216, 0.16), transparent 26%), linear-gradient(180deg, rgba(226, 241, 249, 0.7) 0%, rgba(224, 239, 248, 0.8) 48%, rgba(214, 233, 245, 0.94) 100%), url("/theme-battleship.jpg");
+        --page-bg-after: radial-gradient(circle at top, rgba(61, 171, 211, 0.18), transparent 40%), linear-gradient(180deg, transparent 0%, rgba(16, 44, 60, 0.08) 100%);
+        --selection-bg: rgba(18, 157, 199, 0.26);
+        --selection-text: #f2fdff;
+        --scrollbar-color: rgba(26, 151, 194, 0.68) rgba(194, 225, 239, 0.7);
+        --scrollbar-track: rgba(198, 227, 241, 0.78);
+        --scrollbar-thumb: linear-gradient(180deg, rgba(106, 196, 226, 0.95) 0%, rgba(30, 156, 198, 0.96) 100%);
+        --scrollbar-thumb-border: rgba(198, 227, 241, 0.92);
+        --scrollbar-thumb-hover: linear-gradient(180deg, rgba(137, 210, 234, 0.98) 0%, rgba(46, 173, 214, 0.98) 100%);
+        --hud-radius: 5px;
+        --hud-radius-sm: 4px;
+        --motion-fast: 180ms;
+        --motion-base: 280ms;
+        --motion-slow: 520ms;
+        --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+        --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-        /* battleship specific */
+    html.dark {
+        --bg-main: #020a12;
+        --bg-panel: rgba(4, 19, 31, 0.88);
+        --bg-card: rgba(9, 34, 50, 0.86);
+        --bg-card-strong: rgba(5, 18, 28, 0.96);
+        --bg-card-soft: rgba(10, 33, 49, 0.62);
+        --bg-grid: rgba(2, 17, 27, 0.84);
+        --text-main: #d7f4ff;
+        --text-muted: #6fa9bd;
+        --text-subtle: #5d9ab1;
+        --border-main: rgba(29, 118, 149, 0.46);
+        --border-strong: rgba(43, 190, 229, 0.8);
+        --panel-stroke: rgba(50, 217, 255, 0.52);
+        --accent-primary: #22d3ee;
+        --accent-hover: #06b6d4;
+        --accent-secondary: #74e6ff;
+        --accent-soft: rgba(34, 211, 238, 0.14);
         --grid-line: #0b3a4c;
         --grid-hover: #164e63;
-
-        --ship-color: #22d3ee;
-        --hit-color: #ff5a5a;
+        --grid-hot: rgba(52, 221, 255, 0.28);
+        --ship-color: #4adeff;
         --miss-color: #64748b;
-
-        /* glow */
-        --hud-glow: rgba(0, 229, 255, 0.35);
-
-        /* shared UI tokens */
+        --hud-glow: rgba(0, 229, 255, 0.32);
+        --hud-glow-strong: rgba(0, 229, 255, 0.52);
+        --hud-shadow: 0 0 0 1px rgba(0, 213, 255, 0.06), 0 0 18px rgba(0, 174, 255, 0.1), inset 0 0 18px rgba(0, 140, 255, 0.08);
+        --hud-shadow-strong: 0 0 0 1px rgba(77, 235, 255, 0.22), 0 0 24px rgba(0, 174, 255, 0.18), inset 0 0 24px rgba(0, 174, 255, 0.08);
         --modal-overlay: rgba(2, 9, 16, 0.76);
-        --modal-bg: #0a2432;
-        --button-default-bg: rgba(10, 36, 50, 0.8);
-        --button-default-bg-hover: rgba(15, 54, 73, 0.95);
+        --modal-bg: rgba(6, 24, 37, 0.96);
+        --button-default-bg: linear-gradient(180deg, rgba(11, 40, 55, 0.82) 0%, rgba(6, 25, 38, 0.92) 100%);
+        --button-default-bg-hover: linear-gradient(180deg, rgba(18, 56, 73, 0.92) 0%, rgba(9, 33, 47, 0.98) 100%);
         --button-default-text: #d7f4ff;
-        --button-primary-bg: rgba(34, 211, 238, 0.2);
-        --button-primary-bg-hover: rgba(34, 211, 238, 0.34);
+        --button-primary-bg: linear-gradient(180deg, rgba(50, 217, 255, 0.88) 0%, rgba(29, 181, 224, 0.88) 100%);
+        --button-primary-bg-hover: linear-gradient(180deg, rgba(106, 234, 255, 0.96) 0%, rgba(45, 198, 243, 0.96) 100%);
         --button-primary-text: #d7f4ff;
+        --button-danger-bg: linear-gradient(180deg, rgba(74, 22, 28, 0.88) 0%, rgba(45, 13, 18, 0.96) 100%);
+        --button-danger-bg-hover: linear-gradient(180deg, rgba(96, 28, 35, 0.94) 0%, rgba(58, 16, 23, 0.98) 100%);
+        --button-danger-text: #ffc4c4;
+        --body-image: radial-gradient(circle at top, rgba(16, 99, 133, 0.22), transparent 34%), linear-gradient(180deg, #020912 0%, #03111a 38%, #02070e 100%);
+        --hud-shell-bg: linear-gradient(180deg, rgba(3, 15, 24, 0.9) 0%, rgba(5, 19, 29, 0.84) 100%);
+        --panel-bg: linear-gradient(180deg, rgba(7, 26, 38, 0.9) 0%, rgba(4, 19, 30, 0.94) 100%);
+        --panel-strong-bg: linear-gradient(180deg, rgba(5, 20, 30, 0.96) 0%, rgba(4, 15, 24, 0.98) 100%);
+        --status-bg: linear-gradient(180deg, rgba(6, 26, 38, 0.84) 0%, rgba(4, 16, 24, 0.94) 100%);
+        --input-bg: rgba(3, 18, 30, 0.84);
+        --input-border: rgba(37, 165, 207, 0.42);
+        --ui-outline: rgba(109, 237, 255, 0.92);
+        --ui-focus-ring: rgba(66, 220, 255, 0.12);
+        --grid-cell-border: rgba(23, 141, 173, 0.54);
+        --grid-cell-bg: linear-gradient(180deg, rgba(1, 14, 22, 0.9) 0%, rgba(4, 23, 35, 0.84) 100%);
+        --grid-cell-hover-border: rgba(88, 236, 255, 0.84);
+        --grid-cell-hover-bg: linear-gradient(180deg, rgba(7, 37, 52, 0.94) 0%, rgba(5, 28, 43, 0.88) 100%);
+        --grid-cell-occupied-border: rgba(73, 225, 255, 0.6);
+        --grid-cell-occupied-bg: linear-gradient(180deg, rgba(8, 51, 71, 0.88) 0%, rgba(6, 34, 49, 0.96) 100%);
+        --grid-cell-selected-shadow: 0 0 18px rgba(57, 217, 255, 0.28), inset 0 0 0 1px rgba(106, 234, 255, 0.38);
+        --page-bg-image: radial-gradient(circle at 20% 0%, rgba(25, 111, 144, 0.25), transparent 28%), radial-gradient(circle at 80% 0%, rgba(4, 92, 122, 0.18), transparent 26%), linear-gradient(180deg, rgba(0, 7, 13, 0.66) 0%, rgba(2, 10, 18, 0.8) 48%, rgba(0, 6, 12, 0.95) 100%), url("/theme-battleship.jpg");
+        --page-bg-after: radial-gradient(circle at top, rgba(64, 229, 255, 0.1), transparent 40%), linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.26) 100%);
+        --selection-bg: rgba(34, 211, 238, 0.28);
+        --selection-text: #f2fdff;
+        --scrollbar-color: rgba(77, 235, 255, 0.66) rgba(7, 33, 47, 0.38);
+        --scrollbar-track: rgba(2, 20, 30, 0.65);
+        --scrollbar-thumb: linear-gradient(180deg, rgba(125, 222, 255, 0.95) 0%, rgba(36, 169, 212, 0.96) 100%);
+        --scrollbar-thumb-border: rgba(2, 20, 30, 0.8);
+        --scrollbar-thumb-hover: linear-gradient(180deg, rgba(153, 234, 255, 1) 0%, rgba(49, 191, 238, 1) 100%);
     }
 
     html,
@@ -112,17 +154,124 @@
         font-family: var(--font-body);
         background: var(--bg-main);
         color: var(--text-main);
-        transition: background-color 180ms ease, color 180ms ease;
+        background-image: var(--body-image);
+        transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
+
+    ::selection {
+        background: var(--selection-bg);
+        color: var(--selection-text);
     }
 
     .ui-modal-overlay {
         background: var(--modal-overlay);
+        backdrop-filter: blur(10px);
     }
 
     .ui-modal-surface {
-        border-color: var(--border-main);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--panel-stroke);
         background: var(--modal-bg);
         color: var(--text-main);
+        box-shadow: var(--hud-shadow-strong);
+    }
+
+    .ui-modal-surface::before,
+    .ui-panel::before,
+    .ui-button-shell::before,
+    .ui-statusbar::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(180deg, rgba(164, 244, 255, 0.06) 0%, transparent 14%, transparent 86%, rgba(164, 244, 255, 0.05) 100%), repeating-linear-gradient(180deg, rgba(125, 228, 245, 0.08) 0 1px, transparent 1px 4px);
+        opacity: 0.65;
+        pointer-events: none;
+    }
+
+    .ui-hud-shell {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-main);
+        background: var(--hud-shell-bg);
+        box-shadow: var(--hud-shadow);
+        backdrop-filter: blur(14px);
+    }
+
+    .ui-hud-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, rgba(70, 219, 255, 0.12), transparent 26%, transparent 72%, rgba(70, 219, 255, 0.08));
+        pointer-events: none;
+    }
+
+    .ui-panel {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-main);
+        background: var(--panel-bg);
+        box-shadow: var(--hud-shadow);
+        backdrop-filter: blur(12px);
+    }
+
+    .ui-panel-strong {
+        background: var(--panel-strong-bg);
+        border-color: color-mix(in srgb, var(--border-strong) 74%, transparent);
+        box-shadow: var(--hud-shadow-strong);
+    }
+
+    .ui-panel-glow {
+        box-shadow: 0 0 0 1px rgba(77, 235, 255, 0.18), 0 0 38px rgba(0, 174, 255, 0.14), inset 0 0 20px rgba(0, 174, 255, 0.08);
+    }
+
+    .ui-title-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.42em;
+        text-transform: uppercase;
+        color: var(--text-subtle);
+    }
+
+    .ui-panel-title {
+        font-family: var(--font-mono);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent-secondary);
+    }
+
+    .ui-data-label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--text-subtle);
+    }
+
+    .ui-data-value {
+        font-family: var(--font-mono);
+        color: var(--text-main);
+    }
+
+    .ui-button-shell {
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--hud-shadow);
+        transition: transform var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
     }
 
     .ui-button-default {
@@ -133,25 +282,128 @@
 
     .ui-button-default:hover {
         background: var(--button-default-bg-hover);
+        border-color: var(--border-strong);
+    }
+
+    .ui-button-default::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(90deg, var(--accent-primary) 10px, transparent 10px) 0 0 / 10px 1px no-repeat,
+            linear-gradient(180deg, var(--accent-primary) 10px, transparent 10px) 0 0 / 1px 10px no-repeat,
+            linear-gradient(270deg, var(--accent-primary) 10px, transparent 10px) 100% 100% / 10px 1px no-repeat,
+            linear-gradient(0deg, var(--accent-primary) 10px, transparent 10px) 100% 100% / 1px 10px no-repeat;
+        opacity: 0.72;
     }
 
     .ui-button-primary {
-        border-color: var(--accent-primary);
+        border-color: rgba(117, 235, 255, 0.9);
         background: var(--button-primary-bg);
         color: var(--button-primary-text);
+        box-shadow: 0 0 18px rgba(35, 196, 238, 0.3);
     }
 
     .ui-button-primary:hover {
         background: var(--button-primary-bg-hover);
+        box-shadow: 0 0 24px rgba(70, 219, 255, 0.44);
     }
 
-    /* =========================
-     CUSTOM SCROLLBAR
-  ========================= */
+    .ui-button-danger {
+        border-color: color-mix(in srgb, var(--accent-danger) 64%, transparent);
+        background: var(--button-danger-bg);
+        color: var(--button-danger-text);
+    }
+
+    .ui-button-danger:hover {
+        background: var(--button-danger-bg-hover);
+    }
+
+    .ui-button-shell:focus-visible,
+    .ui-input:focus-visible,
+    .ui-input:focus {
+        outline: none;
+        border-color: var(--ui-outline);
+        box-shadow: 0 0 0 2px var(--ui-focus-ring), 0 0 18px color-mix(in srgb, var(--accent-primary) 34%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent-primary) 14%, transparent);
+    }
+
+    .ui-input {
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--text-main);
+        transition: border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard);
+    }
+
+    .ui-input::placeholder {
+        color: rgba(111, 169, 189, 0.62);
+    }
+
+    .ui-statusbar {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-main);
+        background: var(--status-bg);
+        box-shadow: var(--hud-shadow);
+    }
+
+    .ui-grid-cell {
+        border: 1px solid var(--grid-cell-border);
+        background: var(--grid-cell-bg);
+        box-shadow: inset 0 0 0 1px rgba(8, 76, 99, 0.22);
+        transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-standard);
+    }
+
+    .ui-grid-cell:hover {
+        border-color: var(--grid-cell-hover-border);
+        background: var(--grid-cell-hover-bg);
+        box-shadow: 0 0 12px rgba(0, 212, 255, 0.15), inset 0 0 0 1px rgba(57, 217, 255, 0.22);
+    }
+
+    .ui-grid-cell[data-occupied="true"] {
+        border-color: var(--grid-cell-occupied-border);
+        background: var(--grid-cell-occupied-bg);
+    }
+
+    .ui-grid-cell[data-selected="true"] {
+        border-color: rgba(106, 234, 255, 0.96);
+        box-shadow: var(--grid-cell-selected-shadow);
+    }
+
+    .ui-page-bg {
+        position: absolute;
+        inset: 0;
+        background: var(--page-bg-image);
+        background-size: cover;
+        background-position: center;
+    }
+
+    .ui-page-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--page-bg-after);
+    }
+
+    .ui-tactical-caption {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--accent-secondary);
+    }
+
+    .ui-hud-text-muted {
+        color: var(--text-muted);
+    }
+
+    .ui-danger-text {
+        color: #ff8f8f;
+    }
 
     .themed-scrollbar {
         scrollbar-width: thin;
-        scrollbar-color: #7dbde0 rgba(255, 255, 255, 0.25);
+        scrollbar-color: var(--scrollbar-color);
     }
 
     .themed-scrollbar::-webkit-scrollbar {
@@ -160,17 +412,27 @@
     }
 
     .themed-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.35);
-        border-radius: 999px;
+        background: var(--scrollbar-track);
+        border-radius: 4px;
     }
 
     .themed-scrollbar::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #7dbde0 0%, #3f77b2 100%);
-        border: 2px solid rgba(255, 255, 255, 0.75);
-        border-radius: 999px;
+        background: var(--scrollbar-thumb);
+        border: 2px solid var(--scrollbar-thumb-border);
+        border-radius: 4px;
     }
 
     .themed-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, #6fb2d8 0%, #2f6398 100%);
+        background: var(--scrollbar-thumb-hover);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition-duration: 1ms !important;
+            scroll-behavior: auto !important;
+        }
     }
 }

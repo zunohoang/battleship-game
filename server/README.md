@@ -25,6 +25,57 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## PostgreSQL setup for this project
+
+1. Copy env file and update values when needed.
+
+```bash
+cp .env.example .env
+```
+
+2. Start PostgreSQL with Docker Compose.
+
+```bash
+docker compose up -d
+```
+
+3. Install dependencies.
+
+```bash
+npm install
+```
+
+4. Run database migrations.
+
+```bash
+npm run migration:run
+```
+
+5. Start NestJS server.
+
+```bash
+npm run start:dev
+```
+
+### Environment variables for database
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_SYNCHRONIZE` (recommended `false`)
+- `DB_LOGGING`
+- `DATABASE_URL` (optional; if provided, this is used instead of individual DB_* values)
+
+### Migration commands
+
+```bash
+npm run migration:generate
+npm run migration:run
+npm run migration:revert
+```
+
 ## Project setup
 
 ```bash

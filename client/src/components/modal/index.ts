@@ -1,5 +1,5 @@
-export { LoginModal } from "@/components/modal/LoginModal";
-export { RegisterModal } from "@/components/modal/RegisterModal";
-export { ForgotPasswordModal } from "@/components/modal/ForgotPasswordModal";
-export { ProfileSetupModal } from "@/components/modal/ProfileSetupModal";
-export { SettingsModal } from "@/components/modal/SettingsModal";
+export { LoginModal } from '@/components/modal/LoginModal';
+export { RegisterModal } from '@/components/modal/RegisterModal';
+export { ForgotPasswordModal } from '@/components/modal/ForgotPasswordModal';
+export { ProfileSetupModal } from '@/components/modal/ProfileSetupModal';
+export { SettingsModal } from '@/components/modal/SettingsModal';

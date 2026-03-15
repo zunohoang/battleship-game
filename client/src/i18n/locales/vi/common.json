@@ -1,5 +1,9 @@
 {
     "appName": "Battleship",
+    "modal": {
+        "secureChannel": "Kênh bảo mật",
+        "close": "Đóng hộp thoại"
+    },
     "home": {
         "title": "Sống là để chiến đấu, chiến đấu là để sống",
         "description": "Đã khởi tạo xong nền tảng frontend.",
@@ -26,6 +30,35 @@
         },
         "accessRules": {
             "anonymous": "Người chơi ẩn danh chỉ có thể chơi với bot hoặc bot vs bot. Cần đăng nhập để chơi online."
+        },
+        "gameTitle": "Bộ chỉ huy chiến hạm",
+        "gameSubtitle": "Giao diện tác chiến trực tuyến",
+        "lore1": "Hiệu chỉnh hành vi hạm đội, cấu hình kịch bản chiến thuật và tiến thẳng vào bước thiết lập trận chiến từ một trung tâm chỉ huy duy nhất.",
+        "lore2": "Điều khiển hạm đội đã đồng bộ. Mẫu nhiệm vụ và thiết lập hiện sẵn trong hàng đợi chỉ huy.",
+        "commanderLink": "Liên kết chỉ huy",
+        "systemFeed": "Bảng tin hệ thống",
+        "signalLabel": "Tín hiệu",
+        "signalStatus": "Kết nối uplink ổn định",
+        "operationLabel": "Tác vụ",
+        "operationStatus": "Đang chờ lệnh triển khai",
+        "missionQueue": "Hàng đợi nhiệm vụ",
+        "commandDeck": "Boong chỉ huy",
+        "commandDeckDesc": "Chọn kịch bản, tinh chỉnh hệ thống hoặc đăng nhập để mở khóa tác chiến trực tuyến.",
+        "stats": {
+            "rank": "Cấp bậc",
+            "status": "Trạng thái",
+            "grid": "Lưới",
+            "rankCadet": "Tân binh",
+            "rankFleetAdmiral": "Đô đốc hạm đội",
+            "statusStandby": "Chờ lệnh",
+            "statusReady": "Sẵn sàng",
+            "gridDefault": "10 x 10"
+        },
+        "profile": {
+            "username": "Tên người dùng",
+            "signature": "Chữ ký",
+            "rank": "Cấp bậc",
+            "elo": "Elo"
         }
     },
     "welcome": {
@@ -62,6 +95,9 @@
             "profileSetupTitle": "Thiết lập hồ sơ",
             "signature": "Chữ ký",
             "signatureHint": "Tối đa 200 ký tự",
+            "previewAvatar": "Xem trước ảnh đại diện",
+            "avatar": "Ảnh đại diện",
+            "avatarPreview": "Xem trước ảnh đại diện",
             "changeAvatar": "Đổi ảnh đại diện",
             "logout": "Đăng xuất",
             "submitProfile": "Lưu hồ sơ",
@@ -83,17 +119,45 @@
             "title_placement": "Đặt tàu của bạn",
             "step1Label": "Đội tàu & Bản đồ",
             "step2Label": "Đặt tàu",
+            "phase": "Giai đoạn",
+            "placementPhaseActive": "Giai đoạn đặt tàu đang hoạt động",
+            "mode": "Chế độ {{mode}}",
+            "gameModeLabel": "CHẾ ĐỘ CHƠI",
+            "modes": {
+                "bot": "Bot",
+                "online": "Trực tuyến",
+                "botvbot": "Bot đấu bot"
+            },
+            "commanderName": "Chỉ huy Alpha",
+            "deploymentSectorConfigured": "Khu vực triển khai được cấu hình cho lưới {{rows}} x {{cols}}",
+            "ships": "Tàu",
+            "cellsUsed": "Ô đã dùng",
+            "systemLogWaiting": "Nhật ký hệ thống: đang chờ xác nhận hạm đội",
+            "secureLinkEstablished": "Liên kết bảo mật đã thiết lập",
+            "secureLinkPending": "Liên kết bảo mật đang chờ",
             "back": "Quay lại",
             "backToConfig": "Quay lại cấu hình",
             "nextStep": "Tiếp theo: Đặt tàu",
             "startGame": "Bắt đầu trò chơi"
         },
+        "aiDifficulty": {
+            "label": "ĐỘ KHÓ AI",
+            "random": "NGẪU NHIÊN",
+            "learning": "HỌC HỎI",
+            "probability": "XÁC SUẤT"
+        },
         "step1": {
             "boardSizeTitle": "Kích thước bàn cờ",
+            "configureGridHint": "Cấu hình lưới chiến thuật trước khi chốt đội hình hạm đội.",
+            "presetSize": "{{rows}} hàng · {{cols}} cột",
             "rowsLabel": "Hàng",
             "columnsLabel": "Cột",
             "boardInfo": "Bàn cờ: {{rows}} {{cols}} = {{cells}} ô",
+            "deploymentCapacity": "Sức chứa triển khai",
+            "fleetLoad": "Tải trọng đội tàu",
+            "limit": "Giới hạn",
             "fleetTitle": "Đội tàu",
+            "fleetTypes": "Loại tàu",
             "totalCellsInfo": "Tổng ô chiếm: {{used}} / {{max}} tối đa (50% bàn cờ)",
             "noShips": "Chưa có tàu nào. Vui lòng thêm ít nhất một tàu.",
             "shipName": "Tên",
@@ -108,10 +172,13 @@
         },
         "step2": {
             "boardInfo": "Bàn cờ: {{rows}} {{cols}}",
-            "fleetInfo": "Đội tàu: {{ships}}"
+            "fleetInfo": "Đội tàu: {{ships}}",
+            "deployment": "Triển khai"
         },
         "placement": {
             "shipInstances": "Vị trí tàu",
+            "fleetInventory": "Kho tàu",
+            "orientation": "Hướng đặt",
             "size": "Kích thước",
             "placed": "Đã đặt",
             "notPlaced": "Chưa đặt",
@@ -125,7 +192,8 @@
             "cannotPlaceHere": "Không thể đặt tại đây: ngoài bàn cờ hoặc va chạm với tàu khác.",
             "allShipsPlaced": "Tất cả tàu đã được đặt. Bạn đã sẵn sàng để bắt đầu.",
             "placementInstructions": "Chọn vị trí tàu, sau đó nhấp vào ô bàn cờ để đặt nó.",
-            "randomPlacementFailed": "Đặt ngẫu nhiên không thành công. Hãy thử tăng kích thước bàn cờ hoặc giảm mật độ đội tàu."
+            "randomPlacementFailed": "Đặt ngẫu nhiên không thành công. Hãy thử tăng kích thước bàn cờ hoặc giảm mật độ đội tàu.",
+            "hullDeployHint": "Chọn một thân tàu rồi triển khai nó lên lưới chiến thuật."
         }
     },
     "gamePlay": {
@@ -178,24 +246,32 @@
     },
     "settings": {
         "title": "Cài đặt",
-        "masterVolume": "Master Volume",
-        "backgroundMusic": "Background Music",
-        "sfx": "SFX",
-        "uiVolume": "UI Volume",
+        "masterVolume": "Âm lượng chính",
+        "backgroundMusic": "Nhạc nền",
+        "sfx": "Hiệu ứng âm thanh",
+        "uiVolume": "Âm lượng giao diện",
         "language": "Ngôn ngữ",
-        "theme": "Theme",
+        "theme": "Giao diện",
         "en": "EN",
         "vi": "VI",
-        "light": "Light",
-        "dark": "Dark",
+        "light": "Sáng",
+        "dark": "Tối",
+        "muteVolume": "Tắt tiếng {{channel}}",
+        "unmuteVolume": "Bật tiếng {{channel}}",
         "close": "Đóng"
     },
     "errors": {
         "SESSION_EXPIRED_TITLE": "Phiên đăng nhập hết hạn",
         "notFound": "Không tìm thấy trang",
+        "unexpected": "Rất tiếc! Đã xảy ra lỗi.",
+        "tryAgain": "Thử lại",
         "goHome": "Quay về trang chủ",
         "TIMEOUT": "Yêu cầu quá thời gian chờ. Vui lòng thử lại.",
         "NETWORK_ERROR": "Lỗi mạng. Vui lòng kiểm tra kết nối internet.",
+        "apiBaseUrlRequired": "Thiếu cấu hình VITE_API_BASE_URL.",
+        "spriteLoadFailed": "Không tải được sprite sheet: {{src}}",
+        "spriteContextUnavailable": "Không thể tạo ngữ cảnh canvas 2D để tách sprite.",
+        "spriteDirectionCountInvalid": "Cần 5 sprite tàu cho hướng {{direction}}, nhưng chỉ tìm thấy {{count}}.",
         "INVALID_EMAIL": "Vui lòng nhập email hợp lệ.",
         "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
         "USERNAME_REQUIRED": "Tên người dùng là bắt buộc.",
@@ -210,5 +286,56 @@
         "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
         "USER_NOT_FOUND": "Không tìm thấy người dùng.",
         "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
+    },
+    "gameBattle": {
+        "operationLabel": "TÁC VỤ",
+        "operation": "DEEP SEA STRIKE",
+        "yourTurn": "LƯỢT CỦA BẠN",
+        "enemyTurn": "LƯỢT ĐỊCH",
+        "botATurn": "BOT A TẤNG CÔNG",
+        "botBTurn": "BOT B TẤN CÔNG",
+        "timer": "HẸN GIỜ",
+        "enemyWaters": "VÙNG BIỂN ĐỊCH",
+        "botBFleet": "HẠM ĐỘI BOT B",
+        "myFleet": "HẠM ĐỘI CỦA TÔI",
+        "botAFleet": "HẠM ĐỘI BOT A",
+        "selectCoordinate": "CHỌN TỌA ĐỘ BẮN TÊN LỬA",
+        "waitingForTurn": "ĐỊCH ĐANG NHẮM MỤC TIÊU...",
+        "botAAttacking": "BOT A ĐANG TẤN CÔNG...",
+        "fleetIntact": "HẠM ĐỘI NGUYÊN VẸN",
+        "compromised": "BỊ TỔN THẤT",
+        "missionLog": "NHẬT KÝ NHIỆM VỤ",
+        "quitMission": "RỜI NHIỆM VỤ",
+        "tacticalMap": "BẢN ĐỒ CHIẾN THUẬT",
+        "statistics": "THỐNG KÊ",
+        "minimize": "Thu nhỏ",
+        "stats": {
+            "title": "THỐNG KÊ CHIẾN ĐẤU",
+            "shots": "ĐÃ BẮN",
+            "hits": "TRÚNG",
+            "misses": "TRƯỢT",
+            "accuracy": "ĐỘ CHÍNH XÁC",
+            "youLabel": "TẤN CÔNG CỦA BẠN",
+            "enemyLabel": "TẤN CÔNG CỦA ĐỊCH"
+        },
+        "encryptedChannel": "KÊNH MÃ HÓA",
+        "systemVersion": "HỆ_THỐNG_v4.0.2_HOẠT_ĐỘNG",
+        "logInit": "Hệ thống khởi tạo hoàn tất.",
+        "logYouHit": "Bạn phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logYouMiss": "Bạn phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "logEnemyHit": "Địch phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logEnemyMiss": "Địch phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "logBotAHit": "Bot A phóng tên lửa vào {{coord}}... TRÚNG!",
+        "logBotAMiss": "Bot A phóng tên lửa vào {{coord}}... TRƯỢT!",
+        "result": {
+            "victorySubtitle": "TRẠNG THÁI NHIỆM VỤ",
+            "defeatSubtitle": "TRẠNG THÁI NHIỆM VỤ",
+            "victory": "NHIỆM VỤ HOÀN THÀNH",
+            "defeat": "NHIỆM VỤ THẤT BẠI",
+            "victoryDesc": "Toàn bộ tàu địch đã bị đánh chìm. Biển cả là của chúng ta.",
+            "defeatDesc": "Hạm đội của bạn đã bị tiêu diệt. Rút lui và tái tổ chức.",
+            "playAgain": "TRIỂN KHAI LẠI",
+            "returnBase": "QUAY VỀ CĂN CỨ"
+        }
     }
 }

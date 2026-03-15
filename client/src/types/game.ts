@@ -38,3 +38,18 @@ export interface GameSetupState {
   placements: PlacedShip[]
   isReady: boolean
 }
+
+// --- Battle / game-play types ---
+export type AiDifficulty = 'random' | 'learning' | 'probability'
+
+export interface Shot {
+  x: number
+  y: number
+  isHit: boolean
+}
+
+export type GamePhase = 'playing' | 'gameover'
+
+export type TurnOwner = 'player' | 'bot'
+
+export type GameResult = 'player_wins' | 'bot_wins'
