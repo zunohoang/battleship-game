@@ -261,6 +261,11 @@ export function HomePage() {
       return;
     }
 
+    if (id === 'playOnline') {
+      navigate('/game/rooms');
+      return;
+    }
+
     if (id === 'botVsBot') {
       const { boardConfig, ships } = DEFAULT_GAME_CONFIG;
       const instances = buildShipInstances(ships);
