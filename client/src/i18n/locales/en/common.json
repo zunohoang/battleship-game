@@ -196,6 +196,54 @@
             "hullDeployHint": "Select a hull and deploy it on the tactical grid."
         }
     },
+    "gamePlay": {
+        "header": {
+            "modeLabel": "Battle mode",
+            "title": "Command Deck",
+            "description": "Two active boards, a 30 second turn clock, and live fleet tracking. Red cells are confirmed hits, white cells are missed shots.",
+            "turnLabel": "Turn control",
+            "timerLabel": "Turn timer",
+            "timerHint": "Resets every {{seconds}} seconds",
+            "playerTurn": "Your turn",
+            "botTurn": "Bot turn",
+            "playerWon": "You won the battle",
+            "botWon": "Bot secured the win",
+            "playerTurnHint": "Choose a target on the enemy board before the timer runs out.",
+            "botTurnHint": "The bot is selecting its next shot.",
+            "finished": "Battle complete. You can redeploy or go back to setup."
+        },
+        "boards": {
+            "playerTitle": "Your waters",
+            "playerSubtitle": "Destroyed ships: {{destroyed}} / {{total}}",
+            "playerTurnLabel": "Player fleet",
+            "botTitle": "Bot waters",
+            "botSubtitle": "Destroyed ships: {{destroyed}} / {{total}}",
+            "botTurnLabel": "Opponent fleet"
+        },
+        "fleet": {
+            "playerLabel": "Your ship list",
+            "botLabel": "Bot ship list"
+        },
+        "status": {
+            "label": "Battle feed",
+            "ready": "Battle stations set. Open with your first shot.",
+            "playerTimeout": "Your turn expired. The bot takes over.",
+            "playerHit": "Direct hit at {{cell}}.",
+            "playerMiss": "Shot missed at {{cell}}.",
+            "playerWins": "Final hit landed at {{cell}}. Enemy fleet destroyed.",
+            "botHit": "Bot scored a hit at {{cell}}.",
+            "botMiss": "Bot missed at {{cell}}.",
+            "botWins": "Bot's strike at {{cell}} finished your fleet."
+        },
+        "actions": {
+            "playAgain": "Play Again",
+            "backToSetup": "Back To Setup"
+        },
+        "missingState": {
+            "title": "No battle setup found",
+            "description": "Start from setup so board size, fleet composition, and ship placements can be carried into the match."
+        }
+    },
     "settings": {
         "title": "Settings",
         "masterVolume": "Master Volume",
