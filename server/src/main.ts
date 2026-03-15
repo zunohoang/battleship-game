@@ -53,8 +53,20 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const logger = app.get(AppLoggerService);
 
+  const allowedOrigins = configService
+    .getOrThrow<string>('CLIENT_URL')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
   app.enableCors({
-    origin: configService.getOrThrow<string>('CLIENT_URL'),
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+    },
     credentials: true,
   });
 
