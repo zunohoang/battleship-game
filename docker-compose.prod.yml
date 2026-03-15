@@ -58,7 +58,7 @@ services:
     depends_on:
       - server
     ports:
-      - '${CLIENT_PORT:-80}:80'
+      - '${CLIENT_PORT:-8080}:80'
 
 volumes:
   postgres_data:
