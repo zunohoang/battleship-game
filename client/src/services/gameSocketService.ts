@@ -5,6 +5,7 @@ import type {
   JoinRoomPayload,
   MatchMovePayload,
   MatchSnapshot,
+  RoomActionPayload,
   RoomReadyPayload,
   RoomSnapshot,
 } from '@/types/online';
@@ -106,6 +107,10 @@ class GameSocketService {
 
   joinRoom(payload: JoinRoomPayload, ack?: SocketAck<ServerRoomUpdatedPayload>): void {
     this.socket?.emit('room:join', payload, ack);
+  }
+
+  startRoom(payload: RoomActionPayload, ack?: SocketAck<ServerRoomUpdatedPayload>): void {
+    this.socket?.emit('room:start', payload, ack);
   }
 
   markReady(payload: RoomReadyPayload, ack?: SocketAck<ServerMatchUpdatedPayload>): void {

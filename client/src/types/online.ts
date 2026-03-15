@@ -42,9 +42,14 @@ export interface MatchSnapshot {
   player2Shots: ShotRecord[];
   turnPlayerId: string | null;
   winnerId: string | null;
+  setupDeadlineAt: string | null;
   version: number;
   rematchVotes: Record<string, boolean>;
   updatedAt: string;
+}
+
+export interface RoomActionPayload {
+  roomId: string;
 }
 
 export interface CreateRoomPayload {
@@ -58,6 +63,7 @@ export interface JoinRoomPayload {
 }
 
 export interface RoomReadyPayload {
+  roomId: string;
   placements: PlacedShip[];
 }
 

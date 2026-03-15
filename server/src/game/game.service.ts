@@ -12,12 +12,16 @@ import { RoomEntity } from './infrastructure/persistence/relational/entities/roo
 import type {
   BoardConfig,
   MatchSnapshot,
+  Orientation,
   PlacedShip,
   RoomSnapshot,
   ShipDefinition,
   ShotRecord,
 } from './types/game.types';
 import { CreateRoomDto, MoveDto, RoomReadyDto } from './dto/game-events.dto';
+
+const SETUP_WINDOW_MS = 60 * 1000;
+const RANDOM_PLACEMENT_MAX_ATTEMPTS = 300;
 
 function keyOf(x: number, y: number): string {
   return `${x},${y}`;
@@ -143,7 +147,7 @@ export class GameService {
     }
 
     room.guestId = userId;
-    room.status = 'setup';
+    room.status = 'waiting';
 
     const match = room.currentMatchId
       ? await this.matchRepo.findOne({ where: { id: room.currentMatchId } })
@@ -214,6 +218,7 @@ export class GameService {
       player2Shots: [],
       turnPlayerId: null,
       winnerId: null,
+      setupDeadlineAt: null,
       version: 0,
       rematchVotes: {},
     });
@@ -224,6 +229,53 @@ export class GameService {
     return this.toMatchSnapshot(savedMatch);
   }
 
+  async startRoom(
+    roomId: string,
+    userId: string,
+  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
+    const room = await this.getRoomOrThrow(roomId);
+    const match = await this.getCurrentMatchOrThrow(room);
+
+    if (userId !== room.ownerId) {
+      throw new BadRequestException({
+        error: 'ROOM_OWNER_ONLY',
+        message: 'Only room owner can start setup',
+      });
+    }
+
+    if (!room.guestId) {
+      throw new BadRequestException({
+        error: 'ROOM_NEEDS_OPPONENT',
+        message: 'Room has no opponent yet',
+      });
+    }
+
+    if (match.status !== 'setup') {
+      throw new BadRequestException({
+        error: 'MATCH_INVALID_STATE',
+        message: 'Match setup already finished',
+      });
+    }
+
+    room.status = 'setup';
+    room.ownerReady = false;
+    room.guestReady = false;
+
+    match.player2Id = room.guestId;
+    match.setupDeadlineAt = new Date(Date.now() + SETUP_WINDOW_MS);
+    match.version += 1;
+
+    const [savedRoom, savedMatch] = await Promise.all([
+      this.roomRepo.save(room),
+      this.matchRepo.save(match),
+    ]);
+
+    return {
+      room: this.toRoomSnapshot(savedRoom),
+      match: this.toMatchSnapshot(savedMatch),
+    };
+  }
+
   async markReady(
     roomId: string,
     userId: string,
@@ -231,6 +283,26 @@ export class GameService {
   ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
     const room = await this.getRoomOrThrow(roomId);
     const match = await this.getCurrentMatchOrThrow(room);
+
+    if (room.status !== 'setup' || match.status !== 'setup') {
+      throw new BadRequestException({
+        error: 'ROOM_NOT_IN_SETUP',
+        message: 'Room is not in setup phase',
+      });
+    }
+
+    if (this.isSetupExpired(match)) {
+      this.forceStartAfterSetupTimeout(room, match);
+      const [savedRoom, savedMatch] = await Promise.all([
+        this.roomRepo.save(room),
+        this.matchRepo.save(match),
+      ]);
+      return {
+        room: this.toRoomSnapshot(savedRoom),
+        match: this.toMatchSnapshot(savedMatch),
+      };
+    }
+
     const placements = payload.placements as PlacedShip[];
 
     this.validatePlacements(match.boardConfig, match.ships, placements);
@@ -252,6 +324,7 @@ export class GameService {
       match.status = 'in_progress';
       room.status = 'in_game';
       match.turnPlayerId = match.player1Id;
+      match.setupDeadlineAt = null;
     }
 
     match.version += 1;
@@ -459,6 +532,7 @@ export class GameService {
         player2Shots: [],
         turnPlayerId: null,
         winnerId: null,
+        setupDeadlineAt: null,
         version: 0,
         rematchVotes: {},
       });
@@ -511,9 +585,24 @@ export class GameService {
     roomId: string,
   ): Promise<{ room: RoomSnapshot; match: MatchSnapshot | null }> {
     const room = await this.getRoomOrThrow(roomId);
-    const match = room.currentMatchId
+    let match = room.currentMatchId
       ? await this.matchRepo.findOne({ where: { id: room.currentMatchId } })
       : null;
+
+    if (match && room.status === 'setup' && match.status === 'setup') {
+      if (this.isSetupExpired(match)) {
+        this.forceStartAfterSetupTimeout(room, match);
+        const [savedRoom, savedMatch] = await Promise.all([
+          this.roomRepo.save(room),
+          this.matchRepo.save(match),
+        ]);
+        return {
+          room: this.toRoomSnapshot(savedRoom),
+          match: this.toMatchSnapshot(savedMatch),
+        };
+      }
+    }
+
     return {
       room: this.toRoomSnapshot(room),
       match: match ? this.toMatchSnapshot(match) : null,
@@ -554,6 +643,14 @@ export class GameService {
 
     if (!match) {
       match = await this.getCurrentMatchOrThrow(room);
+    }
+
+    if (room.status === 'setup' && match.status === 'setup' && this.isSetupExpired(match)) {
+      this.forceStartAfterSetupTimeout(room, match);
+      [room, match] = await Promise.all([
+        this.roomRepo.save(room),
+        this.matchRepo.save(match),
+      ]);
     }
 
     if (
@@ -755,9 +852,99 @@ export class GameService {
       player2Shots: match.player2Shots,
       turnPlayerId: match.turnPlayerId,
       winnerId: match.winnerId,
+      setupDeadlineAt: match.setupDeadlineAt
+        ? match.setupDeadlineAt.toISOString()
+        : null,
       version: match.version,
       rematchVotes: match.rematchVotes,
       updatedAt: match.updatedAt.toISOString(),
     };
+  }
+
+  private isSetupExpired(match: MatchEntity): boolean {
+    if (!match.setupDeadlineAt) {
+      return false;
+    }
+
+    return Date.now() >= match.setupDeadlineAt.getTime();
+  }
+
+  private forceStartAfterSetupTimeout(room: RoomEntity, match: MatchEntity): void {
+    if (!match.player1Placements) {
+      match.player1Placements = this.generateRandomPlacements(
+        match.boardConfig,
+        match.ships,
+      );
+      room.ownerReady = true;
+    }
+
+    if (!match.player2Placements) {
+      match.player2Placements = this.generateRandomPlacements(
+        match.boardConfig,
+        match.ships,
+      );
+      room.guestReady = true;
+    }
+
+    room.status = 'in_game';
+    match.status = 'in_progress';
+    match.turnPlayerId = match.player1Id;
+    match.setupDeadlineAt = null;
+    match.version += 1;
+  }
+
+  private generateRandomPlacements(
+    board: BoardConfig,
+    ships: ShipDefinition[],
+  ): PlacedShip[] {
+    const placements: PlacedShip[] = [];
+    const occupied = new Set<string>();
+
+    for (const ship of ships) {
+      for (let instanceIndex = 0; instanceIndex < ship.count; instanceIndex += 1) {
+        let placed = false;
+
+        for (let attempt = 0; attempt < RANDOM_PLACEMENT_MAX_ATTEMPTS; attempt += 1) {
+          const orientation: Orientation =
+            Math.random() > 0.5 ? 'horizontal' : 'vertical';
+          const maxX =
+            orientation === 'horizontal' ? board.cols - ship.size : board.cols - 1;
+          const maxY =
+            orientation === 'vertical' ? board.rows - ship.size : board.rows - 1;
+          const x = Math.floor(Math.random() * (maxX + 1));
+          const y = Math.floor(Math.random() * (maxY + 1));
+
+          const candidate: PlacedShip = {
+            definitionId: ship.id,
+            instanceIndex,
+            x,
+            y,
+            orientation,
+          };
+
+          const cells = shipCells(candidate, ship.size);
+          const blocked = cells.some((cell) => occupied.has(keyOf(cell.x, cell.y)));
+          if (blocked) {
+            continue;
+          }
+
+          placements.push(candidate);
+          for (const cell of cells) {
+            occupied.add(keyOf(cell.x, cell.y));
+          }
+          placed = true;
+          break;
+        }
+
+        if (!placed) {
+          throw new BadRequestException({
+            error: 'AUTO_PLACEMENT_FAILED',
+            message: 'Could not auto place ships in setup timeout',
+          });
+        }
+      }
+    }
+
+    return placements;
   }
 }

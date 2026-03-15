@@ -69,6 +69,7 @@ export interface MatchSnapshot {
   player2Shots: ShotRecord[];
   turnPlayerId: string | null;
   winnerId: string | null;
+  setupDeadlineAt: string | null;
   version: number;
   rematchVotes: Record<string, boolean>;
   updatedAt: string;

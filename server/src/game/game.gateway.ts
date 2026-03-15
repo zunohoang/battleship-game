@@ -19,6 +19,7 @@ import {
   MoveDto,
   ReconnectDto,
   RematchVoteDto,
+  RoomActionDto,
   RoomReadyDto,
 } from './dto/game-events.dto';
 import { GameEvents } from './constants/game-events.const';
@@ -107,16 +108,28 @@ export class GameGateway {
     return result;
   }
 
+  @SubscribeMessage(GameEvents.RoomStart)
+  async handleStartRoom(
+    @MessageBody() payload: RoomActionDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = this.getUserId(client);
+    const result = await this.gameService.startRoom(payload.roomId, userId);
+    this.server
+      .to(`room:${payload.roomId}`)
+      .emit(GameEvents.ServerRoomUpdated, result);
+    return result;
+  }
+
   @SubscribeMessage(GameEvents.RoomReady)
   async handleReady(
     @MessageBody() payload: RoomReadyDto,
     @ConnectedSocket() client: Socket,
   ) {
     const userId = this.getUserId(client);
-    const roomId = this.readRoomIdFromSocket(client);
-    const result = await this.gameService.markReady(roomId, userId, payload);
+    const result = await this.gameService.markReady(payload.roomId, userId, payload);
     this.server
-      .to(`room:${roomId}`)
+      .to(`room:${payload.roomId}`)
       .emit(GameEvents.ServerMatchUpdated, result);
     return result;
   }

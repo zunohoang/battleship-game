@@ -21,7 +21,7 @@ export function WaitingRoomPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation('common');
-  const { isLoggedIn } = useGlobalContext();
+  const { isLoggedIn, user } = useGlobalContext();
   const state = (location.state as WaitingLocationState | null) ?? {};
   const roomId = state.roomId;
   const matchId = state.matchId;
@@ -30,9 +30,20 @@ export function WaitingRoomPage() {
     match,
     connectionState,
     lastError,
+    startRoom,
     reconnect,
     leaveRoom,
   } = useOnlineRoom(roomId);
+
+  const currentUserId = user?.id ?? null;
+  const isOwner = !!currentUserId && currentUserId === room?.ownerId;
+  const canStartSetup = !!isOwner && !!room?.guestId && room.status === 'waiting';
+
+  const secondsLeft = useMemo(() => {
+    if (!match?.setupDeadlineAt) return null;
+    const diffMs = new Date(match.setupDeadlineAt).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diffMs / 1000));
+  }, [match?.setupDeadlineAt, room?.updatedAt]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -46,7 +57,30 @@ export function WaitingRoomPage() {
     }
 
     reconnect({ roomId, matchId });
+    const timer = window.setInterval(() => {
+      reconnect({ roomId, matchId });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [isLoggedIn, matchId, navigate, reconnect, roomId]);
+
+  useEffect(() => {
+    if (!room || !match) {
+      return;
+    }
+
+    if (room.status === 'setup') {
+      navigate('/game/setup', {
+        state: {
+          mode: 'online',
+          roomId: room.roomId,
+          matchId: match.id,
+        },
+      });
+    }
+  }, [match, navigate, room]);
 
   const statusLabel = useMemo(() => {
     if (connectionState === 'connected') return 'SYNCED';
@@ -101,6 +135,7 @@ export function WaitingRoomPage() {
                 <p>Match ID: <span className='font-mono text-(--accent-secondary)'>{shortId(match?.id ?? matchId)}</span></p>
                 <p>Player 1: <span className='font-mono'>{shortId(match?.player1Id)}</span></p>
                 <p>Player 2: <span className='font-mono'>{shortId(match?.player2Id)}</span></p>
+                <p>Setup timer: <span className='font-mono'>{secondsLeft === null ? 'not started' : `${secondsLeft}s`}</span></p>
                 <p>Version: <span className='font-mono'>{match?.version ?? 0}</span></p>
               </div>
             </div>
@@ -117,23 +152,19 @@ export function WaitingRoomPage() {
               <Button
                 variant='primary'
                 className='h-11'
-                onClick={() => reconnect({ roomId, matchId })}
+                disabled={!canStartSetup}
+                onClick={() => {
+                  if (!room?.roomId) return;
+                  startRoom({ roomId: room.roomId });
+                }}
               >
-                Refresh State
+                {canStartSetup ? 'Start Setup (Owner)' : 'Waiting For Owner Start'}
               </Button>
               <Button
                 className='h-11'
-                onClick={() =>
-                  navigate('/game/setup', {
-                    state: {
-                      mode: 'online',
-                      roomId: room?.roomId ?? roomId,
-                      matchId: match?.id ?? matchId,
-                    },
-                  })
-                }
+                onClick={() => reconnect({ roomId, matchId })}
               >
-                Open Setup
+                Refresh State
               </Button>
               <Button
                 variant='danger'

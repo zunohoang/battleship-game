@@ -55,6 +55,9 @@ export class MatchEntity {
   @Column({ type: 'uuid', nullable: true })
   winnerId: string | null;
 
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  setupDeadlineAt: Date | null;
+
   @Column({ type: 'integer', default: 0 })
   version: number;
 

@@ -3,7 +3,10 @@ import { gameSocketService } from '@/services/gameSocketService';
 import type {
   CreateRoomPayload,
   JoinRoomPayload,
+  MatchMovePayload,
   MatchSnapshot,
+  RoomActionPayload,
+  RoomReadyPayload,
   RoomSnapshot,
 } from '@/types/online';
 
@@ -17,7 +20,7 @@ interface UseOnlineRoomState {
   lastError: string | null;
 }
 
-export function useOnlineRoom(initialRoomId?: string) {
+export function useOnlineRoom(initialRoomId?: string, enabled = true) {
   const [state, setState] = useState<UseOnlineRoomState>({
     connectionState: 'idle',
     room: null,
@@ -27,6 +30,14 @@ export function useOnlineRoom(initialRoomId?: string) {
   });
 
   useEffect(() => {
+    if (!enabled) {
+      setState((current) => ({
+        ...current,
+        connectionState: 'idle',
+      }));
+      return;
+    }
+
     setState((current) => ({ ...current, connectionState: 'connecting' }));
     const socket = gameSocketService.connect(initialRoomId);
 
@@ -73,7 +84,7 @@ export function useOnlineRoom(initialRoomId?: string) {
       socket.off('disconnect', onDisconnect);
       gameSocketService.disconnect();
     };
-  }, [initialRoomId]);
+  }, [enabled, initialRoomId]);
 
   const listRooms = useCallback(() => {
     gameSocketService.listRooms((response) => {
@@ -103,11 +114,43 @@ export function useOnlineRoom(initialRoomId?: string) {
     });
   }, []);
 
+  const startRoom = useCallback((payload: RoomActionPayload) => {
+    gameSocketService.startRoom(payload, (response) => {
+      setState((current) => ({
+        ...current,
+        room: response.room,
+        match: response.match,
+        lastError: null,
+      }));
+    });
+  }, []);
+
+  const markReady = useCallback((payload: RoomReadyPayload) => {
+    gameSocketService.markReady(payload, (response) => {
+      setState((current) => ({
+        ...current,
+        room: response.room ?? current.room,
+        match: response.match,
+        lastError: null,
+      }));
+    });
+  }, []);
+
   const reconnect = useCallback((payload: { roomId?: string; matchId?: string }) => {
     gameSocketService.reconnect(payload, (response) => {
       setState((current) => ({
         ...current,
         room: response.room,
+        match: response.match,
+        lastError: null,
+      }));
+    });
+  }, []);
+
+  const submitMove = useCallback((payload: MatchMovePayload) => {
+    gameSocketService.move(payload, (response) => {
+      setState((current) => ({
+        ...current,
         match: response.match,
         lastError: null,
       }));
@@ -129,9 +172,22 @@ export function useOnlineRoom(initialRoomId?: string) {
       listRooms,
       createRoom,
       joinRoom,
+      startRoom,
+      markReady,
       reconnect,
+      submitMove,
       leaveRoom,
     }),
-    [createRoom, joinRoom, leaveRoom, listRooms, reconnect, state],
+    [
+      createRoom,
+      joinRoom,
+      leaveRoom,
+      listRooms,
+      markReady,
+      reconnect,
+      submitMove,
+      startRoom,
+      state,
+    ],
   );
 }

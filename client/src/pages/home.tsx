@@ -115,6 +115,7 @@ export function HomePage() {
       });
 
       setUser({
+        id: response.user.id,
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
@@ -158,6 +159,7 @@ export function HomePage() {
       });
 
       setUser({
+        id: response.user.id,
         username: response.user.username,
         avatar: response.user.avatar,
         signature: null,
@@ -185,6 +187,7 @@ export function HomePage() {
       });
 
       setUser({
+        id: response.user.id,
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,

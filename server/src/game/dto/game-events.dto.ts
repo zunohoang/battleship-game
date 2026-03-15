@@ -83,7 +83,15 @@ export class JoinRoomDto {
   roomCode?: string;
 }
 
+export class RoomActionDto {
+  @IsUUID()
+  roomId: string;
+}
+
 export class RoomReadyDto {
+  @IsUUID()
+  roomId: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PlacedShipDto)
