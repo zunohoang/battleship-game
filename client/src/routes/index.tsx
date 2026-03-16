@@ -1,6 +1,6 @@
 import { createBrowserRouter, redirect } from 'react-router-dom'
 import { HomePage } from '@/pages/home'
-import { WelcomePage } from '@/pages/welcome'
+import { LandingPage } from '@/pages/landing'
 import { NotFound } from '@/pages/not-found'
 import { GameSetupPage } from '@/pages/game-setup'
 import { GamePlayPage } from '@/pages/game-play'
@@ -12,7 +12,7 @@ import i18n from '@/i18n'
 export const appRouter = createBrowserRouter([
   {
     path: '/',
-    element: <WelcomePage />,
+    element: <LandingPage />,
   },
   {
     path: '/home',

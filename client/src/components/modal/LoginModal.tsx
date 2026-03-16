@@ -59,7 +59,7 @@ export function LoginModal({
         <button
           type='button'
           onClick={onForgotPassword}
-          className='justify-self-start text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 hover:text-white'
+          className='cursor-pointer justify-self-start text-sm font-semibold text-(--accent-secondary) underline underline-offset-4'
         >
           {t('welcome.modals.forgotPassword')}
         </button>

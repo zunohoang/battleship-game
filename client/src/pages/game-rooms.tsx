@@ -1,30 +1,60 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
-import { SectionStatus } from '@/components/ui/SectionStatus';
-import { BOARD_PRESETS, CONFIG_LIMITS, DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
+import { Modal } from '@/components/ui/Modal';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
-import type { BoardConfig, ShipDefinition } from '@/types/game';
+import type { RoomSnapshot } from '@/types/game';
 
 type PendingAction = 'none' | 'creating' | 'joining';
-type CreateStep = 1 | 2;
+type Phase1Filter = 'all' | 'ready' | 'pending';
+type OccupancyFilter = 'all' | 'empty' | 'full';
+type SortFilter = 'newest' | 'oldest' | 'roomCode';
 
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
+type RoomFilters = {
+  phase1: Phase1Filter;
+  occupancy: OccupancyFilter;
+  sort: SortFilter;
+};
+
+const DEFAULT_FILTERS: RoomFilters = {
+  phase1: 'all',
+  occupancy: 'all',
+  sort: 'newest',
+};
+
+function sortRooms(rooms: RoomSnapshot[], sort: SortFilter): RoomSnapshot[] {
+  const next = [...rooms];
+
+  if (sort === 'roomCode') {
+    return next.sort((left, right) => left.roomCode.localeCompare(right.roomCode));
+  }
+
+  return next.sort((left, right) => {
+    const leftTime = new Date(left.updatedAt).getTime();
+    const rightTime = new Date(right.updatedAt).getTime();
+    return sort === 'oldest' ? leftTime - rightTime : rightTime - leftTime;
+  });
 }
-function genId() {
-  return Math.random().toString(36).slice(2, 8);
+
+function isPhase1Pending(room: RoomSnapshot): boolean {
+  return !room.currentMatchId;
+}
+
+function isRoomFull(room: RoomSnapshot, currentUserId: string | null): boolean {
+  return !!room.guestId && room.guestId !== currentUserId;
+}
+
+function isOwnRoom(room: RoomSnapshot, currentUserId: string | null): boolean {
+  return room.ownerId === currentUserId || room.guestId === currentUserId;
 }
 
 export function GameRoomsPage() {
   const navigate = useNavigate();
-  const { t } = useTranslation('common');
-  const { isLoggedIn } = useGlobalContext();
+  const { isLoggedIn, user } = useGlobalContext();
+  const currentUserId = user?.id ?? null;
   const {
-    connectionState,
     rooms,
     room,
     match,
@@ -36,33 +66,8 @@ export function GameRoomsPage() {
   const [roomCode, setRoomCode] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [pendingAction, setPendingAction] = useState<PendingAction>('none');
-  const [createStep, setCreateStep] = useState<CreateStep>(1);
-
-  // --- fleet/board config state (phase 1) ---
-  const [boardConfig, setBoardConfig] = useState<BoardConfig>(DEFAULT_GAME_CONFIG.boardConfig);
-  const [ships, setShips] = useState<ShipDefinition[]>(DEFAULT_GAME_CONFIG.ships);
-  const [newShipName, setNewShipName] = useState('');
-  const [newShipSize, setNewShipSize] = useState(3);
-  const [newShipCount, setNewShipCount] = useState(1);
-
-  const boardCells = boardConfig.rows * boardConfig.cols;
-  const totalCells = ships.reduce((s, sh) => s + sh.size * sh.count, 0);
-  const isConfigValid = ships.length > 0 && totalCells > 0 && totalCells <= boardCells * 0.5;
-
-  const handleUpdateShip = (id: string, patch: Partial<Omit<ShipDefinition, 'id'>>) => {
-    setShips((prev) => prev.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)));
-  };
-  const handleRemoveShip = (id: string) => {
-    setShips((prev) => prev.filter((sh) => sh.id !== id));
-  };
-  const handleAddShip = () => {
-    const name = newShipName.trim();
-    if (!name || ships.length >= CONFIG_LIMITS.ship.maxShipTypes) return;
-    setShips((prev) => [...prev, { id: genId(), name, size: newShipSize, count: newShipCount }]);
-    setNewShipName('');
-    setNewShipSize(3);
-    setNewShipCount(1);
-  };
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState<RoomFilters>(DEFAULT_FILTERS);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -81,29 +86,46 @@ export function GameRoomsPage() {
   }, [isLoggedIn, listRooms, navigate]);
 
   useEffect(() => {
-    if (!room || !match || pendingAction === 'none') {
+    if (!room || pendingAction === 'none') {
       return;
     }
 
     navigate('/game/waiting', {
       state: {
         roomId: room.roomId,
-        matchId: match.id,
+        matchId: match?.id,
       },
     });
-  }, [match, navigate, pendingAction, room]);
+  }, [match?.id, navigate, pendingAction, room]);
+
+  const filteredRooms = useMemo(() => {
+    const next = rooms.filter((openRoom) => {
+      if (filters.phase1 === 'ready' && isPhase1Pending(openRoom)) {
+        return false;
+      }
+
+      if (filters.phase1 === 'pending' && !isPhase1Pending(openRoom)) {
+        return false;
+      }
+
+      const roomHasGuest = !!openRoom.guestId;
+      if (filters.occupancy === 'empty' && roomHasGuest) {
+        return false;
+      }
+
+      if (filters.occupancy === 'full' && !roomHasGuest) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return sortRooms(next, filters.sort);
+  }, [filters, rooms]);
 
   const canJoinByCode = roomCode.trim().length >= 4;
-
-  const connectionLabel = useMemo(() => {
-    if (connectionState === 'connected') return 'ONLINE';
-    if (connectionState === 'connecting') return 'CONNECTING';
-    if (connectionState === 'error') return 'ERROR';
-    return 'IDLE';
-  }, [connectionState]);
-
-  const inputCls = 'ui-input h-8 w-full rounded-sm px-3 text-sm';
-  const labelCls = 'grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)';
+  const toggleClassName =
+    'cursor-pointer ui-button-shell h-10 rounded-sm border px-3 text-xs font-bold tracking-[0.14em] uppercase transition-colors';
 
   return (
     <motion.main
@@ -115,292 +137,57 @@ export function GameRoomsPage() {
       <div className='ui-page-bg -z-20' />
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
 
-      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-6xl flex-col rounded-md p-4 sm:p-6'>
-        <SectionStatus
-          leftText={t('home.status.system')}
-          rightText={`ROOMS ${connectionLabel}`}
-        />
-
-        <div className='mt-5 grid gap-6 lg:grid-cols-[minmax(340px,400px)_minmax(0,1fr)]'>
-          {/* ── Left: Create / Join ── */}
-          <aside className='ui-panel rounded-md p-4 sm:p-5'>
-            <h1 className='font-mono text-xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
-              Online Rooms
-            </h1>
-            <p className='mt-1 text-sm text-(--text-muted)'>
-              Tạo phòng mới hoặc join phòng đã có.
-            </p>
-
-            {/* ── Create room: 2-step ── */}
-            <div className='mt-5 rounded-sm border border-(--border-main) bg-black/10 p-3'>
-              {/* Step indicator */}
-              <div className='mb-3 flex items-center gap-2'>
-                <button
-                  type='button'
-                  onClick={() => setCreateStep(1)}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-black transition-colors ${
-                    createStep === 1
-                      ? 'border-[rgba(117,235,255,0.92)] bg-[rgba(34,211,238,0.18)] text-(--text-main)'
-                      : isConfigValid
-                        ? 'border-[rgba(63,203,232,0.48)] bg-[rgba(34,211,238,0.14)] text-(--accent-secondary)'
-                        : 'border-[rgba(31,136,176,0.36)] text-(--text-muted)'
-                  }`}
-                >
-                  {isConfigValid && createStep === 2 ? '✓' : '1'}
-                </button>
-                <div className='h-px flex-1 bg-[rgba(31,136,176,0.3)]' />
-                <button
-                  type='button'
-                  disabled={!isConfigValid}
-                  onClick={() => isConfigValid && setCreateStep(2)}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-black transition-colors ${
-                    createStep === 2
-                      ? 'border-[rgba(117,235,255,0.92)] bg-[rgba(34,211,238,0.18)] text-(--text-main)'
-                      : 'border-[rgba(31,136,176,0.36)] text-(--text-muted)'
-                  }`}
-                >
-                  2
-                </button>
-                <p className='ml-2 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-(--accent-secondary)'>
-                  {createStep === 1 ? 'Bản đồ & Đội tàu' : 'Tùy chọn phòng'}
-                </p>
-              </div>
-
-              <AnimatePresence mode='wait'>
-                {createStep === 1 ? (
-                  <motion.div
-                    key='step1'
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className='space-y-4'
-                  >
-                    {/* Board presets */}
-                    <div>
-                      <p className='mb-2 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-(--text-muted)'>Kích thước bản đồ</p>
-                      <div className='grid grid-cols-3 gap-2'>
-                        {BOARD_PRESETS.map((preset) => {
-                          const active = boardConfig.rows === preset.value.rows && boardConfig.cols === preset.value.cols;
-                          return (
-                            <button
-                              key={preset.label}
-                              type='button'
-                              onClick={() => setBoardConfig(preset.value)}
-                              className={`rounded-sm border px-2 py-2 text-center transition-colors ${
-                                active
-                                  ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
-                                  : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] text-(--text-muted) hover:text-(--text-main)'
-                              }`}
-                            >
-                              <p className='font-mono text-xs font-bold'>{preset.label}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className='mt-2 text-xs text-(--text-subtle)'>
-                        Ô trống: <span className='font-bold text-(--text-muted)'>{boardCells}</span>
-                        &nbsp;·&nbsp;Đội tàu dùng: <span className={totalCells > boardCells * 0.5 ? 'font-bold text-[rgba(255,120,100,0.9)]' : 'font-bold text-(--accent-secondary)'}>{totalCells}</span>
-                        &nbsp;/ tối đa {Math.floor(boardCells * 0.5)}
-                      </p>
-                    </div>
-
-                    {/* Ship list */}
-                    <div>
-                      <p className='mb-2 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-(--text-muted)'>Đội tàu ({ships.length})</p>
-
-                      {ships.length === 0 && (
-                        <p className='rounded-sm border border-[rgba(141,63,71,0.62)] bg-[rgba(43,16,22,0.82)] px-3 py-2 text-xs font-semibold text-[#ffb4b4]'>
-                          Chưa có tàu nào — hãy thêm ít nhất 1 tàu.
-                        </p>
-                      )}
-
-                      <div className='space-y-1'>
-                        {ships.map((sh) => (
-                          <div
-                            key={sh.id}
-                            className='rounded-sm border border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] px-3 py-2'
-                          >
-                            <div className='grid grid-cols-[minmax(0,1fr)_60px_52px_auto] items-end gap-2'>
-                              <label className={labelCls}>
-                                Tên
-                                <input
-                                  type='text'
-                                  value={sh.name}
-                                  onChange={(e) => handleUpdateShip(sh.id, { name: e.target.value })}
-                                  className={inputCls}
-                                />
-                              </label>
-                              <label className={labelCls}>
-                                Cỡ
-                                <input
-                                  type='number'
-                                  min={CONFIG_LIMITS.ship.minSize}
-                                  max={CONFIG_LIMITS.ship.maxSize}
-                                  value={sh.size}
-                                  onChange={(e) => handleUpdateShip(sh.id, { size: clamp(parseInt(e.target.value, 10), CONFIG_LIMITS.ship.minSize, CONFIG_LIMITS.ship.maxSize) })}
-                                  className={inputCls}
-                                />
-                              </label>
-                              <label className={labelCls}>
-                                SL
-                                <input
-                                  type='number'
-                                  min={CONFIG_LIMITS.ship.minCount}
-                                  max={CONFIG_LIMITS.ship.maxCount}
-                                  value={sh.count}
-                                  onChange={(e) => handleUpdateShip(sh.id, { count: clamp(parseInt(e.target.value, 10), CONFIG_LIMITS.ship.minCount, CONFIG_LIMITS.ship.maxCount) })}
-                                  className={inputCls}
-                                />
-                              </label>
-                              <Button
-                                variant='danger'
-                                onClick={() => handleRemoveShip(sh.id)}
-                                className='h-8 px-2 text-[10px]'
-                              >
-                                ✕
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Add ship row */}
-                      {ships.length < CONFIG_LIMITS.ship.maxShipTypes && (
-                        <div className='mt-2 rounded-sm border border-dashed border-[rgba(63,203,232,0.48)] bg-[rgba(7,32,46,0.4)] px-3 py-2'>
-                          <p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)'>Thêm tàu mới</p>
-                          <div className='grid grid-cols-[minmax(0,1fr)_60px_52px_auto] items-end gap-2'>
-                            <label className={labelCls}>
-                              Tên
-                              <input
-                                type='text'
-                                placeholder='Tên tàu'
-                                value={newShipName}
-                                onChange={(e) => setNewShipName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddShip()}
-                                className={inputCls}
-                              />
-                            </label>
-                            <label className={labelCls}>
-                              Cỡ
-                              <input
-                                type='number'
-                                min={CONFIG_LIMITS.ship.minSize}
-                                max={CONFIG_LIMITS.ship.maxSize}
-                                value={newShipSize}
-                                onChange={(e) => setNewShipSize(clamp(parseInt(e.target.value, 10), CONFIG_LIMITS.ship.minSize, CONFIG_LIMITS.ship.maxSize))}
-                                className={inputCls}
-                              />
-                            </label>
-                            <label className={labelCls}>
-                              SL
-                              <input
-                                type='number'
-                                min={1}
-                                max={CONFIG_LIMITS.ship.maxCount}
-                                value={newShipCount}
-                                onChange={(e) => setNewShipCount(clamp(parseInt(e.target.value, 10), 1, CONFIG_LIMITS.ship.maxCount))}
-                                className={inputCls}
-                              />
-                            </label>
-                            <Button
-                              variant='primary'
-                              onClick={handleAddShip}
-                              disabled={!newShipName.trim()}
-                              className='h-8 px-2 text-[10px]'
-                            >
-                              +
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Reset + Next */}
-                    <div className='flex items-center justify-between gap-2 border-t border-[rgba(31,136,176,0.28)] pt-3'>
-                      <Button
-                        variant='danger'
-                        onClick={() => {
-                          setBoardConfig(DEFAULT_GAME_CONFIG.boardConfig);
-                          setShips(DEFAULT_GAME_CONFIG.ships);
-                        }}
-                        className='h-8 px-3 text-[10px]'
-                      >
-                        Đặt lại
-                      </Button>
-                      <Button
-                        variant='primary'
-                        disabled={!isConfigValid}
-                        onClick={() => setCreateStep(2)}
-                        className='h-8 px-4 text-[10px]'
-                      >
-                        Tiếp theo →
-                      </Button>
-                    </div>
-
-                    {!isConfigValid && ships.length > 0 && (
-                      <p className='text-xs font-semibold text-[#ffb4b4]'>
-                        Tổng ô tàu vượt quá 50% bản đồ. Giảm số lượng/cỡ tàu.
-                      </p>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key='step2'
-                    initial={{ opacity: 0, x: 8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 8 }}
-                    transition={{ duration: 0.2 }}
-                    className='space-y-3'
-                  >
-                    {/* Summary */}
-                    <div className='rounded-sm border border-[rgba(63,203,232,0.3)] bg-[rgba(7,32,46,0.5)] px-3 py-2 text-xs text-(--text-muted) space-y-1'>
-                      <p>Bản đồ: <span className='font-bold text-(--text-main)'>{boardConfig.rows} × {boardConfig.cols}</span></p>
-                      <p>Tàu: <span className='font-bold text-(--text-main)'>{ships.length} loại</span> · Tổng {totalCells} ô</p>
-                      <button
-                        type='button'
-                        onClick={() => setCreateStep(1)}
-                        className='mt-1 text-[rgba(34,211,238,0.8)] underline-offset-2 hover:underline'
-                      >
-                        ← Chỉnh lại
-                      </button>
-                    </div>
-
-                    <p className='font-mono text-[10px] font-black uppercase tracking-[0.2em] text-(--text-muted)'>Loại phòng</p>
-                    <div className='grid grid-cols-2 gap-2'>
-                      <Button
-                        variant={visibility === 'public' ? 'primary' : 'default'}
-                        className='h-10'
-                        onClick={() => setVisibility('public')}
-                      >
-                        Public
-                      </Button>
-                      <Button
-                        variant={visibility === 'private' ? 'primary' : 'default'}
-                        className='h-10'
-                        onClick={() => setVisibility('private')}
-                      >
-                        Private
-                      </Button>
-                    </div>
-                    <Button
-                      variant='primary'
-                      className='h-11 w-full'
-                      onClick={() => {
-                        setPendingAction('creating');
-                        createRoom({ visibility, boardConfig, ships });
-                      }}
-                    >
-                      {pendingAction === 'creating' ? 'Đang tạo...' : 'Tạo phòng'}
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full flex-col rounded-md p-4 sm:p-6'>
+        <div className='grid min-h-0 flex-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]'>
+          <aside className='ui-panel flex min-h-0 flex-col rounded-md p-4 sm:p-5'>
+            <div>
+              <h1 className='font-mono text-xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                Online Rooms
+              </h1>
+              <p className='mt-1 text-sm text-(--text-muted)'>
+                Create a room, share the code, then finish phase 1 from the waiting room.
+              </p>
             </div>
 
-            {/* ── Join by code ── */}
-            <div className='mt-4 space-y-3 rounded-sm border border-(--border-main) bg-black/10 p-3'>
-              <p className='ui-data-label'>Vào phòng bằng mã</p>
+            <div className='ui-subpanel mt-5 space-y-4 rounded-sm p-4'>
+              <div>
+                <p className='ui-data-label'>Room visibility</p>
+                <div className='mt-3 grid grid-cols-2 gap-2'>
+                  <Button
+                    variant={visibility === 'public' ? 'primary' : 'default'}
+                    className='h-10'
+                    onClick={() => setVisibility('public')}
+                  >
+                    Public
+                  </Button>
+                  <Button
+                    variant={visibility === 'private' ? 'primary' : 'default'}
+                    className='h-10'
+                    onClick={() => setVisibility('private')}
+                  >
+                    Private
+                  </Button>
+                </div>
+              </div>
+
+              <div className='rounded-sm border border-[rgba(63,203,232,0.28)] bg-[rgba(7,28,38,0.78)] px-3 py-3 text-sm text-(--text-muted)'>
+                Phase 1 is now configured in the waiting room by the host before anyone can join.
+              </div>
+
+              <Button
+                variant='primary'
+                className='h-11'
+                onClick={() => {
+                  setPendingAction('creating');
+                  createRoom({ visibility });
+                }}
+              >
+                {pendingAction === 'creating' ? 'Creating...' : 'Create Room'}
+              </Button>
+            </div>
+
+            <div className='ui-subpanel mt-4 space-y-3 rounded-sm p-4'>
+              <p className='ui-data-label'>Join by code</p>
               <input
                 className='ui-input h-11 w-full rounded-sm px-3 font-mono text-sm uppercase tracking-[0.14em]'
                 value={roomCode}
@@ -416,76 +203,218 @@ export function GameRoomsPage() {
                   joinRoom({ roomCode: roomCode.trim() });
                 }}
               >
-                {pendingAction === 'joining' ? 'Đang vào...' : 'Vào phòng'}
+                {pendingAction === 'joining' ? 'Joining...' : 'Join Room'}
               </Button>
             </div>
 
-            <div className='mt-4 flex gap-2'>
-              <Button className='h-10' onClick={() => listRooms()}>
-                Làm mới
-              </Button>
-              <Button className='h-10' onClick={() => navigate('/home')}>
-                Quay lại
-              </Button>
-            </div>
+            <div className='mt-auto pt-4'>
+              <div className='flex gap-2'>
+                <Button className='h-10' onClick={() => listRooms()}>
+                  Refresh
+                </Button>
+                <Button className='h-10' onClick={() => navigate('/home')}>
+                  Back
+                </Button>
+              </div>
 
-            {lastError ? (
-              <p className='mt-4 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
-                {lastError}
-              </p>
-            ) : null}
+              {lastError ? (
+                <p className='mt-4 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
+                  {lastError}
+                </p>
+              ) : null}
+            </div>
           </aside>
 
-          {/* ── Right: Public room list ── */}
-          <section className='ui-panel rounded-md p-4 sm:p-5'>
-            <div className='flex items-center justify-between gap-3'>
-              <h2 className='font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
-                Phòng công khai
-              </h2>
-              <span className='ui-data-label'>{rooms.length} phòng</span>
+          <section className='ui-panel flex min-h-0 flex-col rounded-md p-4 sm:p-5'>
+            <div className='flex flex-wrap items-center justify-between gap-3'>
+              <div>
+                <h2 className='font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                  Public Rooms
+                </h2>
+                <p className='mt-1 text-sm text-(--text-muted)'>
+                  {filteredRooms.length} shown / {rooms.length} total
+                </p>
+              </div>
+
+              <Button className='h-10 w-auto px-4' onClick={() => setIsFilterModalOpen(true)}>
+                Filters
+              </Button>
             </div>
 
-            <div className='mt-4 grid gap-3'>
-              {rooms.length === 0 ? (
-                <div className='rounded-sm border border-(--border-main) bg-black/10 px-4 py-6 text-sm text-(--text-muted)'>
-                  Chưa có phòng nào. Hãy tạo phòng và chờ đối thủ.
+            <div className='mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1'>
+              {filteredRooms.length === 0 ? (
+                <div className='ui-subpanel rounded-sm px-4 py-6 text-sm text-(--text-muted)'>
+                  {rooms.length === 0
+                    ? 'No public rooms yet. Create one and complete phase 1 in the waiting room.'
+                    : 'No rooms match the selected filters.'}
                 </div>
               ) : (
-                rooms.map((openRoom) => (
-                  <div
-                    key={openRoom.roomId}
-                    className='rounded-sm border border-(--border-main) bg-black/10 px-4 py-3'
-                  >
-                    <div className='flex flex-wrap items-center justify-between gap-3'>
-                      <div>
-                        <p className='ui-data-label'>Code</p>
-                        <p className='font-mono text-lg font-black tracking-[0.14em] text-(--accent-secondary)'>
-                          {openRoom.roomCode}
-                        </p>
+                filteredRooms.map((openRoom) => {
+                  const pendingPhase1 = isPhase1Pending(openRoom);
+                  const roomOwnedByUser = isOwnRoom(openRoom, currentUserId);
+                  const roomIsFull = isRoomFull(openRoom, currentUserId);
+                  const canOpenRoom = roomOwnedByUser || (!pendingPhase1 && !roomIsFull);
+
+                  return (
+                    <div
+                      key={openRoom.roomId}
+                      className='ui-subpanel rounded-sm px-4 py-4'
+                    >
+                      <div className='flex flex-wrap items-start justify-between gap-4'>
+                        <div className='min-w-0 flex-1'>
+                          <div className='flex flex-wrap items-center gap-3'>
+                            <div>
+                              <p className='ui-data-label'>Code</p>
+                              <p className='font-mono text-lg font-black tracking-[0.14em] text-(--accent-secondary)'>
+                                {openRoom.roomCode}
+                              </p>
+                            </div>
+                            <span className='rounded-full border border-[rgba(63,203,232,0.32)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-(--text-muted)'>
+                              {pendingPhase1 ? 'Phase 1 pending' : 'Phase 1 ready'}
+                            </span>
+                            <span className='rounded-full border border-[rgba(63,203,232,0.32)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-(--text-muted)'>
+                              {openRoom.guestId ? 'Full' : 'Open'}
+                            </span>
+                          </div>
+
+                          <div className='mt-3 grid gap-1 text-sm text-(--text-muted)'>
+                            <p>Status: <span className='font-mono text-(--text-main)'>{openRoom.status}</span></p>
+                            <p>
+                              Access:{' '}
+                              <span className='font-mono text-(--text-main)'>{openRoom.visibility}</span>
+                            </p>
+                            <p>
+                              Updated:{' '}
+                              <span className='font-mono text-(--text-main)'>
+                                {new Date(openRoom.updatedAt).toLocaleString()}
+                              </span>
+                            </p>
+                          </div>
+
+                          <p className='mt-3 text-xs uppercase tracking-[0.16em] text-(--text-subtle)'>
+                            {roomOwnedByUser
+                              ? 'Your room is waiting for the next action.'
+                              : pendingPhase1
+                                ? 'Host is still configuring phase 1.'
+                                : roomIsFull
+                                  ? 'This room already has an opponent.'
+                                  : 'Room is ready for an opponent to join.'}
+                          </p>
+                        </div>
+
+                        <Button
+                          className='h-10 w-40'
+                          disabled={!canOpenRoom}
+                          onClick={() => {
+                            setPendingAction('joining');
+                            joinRoom({ roomCode: openRoom.roomCode });
+                          }}
+                        >
+                          {roomOwnedByUser
+                            ? 'Open Room'
+                            : pendingPhase1
+                              ? 'Phase 1 Pending'
+                              : roomIsFull
+                                ? 'Room Full'
+                                : 'Join Room'}
+                        </Button>
                       </div>
-                      <div className='text-right'>
-                        <p className='ui-data-label'>Status</p>
-                        <p className='font-mono text-xs uppercase tracking-[0.14em] text-(--text-main)'>
-                          {openRoom.status}
-                        </p>
-                      </div>
-                      <Button
-                        className='h-10 w-36'
-                        onClick={() => {
-                          setPendingAction('joining');
-                          joinRoom({ roomCode: openRoom.roomCode });
-                        }}
-                      >
-                        Vào phòng
-                      </Button>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>
         </div>
       </section>
+
+      <Modal
+        isOpen={isFilterModalOpen}
+        title='Room Filters'
+        onClose={() => setIsFilterModalOpen(false)}
+      >
+        <div className='grid gap-4'>
+          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+            <span>Phase 1</span>
+            <div className='grid grid-cols-3 gap-2'>
+              {([
+                ['all', 'All'],
+                ['ready', 'Ready'],
+                ['pending', 'Pending'],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type='button'
+                  onClick={() => setFilters((current) => ({ ...current, phase1: value }))}
+                  className={`${toggleClassName} ${
+                    filters.phase1 === value ? 'ui-button-primary' : 'ui-button-default'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+            <span>Occupancy</span>
+            <div className='grid grid-cols-3 gap-2'>
+              {([
+                ['all', 'All'],
+                ['empty', 'Open'],
+                ['full', 'Full'],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type='button'
+                  onClick={() => setFilters((current) => ({ ...current, occupancy: value }))}
+                  className={`${toggleClassName} ${
+                    filters.occupancy === value ? 'ui-button-primary' : 'ui-button-default'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+            <span>Sort</span>
+            <div className='grid grid-cols-3 gap-2'>
+              {([
+                ['newest', 'Newest'],
+                ['oldest', 'Oldest'],
+                ['roomCode', 'Code'],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type='button'
+                  onClick={() => setFilters((current) => ({ ...current, sort: value }))}
+                  className={`${toggleClassName} ${
+                    filters.sort === value ? 'ui-button-primary' : 'ui-button-default'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className='flex gap-3'>
+            <Button
+              variant='primary'
+              onClick={() => {
+                setFilters(DEFAULT_FILTERS);
+              }}
+            >
+              Reset Filters
+            </Button>
+            <Button onClick={() => setIsFilterModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </motion.main>
   );
 }

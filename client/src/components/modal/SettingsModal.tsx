@@ -4,7 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { useSettings } from '@/hooks/useSettings'
-import type { AppLanguage, AppTheme, AppVolumeSettings } from '@/store/settingsContext'
+import {
+  LANGUAGE_OPTIONS,
+  THEME_OPTIONS,
+} from '@/constants/settingsDefaults'
+import type { AppVolumeSettings } from '@/types/settings'
 
 type SettingsModalProps = {
   isOpen: boolean
@@ -16,9 +20,6 @@ type VolumeField = {
   label: string
   icon: LucideIcon
 }
-
-const LANGUAGE_OPTIONS: AppLanguage[] = ['en', 'vi']
-const THEME_OPTIONS: AppTheme[] = ['light', 'dark']
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { t } = useTranslation('common')
@@ -83,7 +84,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         ? t('settings.unmuteVolume', { channel: field.label })
                         : t('settings.muteVolume', { channel: field.label })
                     }
-                    className='cursor-pointer rounded-sm border border-(--border-main) bg-black/10 p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)'
+                    className='ui-subpanel cursor-pointer rounded-sm p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)'
                   >
                     {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   </button>

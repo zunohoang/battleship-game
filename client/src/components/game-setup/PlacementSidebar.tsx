@@ -60,13 +60,13 @@ export function PlacementSidebar({
           {statusText}
         </p>
         <div className='flex gap-2'>
-          <div className='flex-1 rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
             <p className='ui-data-label'>{t('gameSetup.step2.deployment')}</p>
             <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
               {placedShipsCount}/{totalRequiredShips}
             </p>
           </div>
-          <div className='flex-1 rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
             <p className='ui-data-label'>{t('gameSetup.placement.orientation')}</p>
             <p className='mt-1 font-mono text-sm uppercase text-(--accent-secondary)'>
               {orientation}
@@ -74,7 +74,7 @@ export function PlacementSidebar({
           </div>
         </div>
         {aiDifficulty && onAiDifficultyChange && (
-          <div className='rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+          <div className='ui-subpanel rounded-sm px-3 py-2'>
             <p className='ui-data-label mb-2'>{t('gameSetup.aiDifficulty.label')}</p>
             <div className='flex gap-1'>
               {(['random', 'learning', 'probability'] as AiDifficulty[]).map((d) => (
@@ -85,7 +85,7 @@ export function PlacementSidebar({
                   className={`ui-button-shell flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                     aiDifficulty === d
                       ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
-                      : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] text-(--text-muted) hover:text-(--text-main)'
+                      : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                   }`}
                 >
                   {t(`gameSetup.aiDifficulty.${d}`)}
@@ -120,7 +120,7 @@ export function PlacementSidebar({
               className={`rounded-sm border p-2.5 text-xs ${
                 selected
                   ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)]'
-                  : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)]'
+                  : 'ui-state-idle'
               }`}
             >
               <button

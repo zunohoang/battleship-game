@@ -3,18 +3,25 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGameSetup } from '@/store/gameSetupContext';
-import { BOARD_PRESETS, CONFIG_LIMITS } from '@/constants/gameDefaults';
+import { BOARD_PRESETS, CONFIG_LIMITS, DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
 import { Button } from '@/components/ui/Button';
 import { SectionStatus } from '@/components/ui/SectionStatus';
 import { ShipPlacementStage } from '@/components/game-setup/ShipPlacementStage';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
-import type { AiDifficulty, GameMode, Orientation, ShipDefinition } from '@/types/game';
+import type {
+  AiDifficulty,
+  GameMode,
+  OnlineSetupFlow,
+  Orientation,
+  ShipDefinition,
+} from '@/types/game';
 
 type LocationState = {
   mode?: GameMode;
   roomId?: string;
   matchId?: string;
+  onlineSetupFlow?: OnlineSetupFlow;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -26,10 +33,10 @@ function generateId() {
 }
 
 interface StepPillProps {
-    number: number;
-    label: string;
+  number: number;
+  label: string;
   phaseLabel: string;
-    status: 'active' | 'done' | 'upcoming';
+  status: 'active' | 'done' | 'upcoming';
 }
 
 function StepPill({ number, label, phaseLabel, status }: StepPillProps) {
@@ -43,8 +50,8 @@ function StepPill({ number, label, phaseLabel, status }: StepPillProps) {
         active
           ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main) shadow-[0_0_18px_rgba(0,174,255,0.18)]'
           : done
-            ? 'border-[rgba(63,203,232,0.48)] bg-[rgba(7,32,46,0.84)] text-(--accent-secondary)'
-            : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] text-(--text-muted)'
+            ? 'ui-state-done text-(--accent-secondary)'
+            : 'ui-state-idle text-(--text-muted)'
       }`}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -79,6 +86,9 @@ export function GameSetupPage() {
   const mode = locationState?.mode ?? 'bot';
   const roomId = locationState?.roomId;
   const matchId = locationState?.matchId;
+  const onlineSetupFlow = locationState?.onlineSetupFlow ?? 'placement';
+  const isOnlinePhase1Flow = mode === 'online' && onlineSetupFlow === 'phase1';
+  const isOnlinePlacementFlow = mode === 'online' && onlineSetupFlow === 'placement';
   const { user } = useGlobalContext();
   const currentUserId = user?.id ?? null;
 
@@ -95,10 +105,11 @@ export function GameSetupPage() {
     resetConfig,
   } = useGameSetup();
 
-  const { room, match, reconnect, markReady } = useOnlineRoom(
+  const { room, match, reconnect, markReady, configureRoomSetup, lastError } = useOnlineRoom(
     roomId,
     mode === 'online',
   );
+  const isRoomOwner = currentUserId !== null && currentUserId === room?.ownerId;
 
   const hasInitializedOnlineConfig = useRef(false);
 
@@ -108,6 +119,8 @@ export function GameSetupPage() {
   const [newShipName, setNewShipName] = useState('');
   const [newShipSize, setNewShipSize] = useState(3);
   const [newShipCount, setNewShipCount] = useState(1);
+  const [onlineSetupNowMs, setOnlineSetupNowMs] = useState<number | null>(null);
+  const [isSavingPhase1, setIsSavingPhase1] = useState(false);
 
   const { boardConfig, ships } = state.config;
 
@@ -164,6 +177,17 @@ export function GameSetupPage() {
   };
 
   const handleNext = () => {
+    if (isOnlinePhase1Flow) {
+      if (!roomId) return;
+      setIsSavingPhase1(true);
+      configureRoomSetup({
+        roomId,
+        boardConfig,
+        ships,
+      });
+      return;
+    }
+
     clearPlacements();
     setPlacementOrientation('horizontal');
     setStep(2);
@@ -178,6 +202,8 @@ export function GameSetupPage() {
   const totalCells = ships.reduce((sum, ship) => sum + ship.size * ship.count, 0);
   const boardCells = boardConfig.rows * boardConfig.cols;
   const isConfigValid = ships.length > 0 && totalCells <= boardCells * 0.5;
+  const isPhase1SavePending =
+    isSavingPhase1 && !lastError && !room?.currentMatchId;
   const requiredShipCount = useMemo(
     () => ships.reduce((total, ship) => total + ship.count, 0),
     [ships],
@@ -191,7 +217,7 @@ export function GameSetupPage() {
   useEffect(() => {
     if (mode !== 'online') return;
 
-    if (!roomId || !matchId) {
+    if (!roomId) {
       navigate('/game/rooms');
       return;
     }
@@ -207,7 +233,15 @@ export function GameSetupPage() {
   }, [matchId, mode, navigate, reconnect, roomId]);
 
   useEffect(() => {
-    if (mode !== 'online' || !match) return;
+    if (!isOnlinePhase1Flow) {
+      return;
+    }
+
+    setConfig(DEFAULT_GAME_CONFIG);
+  }, [isOnlinePhase1Flow, setConfig]);
+
+  useEffect(() => {
+    if (!isOnlinePlacementFlow || !match) return;
     if (hasInitializedOnlineConfig.current) return;
 
     hasInitializedOnlineConfig.current = true;
@@ -215,8 +249,41 @@ export function GameSetupPage() {
       boardConfig: match.boardConfig,
       ships: match.ships,
     });
-    setStep(2);
-  }, [match, mode, setConfig]);
+
+    const syncStepTimeoutId = window.setTimeout(() => {
+      setStep(2);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(syncStepTimeoutId);
+    };
+  }, [isOnlinePlacementFlow, match, setConfig]);
+
+  useEffect(() => {
+    if (!isOnlinePhase1Flow || !isSavingPhase1 || !room || !match) {
+      return;
+    }
+
+    navigate('/game/waiting', {
+      state: {
+        roomId: room.roomId,
+        matchId: match.id,
+      },
+    });
+  }, [isOnlinePhase1Flow, isSavingPhase1, match, navigate, room]);
+
+  useEffect(() => {
+    if (!isOnlinePhase1Flow || isSavingPhase1 || !room?.currentMatchId) {
+      return;
+    }
+
+    navigate('/game/waiting', {
+      state: {
+        roomId: room.roomId,
+        matchId: match?.id ?? room.currentMatchId,
+      },
+    });
+  }, [isOnlinePhase1Flow, isSavingPhase1, match?.id, navigate, room]);
 
   useEffect(() => {
     if (mode !== 'online' || !room || !match) return;
@@ -242,13 +309,43 @@ export function GameSetupPage() {
         },
       });
     }
-  }, [currentUserId, match, mode, navigate, room, state.placements]);
+  }, [currentUserId, match, mode, navigate, room, roomId, state.placements]);
 
-  const onlineSetupSecondsLeft = useMemo(() => {
-    if (mode !== 'online' || !match?.setupDeadlineAt) return null;
-    const diffMs = new Date(match.setupDeadlineAt).getTime() - Date.now();
-    return Math.max(0, Math.ceil(diffMs / 1000));
-  }, [match?.setupDeadlineAt, mode, room?.updatedAt]);
+  useEffect(() => {
+    if (mode !== 'online' || !match?.setupDeadlineAt) {
+      const resetTimeoutId = window.setTimeout(() => {
+        setOnlineSetupNowMs(null);
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetTimeoutId);
+      };
+    }
+
+    const syncNow = () => {
+      setOnlineSetupNowMs(Date.now());
+    };
+
+    const syncTimeoutId = window.setTimeout(syncNow, 0);
+    const intervalId = window.setInterval(syncNow, 1000);
+
+    return () => {
+      window.clearTimeout(syncTimeoutId);
+      window.clearInterval(intervalId);
+    };
+  }, [match?.setupDeadlineAt, mode]);
+
+  const onlineSetupSecondsLeft =
+    mode !== 'online' ||
+    !match?.setupDeadlineAt ||
+    onlineSetupNowMs === null
+      ? null
+      : Math.max(
+        0,
+        Math.ceil(
+          (new Date(match.setupDeadlineAt).getTime() - onlineSetupNowMs) / 1000,
+        ),
+      );
 
   const inputCls = 'ui-input h-8 w-full rounded-sm px-3 text-sm';
   const labelCls = 'grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)';
@@ -265,7 +362,7 @@ export function GameSetupPage() {
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]' />
 
       <section className='ui-hud-shell mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col rounded-md p-3 sm:p-4'>
-        <div className={`grid gap-3 lg:items-center ${step === 2 ? 'lg:grid-cols-[minmax(0,1fr)_auto_auto]' : 'lg:grid-cols-[minmax(0,1fr)_auto]'}`}>
+        <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center'>
           <div className='ui-panel ui-panel-glow flex items-center rounded-md px-5 py-3'>
             <div className='relative z-10 flex min-w-0 flex-1 flex-wrap items-center gap-4'>
               <div className='text-(--accent-secondary) flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)] font-mono text-lg font-black'>
@@ -284,26 +381,23 @@ export function GameSetupPage() {
             </div>
           </div>
 
-          {step === 2 ? (
-            <motion.div
-              key='mode-badge'
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className='ui-panel rounded-md px-4 py-3'
-            >
-              <p className='ui-data-label mb-2'>{t('gameSetup.header.gameModeLabel')}</p>
-              <p className='font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)'>
-                {t(`gameSetup.header.modes.${mode}`)}
+          <motion.div
+            key='mode-badge'
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className='ui-panel rounded-md px-4 py-3'
+          >
+            <p className='ui-data-label mb-2'>{t('gameSetup.header.gameModeLabel')}</p>
+            <p className='font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)'>
+              {t(`gameSetup.header.modes.${mode}`)}
+            </p>
+            {mode === 'online' ? (
+              <p className='mt-2 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-(--text-main)'>
+                Setup Timer: {onlineSetupSecondsLeft === null ? '--' : `${onlineSetupSecondsLeft}s`}
               </p>
-              {mode === 'online' ? (
-                <p className='mt-2 font-mono text-xs font-semibold uppercase tracking-[0.14em] text-(--text-main)'>
-                  Setup Timer: {onlineSetupSecondsLeft === null ? '--' : `${onlineSetupSecondsLeft}s`}
-                </p>
-              ) : null}
-            </motion.div>
-          ) : null}
+            ) : null}
+          </motion.div>
 
           <div className='flex flex-wrap items-center gap-2 lg:justify-end'>
             <StepPill
@@ -312,21 +406,50 @@ export function GameSetupPage() {
               phaseLabel={t('gameSetup.header.phase')}
               status={step > 1 ? 'done' : 'active'}
             />
-            <div className='hidden h-px w-8 bg-[rgba(63,203,232,0.48)] lg:block' />
-            <StepPill
-              number={2}
-              label={t('gameSetup.header.step2Label')}
-              phaseLabel={t('gameSetup.header.phase')}
-              status={step === 2 ? 'active' : 'upcoming'}
-            />
+            {!isOnlinePhase1Flow ? (
+              <>
+                <div className='hidden h-px w-8 bg-[rgba(63,203,232,0.48)] lg:block' />
+                <StepPill
+                  number={2}
+                  label={t('gameSetup.header.step2Label')}
+                  phaseLabel={t('gameSetup.header.phase')}
+                  status={step === 2 ? 'active' : 'upcoming'}
+                />
+              </>
+            ) : null}
             <Button
-              onClick={() =>
-                step === 2 ? handleBackToConfig() : navigate('/home')
-              }
+              onClick={() => {
+                if (isOnlinePhase1Flow && roomId) {
+                  navigate('/game/waiting', {
+                    state: {
+                      roomId,
+                      matchId: match?.id ?? matchId,
+                    },
+                  });
+                  return;
+                }
+
+                if (step === 2) {
+                  handleBackToConfig();
+                  return;
+                }
+
+                navigate('/home');
+              }}
               className='h-10 px-4 sm:w-auto'
             >
               {t('gameSetup.header.back')}
             </Button>
+            {isOnlinePhase1Flow && step === 1 ? (
+              <Button
+                variant='primary'
+                disabled={!isConfigValid || !roomId || !isRoomOwner || !!room?.currentMatchId || isPhase1SavePending}
+                onClick={handleNext}
+                className='h-10 px-4 sm:w-auto sm:min-w-52'
+              >
+                {isPhase1SavePending ? 'Saving Phase 1...' : 'Save Phase 1'}
+              </Button>
+            ) : null}
             {step === 2 ? (
               <Button
                 variant='primary'
@@ -403,7 +526,7 @@ export function GameSetupPage() {
                             className={`ui-button-shell rounded-md border px-4 py-3 text-left transition-colors ${
                               active
                                 ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
-                                : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] text-(--text-muted) hover:text-(--text-main)'
+                                : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                             }`}
                           >
                             <p className='font-mono text-sm font-bold uppercase tracking-[0.18em]'>
@@ -420,7 +543,7 @@ export function GameSetupPage() {
                       })}
                     </div>
 
-                    <div className='grid gap-4 rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-4 py-4'>
+                    <div className='ui-subpanel grid gap-4 rounded-sm px-4 py-4'>
                       <div>
                         <p className='ui-data-label'>{t('gameSetup.step1.deploymentCapacity')}</p>
                         <p className='mt-2 text-3xl font-black text-(--accent-secondary)'>
@@ -435,13 +558,13 @@ export function GameSetupPage() {
                         </p>
                       </div>
                       <div className='grid grid-cols-2 gap-3'>
-                        <div className='rounded-sm border border-[rgba(31,136,176,0.3)] bg-[rgba(1,11,18,0.6)] px-3 py-3'>
+                        <div className='ui-subpanel-strong rounded-sm px-3 py-3'>
                           <p className='ui-data-label'>{t('gameSetup.step1.fleetLoad')}</p>
                           <p className='mt-1 font-mono text-lg text-(--text-main)'>
                             {totalCells}
                           </p>
                         </div>
-                        <div className='rounded-sm border border-[rgba(31,136,176,0.3)] bg-[rgba(1,11,18,0.6)] px-3 py-3'>
+                        <div className='ui-subpanel-strong rounded-sm px-3 py-3'>
                           <p className='ui-data-label'>{t('gameSetup.step1.limit')}</p>
                           <p className='mt-1 font-mono text-lg text-(--text-main)'>
                             {Math.floor(boardCells * 0.5)}
@@ -466,7 +589,7 @@ export function GameSetupPage() {
                           })}
                         </p>
                       </div>
-                      <div className='rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-4 py-2'>
+                      <div className='ui-subpanel rounded-sm px-4 py-2'>
                         <p className='ui-data-label'>{t('gameSetup.step1.fleetTypes')}</p>
                         <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
                           {ships.length}
@@ -484,7 +607,7 @@ export function GameSetupPage() {
                       {ships.map((ship) => (
                         <div
                           key={ship.id}
-                          className='rounded-sm border border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] px-4 py-2'
+                          className='ui-state-idle rounded-sm px-4 py-2'
                         >
                           <div className='grid gap-3 xl:grid-cols-[minmax(0,1fr)_96px_96px_auto] xl:items-end'>
                             <label className={labelCls}>
@@ -549,7 +672,7 @@ export function GameSetupPage() {
                     </div>
 
                     {ships.length < CONFIG_LIMITS.ship.maxShipTypes ? (
-                      <div className='rounded-sm border border-dashed border-[rgba(63,203,232,0.48)] bg-[rgba(7,32,46,0.4)] px-4 py-2'>
+                      <div className='ui-subpanel rounded-sm border-dashed border-[rgba(63,203,232,0.48)] px-4 py-2'>
                         <div className='grid gap-3 xl:grid-cols-[minmax(0,1fr)_96px_96px_auto] xl:items-end'>
                           <label className={labelCls}>
                             {t('gameSetup.step1.shipName')}
@@ -635,11 +758,19 @@ export function GameSetupPage() {
                       </div>
                       <Button
                         variant='primary'
-                        disabled={!isConfigValid}
+                        disabled={
+                          isOnlinePhase1Flow
+                            ? !isConfigValid || !roomId || !isRoomOwner || !!room?.currentMatchId || isPhase1SavePending
+                            : !isConfigValid
+                        }
                         onClick={handleNext}
                         className='h-8 px-4 sm:w-auto'
                       >
-                        {t('gameSetup.header.nextStep')}
+                        {isOnlinePhase1Flow
+                          ? isPhase1SavePending
+                            ? 'Saving Phase 1...'
+                            : 'Save Phase 1'
+                          : t('gameSetup.header.nextStep')}
                       </Button>
                     </div>
                   </div>
