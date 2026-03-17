@@ -1,4 +1,6 @@
 export const GameEvents = {
+  ChatHistory: 'chat:history',
+  ChatSendMessage: 'chat:sendMessage',
   RoomCreate: 'room:create',
   RoomConfigureSetup: 'room:configureSetup',
   RoomList: 'room:list',
@@ -11,6 +13,8 @@ export const GameEvents = {
   MatchForfeit: 'match:forfeit',
   MatchReconnect: 'match:reconnect',
   MatchRematchVote: 'match:rematchVote',
+  ServerChatHistory: 'server:chatHistory',
+  ServerChatMessage: 'server:chatMessage',
   ServerRoomUpdated: 'server:roomUpdated',
   ServerMatchUpdated: 'server:matchUpdated',
   ServerError: 'server:error',

@@ -24,6 +24,7 @@ import {
   toBattleShots,
   toCoordLabel,
 } from '@/utils/gamePlayUtils';
+import type { ChatMessage } from '@/types/chat';
 
 const EMPTY_SHIPS: ShipDefinition[] = [];
 
@@ -50,6 +51,10 @@ interface UseOnlineGamePlaySessionParams {
 interface UseOnlineGamePlaySessionResult {
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
+  chat: {
+    messages: ChatMessage[];
+    sendMessage: (content: string) => void;
+  };
   model: OnlineGamePlayScreenBaseModel | null;
   phase: GamePhase;
   result: GameResult | null;
@@ -69,8 +74,16 @@ export function useOnlineGamePlaySession({
   const currentUserId = user?.id ?? null;
   const [turnNowMs, setTurnNowMs] = useState<number | null>(null);
 
-  const { room, match, connectionState, lastError, reconnect, submitMove } =
-    useOnlineRoom(roomId, enabled);
+  const {
+    room,
+    match,
+    connectionState,
+    chatMessages,
+    lastError,
+    reconnect,
+    submitMove,
+    sendChatMessage,
+  } = useOnlineRoom(roomId, enabled);
 
   const refresh = useCallback(() => {
     if (!enabled) {
@@ -402,6 +415,10 @@ export function useOnlineGamePlaySession({
   return {
     room,
     match,
+    chat: {
+      messages: chatMessages,
+      sendMessage: (content: string) => sendChatMessage(content, roomId),
+    },
     model,
     phase,
     result,

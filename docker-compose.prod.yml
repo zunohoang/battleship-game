@@ -17,12 +17,26 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: p-btship-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   server:
     image: ${SERVER_IMAGE}
     container_name: p-btship-server
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       PORT: 3000
@@ -46,6 +60,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
       DB_LOGGING: ${DB_LOGGING:-false}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: ${REDIS_DB:-0}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-80}
+      CHAT_HISTORY_TTL_SECONDS: ${CHAT_HISTORY_TTL_SECONDS:-43200}
     ports:
       - '${PORT:-3000}:3000'
     volumes:

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, SlidersHorizontal } from 'lucide-react';
@@ -36,6 +36,7 @@ import type {
   ShipDefinition,
   Shot,
 } from '@/types/game';
+import type { ChatMessage } from '@/types/chat';
 
 const EMPTY_BOARD_CONFIG: BoardConfig = { rows: 0, cols: 0 };
 const EMPTY_GAME_CONFIG: GameConfig = {
@@ -91,6 +92,11 @@ export interface GamePlayScreenModel {
     entries: MissionLogEntry[];
     subtitle?: string;
     heightClassName?: string;
+    chatMessages?: ChatMessage[];
+    currentUserId?: string | null;
+    chatDisabled?: boolean;
+    onSendChatMessage?: (content: string) => void;
+    resolveChatAuthorLabel?: (senderId: string) => string;
   };
   actions: {
     onQuit: () => void;
@@ -144,6 +150,7 @@ function GamePlayScreen({
   const { t } = useTranslation();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [statsDisplayState, setStatsDisplayState] = useState<StatsDisplayState>('hidden');
+  const [chatDraft, setChatDraft] = useState('');
   const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(
     () => Boolean(model?.actions.encryptedChannelMaskable),
   );
@@ -200,6 +207,16 @@ function GamePlayScreen({
   const handleQuit = () => {
     stopBackgroundMusic();
     actions.onQuit();
+  };
+
+  const handleSendChat = () => {
+    const content = chatDraft.trim();
+    if (!content || !missionLog.onSendChatMessage || missionLog.chatDisabled) {
+      return;
+    }
+
+    missionLog.onSendChatMessage(content);
+    setChatDraft('');
   };
 
   return (
@@ -338,12 +355,47 @@ function GamePlayScreen({
           title={t('gameBattle.missionLog')}
           subtitle={missionLog.subtitle}
           entries={missionLog.entries}
+          chatMessages={missionLog.chatMessages}
+          currentUserId={missionLog.currentUserId}
+          isChatDisabled={missionLog.chatDisabled}
+          onSendMessage={missionLog.onSendChatMessage}
+          resolveChatAuthorLabel={missionLog.resolveChatAuthorLabel}
+          showComposer={false}
           logHeightClassName={missionLog.heightClassName ?? 'h-11 sm:h-32'}
         />
 
         {/* Bottom panel */}
         <div className='border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
-          <div className='grid grid-cols-2 gap-2 md:flex'>
+          <div className='flex flex-wrap items-center gap-2 md:flex-nowrap'>
+            {/* Chat input */}
+            {missionLog.onSendChatMessage ? (
+              <div className='flex min-w-0 items-center gap-2 md:ml-2 md:flex-1'>
+                <button
+                  type='button'
+                  onClick={handleSendChat}
+                  disabled={missionLog.chatDisabled || chatDraft.trim().length === 0}
+                  className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  {t('gameBattle.chatSend')}
+                </button>
+                <input
+                  type='text'
+                  value={chatDraft}
+                  onChange={(event) => setChatDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleSendChat();
+                    }
+                  }}
+                  placeholder={t('gameBattle.chatInputPlaceholder')}
+                  disabled={missionLog.chatDisabled}
+                  maxLength={280}
+                  className='w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
+                />
+              </div>
+            ) : null}
+
             {/* Quit btn */}
             <Button onClick={handleQuit} className='h-8 px-3 text-[10px] md:w-auto'>
               {t('gameBattle.quitMission')}
@@ -476,6 +528,7 @@ export function GamePlayPage() {
   const {
     room,
     match,
+    chat,
     model: onlineModel,
     phase: onlinePhase,
     result: onlineResult,
@@ -497,6 +550,27 @@ export function GamePlayPage() {
   const { getProfileById } = usePlayerProfiles([currentUserId, onlineOpponentId]);
   const currentPlayerProfile = getProfileById(currentUserId);
   const opponentProfile = getProfileById(onlineOpponentId);
+  const resolveOnlineChatAuthorLabel = useCallback(
+    (senderId: string) => {
+      if (senderId === currentUserId) {
+        return currentPlayerProfile?.username?.trim() || user?.username?.trim() || t('gameBattle.chatYouLabel');
+      }
+
+      if (senderId === onlineOpponentId) {
+        return opponentProfile?.username?.trim() || t('gameBattle.chatOpponentLabel');
+      }
+
+      return t('gameBattle.chatOpponentLabel');
+    },
+    [
+      currentPlayerProfile?.username,
+      currentUserId,
+      onlineOpponentId,
+      opponentProfile?.username,
+      t,
+      user?.username,
+    ],
+  );
   const onlineLeftHeaderContent = createHeaderContent({
     avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar,
     label: 'COMMANDER',
@@ -570,6 +644,14 @@ export function GamePlayPage() {
             ...onlineModel.header,
             leftContent: onlineLeftHeaderContent,
             rightContent: onlineRightHeaderContent,
+          },
+          missionLog: {
+            ...onlineModel.missionLog,
+            chatMessages: chat.messages,
+            currentUserId,
+            chatDisabled: !room || !match,
+            onSendChatMessage: chat.sendMessage,
+            resolveChatAuthorLabel: resolveOnlineChatAuthorLabel,
           },
           actions: {
             onQuit: () => navigate('/game/rooms'),

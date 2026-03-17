@@ -2,11 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageSquare, ScrollText, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { MissionLogEntry } from '@/types/game';
+import type { ChatMessage } from '@/types/chat';
 
 export interface MissionLogPanelProps {
   title: string;
   subtitle?: string;
   entries: MissionLogEntry[];
+  chatMessages?: ChatMessage[];
+  currentUserId?: string | null;
+  isChatDisabled?: boolean;
+  onSendMessage?: (content: string) => void;
+  resolveChatAuthorLabel?: (senderId: string) => string;
+  showComposer?: boolean;
   className?: string;
   logHeightClassName?: string;
   defaultTab?: MissionLogTab;
@@ -74,6 +81,12 @@ export function MissionLogPanel({
   title,
   subtitle,
   entries,
+  chatMessages = [],
+  currentUserId,
+  isChatDisabled = false,
+  onSendMessage,
+  resolveChatAuthorLabel,
+  showComposer = true,
   className = '',
   logHeightClassName = 'h-28',
   defaultTab = 'logs',
@@ -82,8 +95,10 @@ export function MissionLogPanel({
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeTab, setActiveTab] = useState<MissionLogTab>(defaultTab);
+  const [draftMessage, setDraftMessage] = useState('');
   const isChatOnly = mode === 'chat-only';
   const isLogsTab = !isChatOnly && activeTab === 'logs';
+  const isChatTab = isChatOnly || activeTab === 'chats';
   const panelTitle = isChatOnly
     ? t('gameBattle.chatTitle')
     : isLogsTab
@@ -102,7 +117,53 @@ export function MissionLogPanel({
     }
 
     container.scrollTop = container.scrollHeight;
-  }, [activeTab, entries, isChatOnly]);
+  }, [activeTab, chatMessages, entries, isChatOnly]);
+
+  const handleSubmit = () => {
+    const content = draftMessage.trim();
+    if (!content || !onSendMessage || isChatDisabled) {
+      return;
+    }
+
+    onSendMessage(content);
+    setDraftMessage('');
+  };
+
+  const renderChatContent = () => {
+    if (chatMessages.length === 0) {
+      return (
+        <p className='font-mono text-[11px] leading-6'>
+          <span className='text-(--text-subtle)'>[SYS] </span>
+          <span className='text-(--text-muted)'>
+            {t('gameBattle.chatPlaceholder')}
+          </span>
+        </p>
+      );
+    }
+
+    return chatMessages.map((message) => {
+      const isOwnMessage = currentUserId && message.senderId === currentUserId;
+      const authorLabel = resolveChatAuthorLabel
+        ? resolveChatAuthorLabel(message.senderId)
+        : isOwnMessage
+          ? t('gameBattle.chatYouLabel')
+          : t('gameBattle.chatOpponentLabel');
+      const timeLabel = new Date(message.sentAt).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      return (
+        <p key={message.id} className='font-mono text-[11px] leading-6'>
+          <span className='text-(--text-subtle)'>[{timeLabel}] </span>
+          <span className={isOwnMessage ? 'text-(--accent-secondary)' : 'text-(--text-subtle)'}>
+            [{authorLabel}] 
+          </span>
+          <span className='text-(--text-main)'>{message.content}</span>
+        </p>
+      );
+    });
+  };
 
   return (
     <div className={`${className} flex items-stretch gap-3`}>
@@ -149,14 +210,42 @@ export function MissionLogPanel({
               ))}
             </>
           ) : (
-            <p className='font-mono text-[11px] leading-6'>
-              <span className='text-(--text-subtle)'>[SYS] </span>
-              <span className='text-(--text-muted)'>
-                {t('gameBattle.chatPlaceholder')}
-              </span>
-            </p>
+            renderChatContent()
           )}
         </div>
+        {showComposer && isChatTab && onSendMessage ? (
+          <div className='mt-3 border-t border-(--border-main) pt-3'>
+            <div className='flex items-center gap-2'>
+              <div className='w-[35%] min-w-0'>
+                <input
+                  type='text'
+                  value={draftMessage}
+                  onChange={(event) => setDraftMessage(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder={t('gameBattle.chatInputPlaceholder')}
+                  disabled={isChatDisabled}
+                  maxLength={280}
+                  className='min-w-0 w-full rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
+                />
+              </div>
+              <div className='flex w-[65%] justify-end'>
+                <button
+                  type='button'
+                  onClick={handleSubmit}
+                  disabled={isChatDisabled || draftMessage.trim().length === 0}
+                  className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  {t('gameBattle.chatSend')}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

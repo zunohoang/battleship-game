@@ -11,6 +11,7 @@ import type {
   RoomReadyPayload,
   RoomSnapshot,
 } from '@/types/game';
+import type { ChatHistoryPayload, ChatMessage, SendChatMessagePayload } from '@/types/chat';
 
 type ServerRoomUpdatedPayload = {
   room: RoomSnapshot;
@@ -27,6 +28,17 @@ type SocketErrorPayload = {
   message: string;
 };
 
+// Chat-related payloads
+type ServerChatHistoryPayload = {
+  roomId: string;
+  messages: ChatMessage[];
+};
+
+type ServerChatMessagePayload = {
+  roomId: string;
+  message: ChatMessage;
+};
+//
 interface SocketAck<T> {
   (response: T): void;
 }
@@ -96,6 +108,22 @@ class GameSocketService {
     };
   }
 
+  onChatHistory(handler: (payload: ServerChatHistoryPayload) => void): () => void {
+    if (!this.socket) return () => undefined;
+    this.socket.on('server:chatHistory', handler);
+    return () => {
+      this.socket?.off('server:chatHistory', handler);
+    };
+  }
+
+  onChatMessage(handler: (payload: ServerChatMessagePayload) => void): () => void {
+    if (!this.socket) return () => undefined;
+    this.socket.on('server:chatMessage', handler);
+    return () => {
+      this.socket?.off('server:chatMessage', handler);
+    };
+  }
+
   createRoom(
     payload: CreateRoomPayload,
     ack?: SocketAck<ServerRoomUpdatedPayload>,
@@ -147,6 +175,38 @@ class GameSocketService {
 
   rematchVote(accept: boolean, ack?: SocketAck<ServerMatchUpdatedPayload>): void {
     this.socket?.emit('match:rematchVote', { accept }, ack);
+  }
+
+  requestChatHistory(
+    payload?: ChatHistoryPayload,
+    ack?: SocketAck<ServerChatHistoryPayload>,
+  ): void {
+    if (!this.socket) {
+      return;
+    }
+
+    if (ack) {
+      this.socket.emit('chat:history', payload, ack);
+      return;
+    }
+
+    this.socket.emit('chat:history', payload);
+  }
+
+  sendMessage(
+    payload: SendChatMessagePayload,
+    ack?: SocketAck<ServerChatMessagePayload>,
+  ): void {
+    if (!this.socket) {
+      return;
+    }
+
+    if (ack) {
+      this.socket.emit('chat:sendMessage', payload, ack);
+      return;
+    }
+
+    this.socket.emit('chat:sendMessage', payload);
   }
 }
 
