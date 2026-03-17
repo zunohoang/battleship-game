@@ -25,15 +25,6 @@ export class RepairMatchTimerSchema1773446400005 implements MigrationInterface {
     `);
 
     await runner.query(`
-      UPDATE "game_matches"
-      SET "turnTimerSeconds" = COALESCE(
-        "turnTimerSeconds",
-        "setupTimerSeconds",
-        30
-      )
-    `);
-
-    await runner.query(`
       ALTER TABLE "game_matches"
       ALTER COLUMN "turnTimerSeconds" SET DEFAULT 30,
       ALTER COLUMN "turnTimerSeconds" SET NOT NULL
