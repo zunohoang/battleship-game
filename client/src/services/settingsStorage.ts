@@ -1,9 +1,11 @@
 import {
   DEFAULT_APP_SETTINGS,
-  type AppLanguage,
-  type AppSettings,
-  type AppTheme,
-} from '@/store/settingsContext'
+} from '@/constants/settingsDefaults'
+import type {
+  AppLanguage,
+  AppSettings,
+  AppTheme,
+} from '@/types/settings'
 
 const SETTINGS_STORAGE_KEY = 'app.settings'
 

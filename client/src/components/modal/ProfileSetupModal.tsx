@@ -1,8 +1,7 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import defaultAvatarSrc from '@/assets/images/default-avatar.svg'
 import { validateProfileInput } from '@/utils/authValidation'
 
 export type ProfileSetupPayload = {
@@ -33,8 +32,9 @@ export function ProfileSetupModal({
 }: ProfileSetupModalProps) {
   const { t } = useTranslation('common')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const signatureTextareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const [avatarSrc, setAvatarSrc] = useState(initialAvatar ?? defaultAvatarSrc)
+  const [avatarSrc, setAvatarSrc] = useState(initialAvatar?.trim() || null)
   const [username, setUsername] = useState(initialUsername)
   const [signature, setSignature] = useState(initialSignature ?? '')
   const [password, setPassword] = useState('')
@@ -62,6 +62,30 @@ export function ProfileSetupModal({
     reader.readAsDataURL(file)
   }
 
+  const syncSignatureHeight = (textarea?: HTMLTextAreaElement | null) => {
+    const target = textarea ?? signatureTextareaRef.current
+    if (!target) {
+      return
+    }
+
+    target.style.height = '0px'
+    target.style.height = `${target.scrollHeight}px`
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncSignatureHeight()
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [isOpen, signature])
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const validation = validateProfileInput(username, signature, password)
@@ -88,7 +112,8 @@ export function ProfileSetupModal({
     'ui-input h-11 rounded-sm px-3'
 
   // Only affects rendering; it does not overwrite user data in global state.
-  const renderAvatarSrc = avatarSrc || defaultAvatarSrc
+  const renderAvatarSrc = avatarSrc?.trim() || null
+  const avatarInitial = username.trim().slice(0, 1).toUpperCase() || 'A'
 
   return (
     <>
@@ -103,7 +128,17 @@ export function ProfileSetupModal({
               aria-label={t('welcome.modals.previewAvatar')}
               className='h-20 w-20 cursor-pointer overflow-hidden rounded-full border-2 border-(--border-strong) bg-(--accent-soft) transition-colors hover:border-(--accent-secondary)'
             >
-              <img src={renderAvatarSrc} alt={t('welcome.modals.avatar')} className='w-full h-full object-cover' />
+              {renderAvatarSrc ? (
+                <img
+                  src={renderAvatarSrc}
+                  alt={t('welcome.modals.avatar')}
+                  className='h-full w-full object-cover'
+                />
+              ) : (
+                <span className='flex h-full w-full items-center justify-center font-mono text-3xl font-black text-(--accent-secondary)'>
+                  {avatarInitial}
+                </span>
+              )}
             </button>
             <button
               type='button'
@@ -147,15 +182,17 @@ export function ProfileSetupModal({
               <span className='font-normal text-(--text-subtle)'>{signature.length}/200</span>
             </div>
             <textarea
+              ref={signatureTextareaRef}
               maxLength={200}
               rows={3}
               value={signature}
               onChange={(e) => {
                 setErrorMessage(null)
                 setSignature(e.target.value)
+                syncSignatureHeight(e.target)
               }}
               placeholder={t('welcome.modals.placeholder.signature')}
-              className='ui-input resize-none rounded-sm px-3 py-2 text-sm'
+              className='ui-input resize-none overflow-hidden rounded-sm px-3 py-2 text-sm'
             />
           </label>
 
@@ -211,12 +248,21 @@ export function ProfileSetupModal({
           aria-modal='true'
           aria-label={t('welcome.modals.avatarPreview')}
         >
-          <img
-            src={renderAvatarSrc}
-            alt={t('welcome.modals.avatarPreview')}
-            className='max-h-[90vh] max-w-[90vw] rounded-md border border-(--border-strong) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
-            onClick={(e) => e.stopPropagation()}
-          />
+          {renderAvatarSrc ? (
+            <img
+              src={renderAvatarSrc}
+              alt={t('welcome.modals.avatarPreview')}
+              className='max-h-[90vh] max-w-[90vw] rounded-md border border-(--border-strong) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div
+              className='flex h-48 w-48 items-center justify-center rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-7xl font-black text-(--accent-secondary) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
+              onClick={(e) => e.stopPropagation()}
+            >
+              {avatarInitial}
+            </div>
+          )}
         </div>
       )}
     </>

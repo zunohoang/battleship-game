@@ -1,18 +1,20 @@
 import { io, Socket } from 'socket.io-client';
 import { getAccessToken } from './authToken';
 import type {
+  ConfigureRoomSetupPayload,
   CreateRoomPayload,
   JoinRoomPayload,
   MatchMovePayload,
   MatchSnapshot,
+  RoomListSummary,
   RoomActionPayload,
   RoomReadyPayload,
   RoomSnapshot,
-} from '@/types/online';
+} from '@/types/game';
 
 type ServerRoomUpdatedPayload = {
   room: RoomSnapshot;
-  match: MatchSnapshot;
+  match: MatchSnapshot | null;
 };
 
 type ServerMatchUpdatedPayload = {
@@ -101,7 +103,14 @@ class GameSocketService {
     this.socket?.emit('room:create', payload, ack);
   }
 
-  listRooms(ack?: SocketAck<{ rooms: RoomSnapshot[] }>): void {
+  configureRoomSetup(
+    payload: ConfigureRoomSetupPayload,
+    ack?: SocketAck<ServerRoomUpdatedPayload>,
+  ): void {
+    this.socket?.emit('room:configureSetup', payload, ack);
+  }
+
+  listRooms(ack?: SocketAck<{ rooms: RoomListSummary[] }>): void {
     this.socket?.emit('room:list', ack);
   }
 
@@ -142,3 +151,4 @@ class GameSocketService {
 }
 
 export const gameSocketService = new GameSocketService();
+

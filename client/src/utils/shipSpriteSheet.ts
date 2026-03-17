@@ -122,9 +122,9 @@ function extractConnectedComponents(
         for (const [nextX, nextY] of neighbors) {
           if (
             nextX < 0 ||
-                        nextX >= width ||
-                        nextY < 0 ||
-                        nextY >= height
+              nextX >= width ||
+              nextY < 0 ||
+              nextY >= height
           ) {
             continue;
           }

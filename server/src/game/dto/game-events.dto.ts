@@ -66,6 +66,11 @@ export class CreateRoomDto {
   @IsOptional()
   @IsIn(['public', 'private'])
   visibility?: 'public' | 'private';
+}
+
+export class ConfigureRoomSetupDto {
+  @IsUUID()
+  roomId: string;
 
   @ValidateNested()
   @Type(() => BoardConfigDto)
@@ -75,9 +80,17 @@ export class CreateRoomDto {
   @ValidateNested({ each: true })
   @Type(() => ShipDefinitionDto)
   ships: ShipDefinitionDto[];
+
+  @IsInt()
+  @IsIn([30, 45, 60, 75, 90, 100])
+  turnTimerSeconds: number;
 }
 
 export class JoinRoomDto {
+  @IsOptional()
+  @IsUUID()
+  roomId?: string;
+
   @IsOptional()
   @IsString()
   roomCode?: string;

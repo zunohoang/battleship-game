@@ -1,6 +1,6 @@
-import type { BoardConfig } from "@/types/game";
+import type { BoardConfig } from '@/types/game';
 
-export type BotShotResult = "hit" | "miss";
+export type BotShotResult = 'hit' | 'miss';
 
 export interface BotTarget {
     x: number;

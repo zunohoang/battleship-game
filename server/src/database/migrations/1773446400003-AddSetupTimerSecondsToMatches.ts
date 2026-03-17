@@ -8,24 +8,24 @@ function getSqlRunner(queryRunner: QueryRunner): SqlRunner {
   return queryRunner as unknown as SqlRunner;
 }
 
-export class AddSetupDeadlineToMatches1773446400002 implements MigrationInterface {
-  name = 'AddSetupDeadlineToMatches1773446400002';
+export class AddTurnTimerSecondsToMatches1773446400003 implements MigrationInterface {
+  name = 'AddTurnTimerSecondsToMatches1773446400003';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     const runner = getSqlRunner(queryRunner);
+
     await runner.query(`
       ALTER TABLE "game_matches"
-      ADD COLUMN IF NOT EXISTS "setupDeadlineAt" TIMESTAMP WITH TIME ZONE,
-      ADD COLUMN IF NOT EXISTS "turnDeadlineAt" TIMESTAMP WITH TIME ZONE
+      ADD COLUMN IF NOT EXISTS "turnTimerSeconds" integer NOT NULL DEFAULT 30
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const runner = getSqlRunner(queryRunner);
+
     await runner.query(`
       ALTER TABLE "game_matches"
-      DROP COLUMN IF EXISTS "turnDeadlineAt",
-      DROP COLUMN IF EXISTS "setupDeadlineAt"
+      DROP COLUMN IF EXISTS "turnTimerSeconds"
     `);
   }
 }

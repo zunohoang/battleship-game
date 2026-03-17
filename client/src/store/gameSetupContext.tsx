@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -27,6 +28,7 @@ interface GameSetupContextValue {
 
   // Board config
   setBoardConfig: (boardConfig: BoardConfig) => void
+  setTurnTimerSeconds: (turnTimerSeconds: number) => void
 
   // Ship definitions (the fleet template)
   setShipDefinitions: (ships: ShipDefinition[]) => void
@@ -93,6 +95,13 @@ export function GameSetupProvider({
       ...s,
       config: { ...s.config, boardConfig: clamped },
       placements: [],  // reset placements when board changes
+    }))
+  }, [])
+
+  const setTurnTimerSeconds = useCallback((turnTimerSeconds: number) => {
+    setState((s) => ({
+      ...s,
+      config: { ...s.config, turnTimerSeconds },
     }))
   }, [])
 
@@ -197,6 +206,7 @@ export function GameSetupProvider({
         state,
         setMode,
         setBoardConfig,
+        setTurnTimerSeconds,
         setShipDefinitions,
         addShipDefinition,
         updateShipDefinition,

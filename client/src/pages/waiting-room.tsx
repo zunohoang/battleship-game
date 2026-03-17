@@ -1,11 +1,23 @@
-import { useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { MissionLogPanel } from '@/components/game-play/MissionLogPanel';
+import {
+  GamePlayIdentityCard,
+  GamePlayShell,
+} from '@/components/game-play/GamePlayShell';
+import { ProfileSetupModal, type ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
+import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import { Button } from '@/components/ui/Button';
-import { SectionStatus } from '@/components/ui/SectionStatus';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
+import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
+import * as authService from '@/services/authService';
+import {
+  getApiErrorCode,
+  isGloballyHandledApiError,
+} from '@/services/httpError';
+import type { OnlineSetupFlow } from '@/types/game';
 
 type WaitingLocationState = {
   roomId?: string;
@@ -18,17 +30,16 @@ function shortId(value: string | null | undefined): string {
 }
 
 export function WaitingRoomPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation('common');
-  const { isLoggedIn, user } = useGlobalContext();
+  const { isLoggedIn, user, setUser, logout } = useGlobalContext();
   const state = (location.state as WaitingLocationState | null) ?? {};
   const roomId = state.roomId;
   const matchId = state.matchId;
   const {
     room,
     match,
-    connectionState,
     lastError,
     startRoom,
     reconnect,
@@ -37,13 +48,24 @@ export function WaitingRoomPage() {
 
   const currentUserId = user?.id ?? null;
   const isOwner = !!currentUserId && currentUserId === room?.ownerId;
-  const canStartSetup = !!isOwner && !!room?.guestId && room.status === 'waiting';
-
-  const secondsLeft = useMemo(() => {
-    if (!match?.setupDeadlineAt) return null;
-    const diffMs = new Date(match.setupDeadlineAt).getTime() - Date.now();
-    return Math.max(0, Math.ceil(diffMs / 1000));
-  }, [match?.setupDeadlineAt, room?.updatedAt]);
+  const opponentUserId = room
+    ? currentUserId === room.ownerId
+      ? room.guestId
+      : currentUserId === room.guestId
+        ? room.ownerId
+        : room.guestId ?? room.ownerId
+    : null;
+  const hasPhase1Configured = !!room?.currentMatchId;
+  const canConfigurePhase1 =
+    !!isOwner && room?.status === 'waiting' && !room.currentMatchId;
+  const canStartSetup =
+    !!isOwner &&
+    !!room?.guestId &&
+    room.status === 'waiting' &&
+    hasPhase1Configured &&
+    !!match;
+  const [isProfileSetupOpen, setProfileSetupOpen] = useState(false);
+  const [isOpponentProfileOpen, setOpponentProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -72,117 +94,405 @@ export function WaitingRoomPage() {
     }
 
     if (room.status === 'setup') {
+      const onlineSetupFlow: OnlineSetupFlow = 'placement';
       navigate('/game/setup', {
         state: {
           mode: 'online',
           roomId: room.roomId,
           matchId: match.id,
+          onlineSetupFlow,
         },
       });
     }
   }, [match, navigate, room]);
 
-  const statusLabel = useMemo(() => {
-    if (connectionState === 'connected') return 'SYNCED';
-    if (connectionState === 'connecting') return 'SYNCING';
-    if (connectionState === 'error') return 'ERROR';
-    return 'IDLE';
-  }, [connectionState]);
+  useEffect(() => {
+    if (opponentUserId) {
+      return;
+    }
+
+    setOpponentProfileOpen(false);
+  }, [opponentUserId]);
+
+  const phase1Summary = useMemo(() => {
+    if (!match) {
+      return null;
+    }
+
+    const totalCells = match.ships.reduce((sum, ship) => sum + ship.size * ship.count, 0);
+    const boardCells = match.boardConfig.rows * match.boardConfig.cols;
+    const fleetCellLimit = Math.floor(boardCells * 0.5);
+    const totalShipInstances = match.ships.reduce((sum, ship) => sum + ship.count, 0);
+
+    return {
+      rows: match.boardConfig.rows,
+      cols: match.boardConfig.cols,
+      boardCells,
+      fleetCellLimit,
+      shipTypes: match.ships.length,
+      totalShipInstances,
+      totalCells,
+      ships: match.ships,
+      turnTimerSeconds: match.turnTimerSeconds,
+    };
+  }, [match]);
+
+  const waitingRoomFeed = useMemo(
+    () => [],
+    [],
+  );
+  const { getProfileById, refreshProfiles } = usePlayerProfiles([currentUserId, opponentUserId]);
+  const currentPlayerProfile = getProfileById(currentUserId);
+  const opponentProfile = getProfileById(opponentUserId);
+  const currentIdentity = useMemo(
+    () => ({
+      avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar ?? null,
+      label: 'COMMANDER',
+      name:
+        currentPlayerProfile?.username?.trim() ||
+        user?.username?.trim() ||
+        'Commander',
+      signature:
+        currentPlayerProfile?.signature?.trim() ||
+        user?.signature?.trim() ||
+        '- - -',
+      align: 'left' as const,
+    }),
+    [
+      currentPlayerProfile?.avatar,
+      currentPlayerProfile?.signature,
+      currentPlayerProfile?.username,
+      user?.avatar,
+      user?.signature,
+      user?.username,
+    ],
+  );
+  const opponentIdentity = useMemo(
+    () => ({
+      avatarSrc: opponentProfile?.avatar ?? null,
+      label: opponentUserId ? 'OPPONENT' : 'AWAITING',
+      name:
+        opponentProfile?.username?.trim() ||
+        (opponentUserId ? shortId(opponentUserId) : 'Awaiting Player'),
+      signature: opponentProfile?.signature?.trim() || '- - -',
+      align: 'right' as const,
+    }),
+    [
+      opponentProfile?.avatar,
+      opponentProfile?.signature,
+      opponentProfile?.username,
+      opponentUserId,
+    ],
+  );
+  const profileSetupModalKey = [
+    'waiting-room-profile-setup',
+    isProfileSetupOpen ? 'open' : 'closed',
+    user?.username ?? '',
+    user?.signature ?? '',
+    user?.avatar ?? '',
+  ].join(':');
+  const opponentShowcaseProfile = useMemo(
+    () =>
+      opponentUserId
+        ? {
+          id: opponentUserId,
+          username:
+            opponentProfile?.username?.trim() || shortId(opponentUserId),
+          avatar: opponentProfile?.avatar ?? null,
+          signature: opponentProfile?.signature?.trim() || '- - -',
+          label: opponentIdentity.label,
+        }
+        : null,
+    [
+      opponentIdentity.label,
+      opponentProfile?.avatar,
+      opponentProfile?.signature,
+      opponentProfile?.username,
+      opponentUserId,
+    ],
+  );
+
+  const handleSubmitProfileSetup = async (
+    payload: ProfileSetupPayload,
+  ): Promise<string | null> => {
+    try {
+      const response = await authService.updateProfile({
+        username: payload.username,
+        signature: payload.signature,
+        password: payload.password,
+        avatarFile: payload.avatarFile,
+      });
+
+      setUser({
+        id: response.user.id,
+        username: response.user.username,
+        avatar: response.user.avatar,
+        signature: response.user.signature,
+        isAnonymous: false,
+      });
+      setProfileSetupOpen(false);
+
+      return null;
+    } catch (error) {
+      if (isGloballyHandledApiError(error)) {
+        return null;
+      }
+
+      return t(`errors.${getApiErrorCode(error)}`);
+    }
+  };
+
+  const handleProfileLogout = async (): Promise<void> => {
+    leaveRoom();
+
+    try {
+      await authService.logout();
+    } finally {
+      logout();
+      setProfileSetupOpen(false);
+      navigate('/home');
+    }
+  };
+
+  const handleRefreshState = async () => {
+    reconnect({ roomId, matchId });
+
+    const refreshedProfiles = await refreshProfiles();
+    const refreshedCurrentProfile =
+      currentUserId ? refreshedProfiles[currentUserId] ?? null : null;
+
+    if (refreshedCurrentProfile && user) {
+      setUser({
+        ...user,
+        username: refreshedCurrentProfile.username,
+        avatar: refreshedCurrentProfile.avatar,
+        signature: refreshedCurrentProfile.signature,
+      });
+    }
+  };
 
   return (
-    <motion.main
-      className='relative min-h-screen overflow-hidden px-4 py-5 text-(--text-main) sm:px-8'
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.35 }}
-    >
-      <div className='ui-page-bg -z-20' />
-      <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
-
-      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-5xl flex-col rounded-md p-4 sm:p-6'>
-        <SectionStatus
-          leftText={t('home.status.system')}
-          rightText={`WAITING ${statusLabel}`}
-        />
-
-        <div className='mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]'>
-          <section className='ui-panel rounded-md p-5'>
-            <h1 className='font-mono text-2xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
-              Waiting Room
-            </h1>
-            <p className='mt-2 text-sm text-(--text-muted)'>
-              Share room code and wait for both captains to be ready.
-            </p>
-
-            <div className='mt-5 grid gap-3 sm:grid-cols-2'>
-              <div className='rounded-sm border border-(--border-main) bg-black/10 px-4 py-3'>
-                <p className='ui-data-label'>Room code</p>
-                <p className='mt-1 font-mono text-2xl font-black tracking-[0.18em] text-(--accent-secondary)'>
-                  {room?.roomCode ?? '------'}
-                </p>
-              </div>
-              <div className='rounded-sm border border-(--border-main) bg-black/10 px-4 py-3'>
-                <p className='ui-data-label'>Room status</p>
-                <p className='mt-1 font-mono text-xs uppercase tracking-[0.16em] text-(--text-main)'>
-                  {room?.status ?? 'loading'}
-                </p>
-              </div>
-            </div>
-
-            <div className='mt-4 rounded-sm border border-(--border-main) bg-black/10 px-4 py-3'>
-              <p className='ui-data-label'>Match</p>
-              <div className='mt-2 grid gap-1 text-sm'>
-                <p>Match ID: <span className='font-mono text-(--accent-secondary)'>{shortId(match?.id ?? matchId)}</span></p>
-                <p>Player 1: <span className='font-mono'>{shortId(match?.player1Id)}</span></p>
-                <p>Player 2: <span className='font-mono'>{shortId(match?.player2Id)}</span></p>
-                <p>Setup timer: <span className='font-mono'>{secondsLeft === null ? 'not started' : `${secondsLeft}s`}</span></p>
-                <p>Version: <span className='font-mono'>{match?.version ?? 0}</span></p>
-              </div>
-            </div>
-
-            {lastError ? (
-              <p className='mt-4 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
-                {lastError}
+    <>
+      <GamePlayShell sectionClassName='ui-hud-shell mx-auto flex min-h-full w-full max-w-5xl flex-col rounded-md p-2 sm:p-4'>
+        <div className='flex min-h-0 flex-1 flex-col gap-3'>
+          <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)] lg:items-center'>
+            <GamePlayIdentityCard
+              content={currentIdentity}
+              onClick={() => setProfileSetupOpen(true)}
+              buttonAriaLabel='Edit your profile'
+            />
+            <div className='ui-subpanel rounded-md px-4 py-2 text-center'>
+              <p className='ui-title-eyebrow'>Status</p>
+              <p className='font-mono text-lg font-black uppercase tracking-[0.16em] text-(--accent-secondary)'>
+                {room?.status ?? 'waiting'}
               </p>
-            ) : null}
-          </section>
-
-          <aside className='ui-panel rounded-md p-4'>
-            <div className='space-y-3'>
-              <Button
-                variant='primary'
-                className='h-11'
-                disabled={!canStartSetup}
-                onClick={() => {
-                  if (!room?.roomId) return;
-                  startRoom({ roomId: room.roomId });
-                }}
-              >
-                {canStartSetup ? 'Start Setup (Owner)' : 'Waiting For Owner Start'}
-              </Button>
-              <Button
-                className='h-11'
-                onClick={() => reconnect({ roomId, matchId })}
-              >
-                Refresh State
-              </Button>
-              <Button
-                variant='danger'
-                className='h-11'
-                onClick={() => {
-                  leaveRoom();
-                  navigate('/game/rooms');
-                }}
-              >
-                Leave Room
-              </Button>
-              <Button className='h-11' onClick={() => navigate('/home')}>
-                Back Home
-              </Button>
+              <p className='mt-2 font-mono text-xs uppercase tracking-[0.18em] text-(--text-subtle)'>
+                Room {room?.roomCode ?? '------'}
+              </p>
             </div>
-          </aside>
+            <GamePlayIdentityCard
+              content={opponentIdentity}
+              onClick={
+                opponentShowcaseProfile
+                  ? () => setOpponentProfileOpen(true)
+                  : undefined
+              }
+              buttonAriaLabel='View opponent profile'
+            />
+          </div>
+
+          <div className='ui-subpanel mt-2 rounded-sm px-4 py-4'>
+            {phase1Summary ? (
+              <div className='grid gap-4'>
+                <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
+                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
+                    <p className='ui-data-label'>Board Size</p>
+                    <p className='mt-2 font-mono text-lg font-black text-(--accent-secondary)'>
+                      {phase1Summary.rows}x{phase1Summary.cols}={phase1Summary.boardCells}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
+                    <p className='ui-data-label'>{t('gameSetup.step1.turnTimer')}</p>
+                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                      {t('gameSetup.step1.turnTimerValue', {
+                        seconds: phase1Summary.turnTimerSeconds,
+                      })}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
+                    <p className='ui-data-label'>{t('gameSetup.step1.fleetTitle')}</p>
+                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                      {phase1Summary.shipTypes}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
+                    <p className='ui-data-label'>Ships Deployed</p>
+                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                      {phase1Summary.totalShipInstances}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
+                    <p className='ui-data-label'>Board Load</p>
+                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                      {phase1Summary.totalCells}/{phase1Summary.fleetCellLimit}
+                    </p>
+                  </div>
+                </div>
+
+                <div className='overflow-x-auto pb-1'>
+                  <div className='min-w-[720px] grid gap-2'>
+                    <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] gap-3 px-4 py-1'>
+                      <p className='ui-data-label'>{t('gameSetup.step1.shipName')}</p>
+                      <p className='ui-data-label'>{t('gameSetup.step1.size')}</p>
+                      <p className='ui-data-label'>{t('gameSetup.step1.count')}</p>
+                      <p className='ui-data-label'>Load</p>
+                      <p className='ui-data-label'>Tổng</p>
+                    </div>
+
+                    <div className='themed-scrollbar max-h-[18rem] overflow-y-auto pr-1'>
+                      <div className='grid gap-2'>
+                        {phase1Summary.ships.map((ship) => (
+                          <div
+                            key={ship.id}
+                            className='ui-state-idle rounded-sm px-4 py-3'
+                          >
+                            <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] items-center gap-3'>
+                              <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
+                                {ship.name}
+                              </p>
+                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                                {ship.size}
+                              </p>
+                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                                {ship.count}
+                              </p>
+                              <p className='font-mono text-sm font-bold text-(--accent-secondary)'>
+                                {ship.size} x {ship.count}
+                              </p>
+                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                                {ship.size * ship.count}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className='mt-2 text-sm text-(--text-muted)'>
+                The host still needs to configure phase 1 before this room can accept an opponent.
+              </p>
+            )}
+          </div>
+
+          {lastError ? (
+            <p className='mt-2 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
+              {lastError}
+            </p>
+          ) : null}
+
+          <div className='ui-panel overflow-hidden rounded-md'>
+            <MissionLogPanel
+              className='px-3 pt-3 pb-2 sm:px-4'
+              title='WAITING ROOM FEED'
+              entries={waitingRoomFeed}
+              mode='chat-only'
+              logHeightClassName='h-11 sm:h-32'
+            />
+            <div className='border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
+              <div className='grid gap-2 md:flex md:flex-wrap'>
+                <Button
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                  onClick={() => navigate('/home')}
+                >
+                  Back Home
+                </Button>
+                <Button
+                  variant='danger'
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                  onClick={() => {
+                    leaveRoom();
+                    navigate('/game/rooms');
+                  }}
+                >
+                  Leave Room
+                </Button>
+                <Button
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                  onClick={() => {
+                    void handleRefreshState();
+                  }}
+                >
+                  Refresh State
+                </Button>
+                {isOwner ? (
+                  <Button
+                    variant='primary'
+                    className='h-8 px-3 text-[10px] md:w-auto'
+                    disabled={!canConfigurePhase1}
+                    onClick={() => {
+                      const onlineSetupFlow: OnlineSetupFlow = 'phase1';
+                      navigate('/game/setup', {
+                        state: {
+                          mode: 'online',
+                          roomId: room?.roomId ?? roomId,
+                          matchId: match?.id ?? matchId,
+                          onlineSetupFlow,
+                        },
+                      });
+                    }}
+                  >
+                    {canConfigurePhase1 ? 'Setup Phase 1' : 'Phase 1 Locked'}
+                  </Button>
+                ) : null}
+                <Button
+                  variant='primary'
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                  disabled={!canStartSetup}
+                  onClick={() => {
+                    if (!room?.roomId) return;
+                    startRoom({ roomId: room.roomId });
+                  }}
+                >
+                  {canStartSetup
+                    ? 'Start Setup'
+                    : !isOwner
+                      ? 'Waiting For Owner'
+                      : !hasPhase1Configured
+                        ? 'Finish Phase 1 First'
+                        : !room?.guestId
+                          ? 'Waiting For Opponent'
+                          : 'Setup Locked'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
-    </motion.main>
+      </GamePlayShell>
+
+      <ProfileSetupModal
+        key={profileSetupModalKey}
+        isOpen={isProfileSetupOpen}
+        onClose={() => setProfileSetupOpen(false)}
+        onSubmit={handleSubmitProfileSetup}
+        onLogout={handleProfileLogout}
+        username={user?.username ?? ''}
+        signature={user?.signature}
+        avatar={user?.avatar}
+      />
+
+      <ProfileShowcaseModal
+        isOpen={isOpponentProfileOpen}
+        onClose={() => setOpponentProfileOpen(false)}
+        title='Opponent Profile'
+        profile={opponentShowcaseProfile}
+      />
+    </>
   );
 }

@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
   Patch,
   Req,
   UploadedFile,
@@ -19,10 +21,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AuthResponse } from '../auth/dto/auth-response.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
+import type { ProfileSummaryDto } from './dto/profile-summary.dto';
 
 @Controller('users')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+  @Get(':id/profile')
+  @UseGuards(JwtAuthGuard)
+  async getProfile(@Param('id') id: string): Promise<ProfileSummaryDto> {
+    return this.profileService.getProfileById(id);
+  }
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)

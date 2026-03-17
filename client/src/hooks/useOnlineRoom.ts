@@ -1,28 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { gameSocketService } from '@/services/gameSocketService';
 import type {
+  ConfigureRoomSetupPayload,
   CreateRoomPayload,
   JoinRoomPayload,
   MatchMovePayload,
   MatchSnapshot,
   RoomActionPayload,
   RoomReadyPayload,
+  RoomListSummary,
   RoomSnapshot,
-} from '@/types/online';
+} from '@/types/game';
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
 
 interface UseOnlineRoomState {
-  connectionState: ConnectionState;
+  socketConnected: boolean;
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
-  rooms: RoomSnapshot[];
+  rooms: RoomListSummary[];
   lastError: string | null;
 }
 
 export function useOnlineRoom(initialRoomId?: string, enabled = true) {
   const [state, setState] = useState<UseOnlineRoomState>({
-    connectionState: 'idle',
+    socketConnected: false,
     room: null,
     match: null,
     rooms: [],
@@ -31,22 +33,40 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
 
   useEffect(() => {
     if (!enabled) {
-      setState((current) => ({
-        ...current,
-        connectionState: 'idle',
-      }));
-      return;
+      const resetConnectionTimeoutId = window.setTimeout(() => {
+        setState((current) => ({
+          ...current,
+          socketConnected: false,
+        }));
+      }, 0);
+
+      return () => {
+        window.clearTimeout(resetConnectionTimeoutId);
+      };
     }
 
-    setState((current) => ({ ...current, connectionState: 'connecting' }));
     const socket = gameSocketService.connect(initialRoomId);
+    const syncConnectionTimeoutId = window.setTimeout(() => {
+      setState((current) => ({
+        ...current,
+        socketConnected: socket.connected,
+        lastError: null,
+      }));
+    }, 0);
 
     const onConnect = () => {
-      setState((current) => ({ ...current, connectionState: 'connected', lastError: null }));
+      setState((current) => ({
+        ...current,
+        socketConnected: true,
+        lastError: null,
+      }));
     };
 
     const onDisconnect = () => {
-      setState((current) => ({ ...current, connectionState: 'idle' }));
+      setState((current) => ({
+        ...current,
+        socketConnected: false,
+      }));
     };
 
     const offRoom = gameSocketService.onRoomUpdated((payload) => {
@@ -68,7 +88,6 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     const offError = gameSocketService.onServerError((payload) => {
       setState((current) => ({
         ...current,
-        connectionState: 'error',
         lastError: payload.message || payload.error,
       }));
     });
@@ -77,6 +96,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     socket.on('disconnect', onDisconnect);
 
     return () => {
+      window.clearTimeout(syncConnectionTimeoutId);
       offRoom();
       offMatch();
       offError();
@@ -86,6 +106,22 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     };
   }, [enabled, initialRoomId]);
 
+  const connectionState: ConnectionState = useMemo(() => {
+    if (!enabled) {
+      return 'idle';
+    }
+
+    if (state.lastError) {
+      return 'error';
+    }
+
+    if (state.socketConnected) {
+      return 'connected';
+    }
+
+    return 'connecting';
+  }, [enabled, state.lastError, state.socketConnected]);
+
   const listRooms = useCallback(() => {
     gameSocketService.listRooms((response) => {
       setState((current) => ({ ...current, rooms: response.rooms }));
@@ -94,6 +130,17 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
 
   const createRoom = useCallback((payload: CreateRoomPayload) => {
     gameSocketService.createRoom(payload, (response) => {
+      setState((current) => ({
+        ...current,
+        room: response.room,
+        match: response.match,
+        lastError: null,
+      }));
+    });
+  }, []);
+
+  const configureRoomSetup = useCallback((payload: ConfigureRoomSetupPayload) => {
+    gameSocketService.configureRoomSetup(payload, (response) => {
       setState((current) => ({
         ...current,
         room: response.room,
@@ -162,15 +209,21 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       setState((current) => ({
         ...current,
         room: response.room,
+        match: null,
       }));
     });
   }, []);
 
   return useMemo(
     () => ({
-      ...state,
+      connectionState,
+      room: state.room,
+      match: state.match,
+      rooms: state.rooms,
+      lastError: state.lastError,
       listRooms,
       createRoom,
+      configureRoomSetup,
       joinRoom,
       startRoom,
       markReady,
@@ -179,15 +232,21 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       leaveRoom,
     }),
     [
+      connectionState,
       createRoom,
+      configureRoomSetup,
       joinRoom,
       leaveRoom,
       listRooms,
       markReady,
       reconnect,
-      submitMove,
       startRoom,
-      state,
+      state.lastError,
+      state.match,
+      state.room,
+      state.rooms,
+      submitMove,
     ],
   );
 }
+

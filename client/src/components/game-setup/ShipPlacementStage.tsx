@@ -226,8 +226,8 @@ export function ShipPlacementStage({
       : t('gameSetup.placement.placementInstructions'));
 
   return (
-    <div className='flex h-full min-h-0 flex-col gap-3'>
-      <div className='grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_35rem]'>
+    <div className='flex flex-col gap-3 sm:h-full sm:min-h-0'>
+      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1fr)_32rem]'>
         <PlacementBoard
           boardConfig={boardConfig}
           ships={ships}

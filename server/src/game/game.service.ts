@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Repository } from 'typeorm';
+import { In, type Repository } from 'typeorm';
 import { MatchEntity } from './infrastructure/persistence/relational/entities/match.entity';
 import { MoveEntity } from './infrastructure/persistence/relational/entities/move.entity';
 import { RoomEntity } from './infrastructure/persistence/relational/entities/room.entity';
@@ -14,14 +14,21 @@ import type {
   MatchSnapshot,
   Orientation,
   PlacedShip,
+  RoomListSummary,
   RoomSnapshot,
   ShipDefinition,
   ShotRecord,
 } from './types/game.types';
-import { CreateRoomDto, MoveDto, RoomReadyDto } from './dto/game-events.dto';
+import {
+  ConfigureRoomSetupDto,
+  CreateRoomDto,
+  MoveDto,
+  RoomReadyDto,
+} from './dto/game-events.dto';
 
-const SETUP_WINDOW_MS = 60 * 1000;
 const RANDOM_PLACEMENT_MAX_ATTEMPTS = 300;
+const DEFAULT_TURN_TIMER_SECONDS = 30;
+const DEFAULT_SETUP_TIMER_SECONDS = 60;
 
 function keyOf(x: number, y: number): string {
   return `${x},${y}`;
@@ -82,25 +89,88 @@ export class GameService {
     return this.toRoomSnapshot(savedRoom);
   }
 
-  async listOpenRooms(): Promise<RoomSnapshot[]> {
-    const rooms = await this.roomRepo.find({
-      where: {
-        status: 'waiting',
-        visibility: 'public',
-      },
-      order: { updatedAt: 'DESC' },
-      take: 50,
-    });
-    return rooms.map((room) => this.toRoomSnapshot(room));
+  async listOpenRooms(userId: string): Promise<RoomListSummary[]> {
+    const [memberRooms, publicRooms] = await Promise.all([
+      this.roomRepo.find({
+        where: [
+          {
+            status: 'waiting',
+            ownerId: userId,
+          },
+          {
+            status: 'waiting',
+            guestId: userId,
+          },
+        ],
+        order: { updatedAt: 'DESC' },
+        take: 25,
+      }),
+      this.roomRepo.find({
+        where: {
+          status: 'waiting',
+          visibility: 'public',
+        },
+        order: { updatedAt: 'DESC' },
+        take: 50,
+      }),
+    ]);
+
+    const seenRoomIds = new Set<string>();
+
+    const listRooms = [...memberRooms, ...publicRooms]
+      .filter((room) => {
+        if (seenRoomIds.has(room.id)) {
+          return false;
+        }
+        const isRoomMember = room.ownerId === userId || room.guestId === userId;
+        const canShowFromRoomList =
+          room.visibility === 'public' && room.status === 'waiting';
+
+        if (!isRoomMember && !canShowFromRoomList) {
+          return false;
+        }
+
+        seenRoomIds.add(room.id);
+        return true;
+      })
+      .sort(
+        (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
+      )
+      .slice(0, 50);
+
+    const matchIds = listRooms.flatMap((room) =>
+      room.currentMatchId ? [room.currentMatchId] : [],
+    );
+    const matches =
+      matchIds.length === 0
+        ? []
+        : await this.matchRepo.find({
+            where: { id: In(matchIds) },
+          });
+    const matchesById = new Map(matches.map((match) => [match.id, match]));
+
+    return listRooms.map((room) =>
+      this.toRoomListSummary(
+        room,
+        userId,
+        room.currentMatchId
+          ? (matchesById.get(room.currentMatchId) ?? null)
+          : null,
+      ),
+    );
   }
 
   async joinRoom(
     userId: string,
-    options: { roomCode?: string },
-  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
+    options: { roomId?: string; roomCode?: string },
+  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot | null }> {
     let room: RoomEntity | null = null;
 
-    if (options.roomCode) {
+    if (options.roomId) {
+      room = await this.roomRepo.findOne({
+        where: { id: options.roomId },
+      });
+    } else if (options.roomCode) {
       room = await this.roomRepo.findOne({
         where: { code: options.roomCode.toUpperCase() },
       });
@@ -121,22 +191,35 @@ export class GameService {
       });
     }
 
-    if (room.ownerId === userId) {
+    const isRoomMember = room.ownerId === userId || room.guestId === userId;
+
+    if (
+      options.roomId &&
+      !isRoomMember &&
+      (room.visibility !== 'public' || room.status !== 'waiting')
+    ) {
+      throw new NotFoundException({
+        error: 'ROOM_NOT_FOUND',
+        message: 'Room not found',
+      });
+    }
+
+    if (!isRoomMember && room.status !== 'waiting') {
+      throw new BadRequestException({
+        error: 'MATCH_INVALID_STATE',
+        message: 'Room is not available to join',
+      });
+    }
+
+    if (room.ownerId === userId || room.guestId === userId) {
       const existing = room.currentMatchId
         ? await this.matchRepo.findOne({ where: { id: room.currentMatchId } })
         : null;
 
-      if (existing) {
-        return {
-          room: this.toRoomSnapshot(room),
-          match: this.toMatchSnapshot(existing),
-        };
-      }
-
-      throw new BadRequestException({
-        error: 'ROOM_NEEDS_OPPONENT',
-        message: 'Room has no opponent yet',
-      });
+      return {
+        room: this.toRoomSnapshot(room),
+        match: existing ? this.toMatchSnapshot(existing) : null,
+      };
     }
 
     if (room.guestId && room.guestId !== userId) {
@@ -145,9 +228,6 @@ export class GameService {
         message: 'Room is full',
       });
     }
-
-    room.guestId = userId;
-    room.status = 'waiting';
 
     const match = room.currentMatchId
       ? await this.matchRepo.findOne({ where: { id: room.currentMatchId } })
@@ -159,6 +239,9 @@ export class GameService {
         message: 'Room setup is not initialized',
       });
     }
+
+    room.guestId = userId;
+    room.status = 'waiting';
 
     match.player2Id = userId;
     match.updatedAt = new Date();
@@ -179,6 +262,7 @@ export class GameService {
     ownerId: string,
     boardConfig: BoardConfig,
     ships: ShipDefinition[],
+    turnTimerSeconds: number,
   ): Promise<MatchSnapshot> {
     const room = await this.roomRepo.findOne({ where: { id: roomId } });
     if (!room) {
@@ -210,6 +294,7 @@ export class GameService {
       status: 'setup',
       boardConfig,
       ships,
+      turnTimerSeconds,
       player1Id: ownerId,
       player2Id: room.guestId ?? ownerId,
       player1Placements: null,
@@ -219,14 +304,64 @@ export class GameService {
       turnPlayerId: null,
       winnerId: null,
       setupDeadlineAt: null,
+      turnDeadlineAt: null,
       version: 0,
       rematchVotes: {},
     });
 
     const savedMatch = await this.matchRepo.save(match);
-    room.currentMatchId = savedMatch.id;
+    room.currentMatchId = match.id;
     await this.roomRepo.save(room);
     return this.toMatchSnapshot(savedMatch);
+  }
+
+  async configureRoomSetup(
+    userId: string,
+    payload: ConfigureRoomSetupDto,
+  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
+    const room = await this.getRoomOrThrow(payload.roomId);
+
+    if (room.ownerId !== userId) {
+      throw new BadRequestException({
+        error: 'ROOM_OWNER_ONLY',
+        message: 'Only room owner can configure phase 1',
+      });
+    }
+
+    if (room.status !== 'waiting') {
+      throw new BadRequestException({
+        error: 'MATCH_INVALID_STATE',
+        message: 'Room is not available for phase 1 setup',
+      });
+    }
+
+    if (room.guestId) {
+      throw new BadRequestException({
+        error: 'ROOM_SETUP_LOCKED',
+        message: 'Phase 1 is locked after an opponent joins',
+      });
+    }
+
+    if (room.currentMatchId) {
+      throw new BadRequestException({
+        error: 'ROOM_SETUP_LOCKED',
+        message: 'Phase 1 has already been configured',
+      });
+    }
+
+    const match = await this.initializeMatch(
+      room.id,
+      userId,
+      payload.boardConfig,
+      payload.ships,
+      payload.turnTimerSeconds,
+    );
+    const savedRoom = await this.getRoomOrThrow(room.id);
+
+    return {
+      room: this.toRoomSnapshot(savedRoom),
+      match,
+    };
   }
 
   async startRoom(
@@ -234,6 +369,12 @@ export class GameService {
     userId: string,
   ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
     const room = await this.getRoomOrThrow(roomId);
+    if (!room.currentMatchId) {
+      throw new BadRequestException({
+        error: 'ROOM_SETUP_MISSING',
+        message: 'Room setup is not initialized',
+      });
+    }
     const match = await this.getCurrentMatchOrThrow(room);
 
     if (userId !== room.ownerId) {
@@ -262,7 +403,10 @@ export class GameService {
     room.guestReady = false;
 
     match.player2Id = room.guestId;
-    match.setupDeadlineAt = new Date(Date.now() + SETUP_WINDOW_MS);
+    match.setupDeadlineAt = new Date(
+      Date.now() + DEFAULT_SETUP_TIMER_SECONDS * 1000,
+    );
+    match.turnDeadlineAt = null;
     match.version += 1;
 
     const [savedRoom, savedMatch] = await Promise.all([
@@ -325,6 +469,7 @@ export class GameService {
       room.status = 'in_game';
       match.turnPlayerId = match.player1Id;
       match.setupDeadlineAt = null;
+      match.turnDeadlineAt = this.makeTurnDeadline(match);
     }
 
     match.version += 1;
@@ -348,6 +493,12 @@ export class GameService {
         error: 'MATCH_NOT_FOUND',
         message: 'Match not found',
       });
+    }
+
+    const room = await this.getRoomOrThrow(match.roomId);
+    const resolvedTimedOutTurn = this.resolveExpiredTurns(room, match);
+    if (resolvedTimedOutTurn) {
+      await Promise.all([this.roomRepo.save(room), this.matchRepo.save(match)]);
     }
 
     if (match.status !== 'in_progress') {
@@ -421,18 +572,17 @@ export class GameService {
     );
 
     if (destroyed) {
-      match.status = 'finished';
-      match.winnerId = userId;
-      match.turnPlayerId = null;
-      await this.markRoomFinished(match.roomId);
+      this.finishMatch(room, match, userId);
     } else {
       match.turnPlayerId =
         userId === match.player1Id ? match.player2Id : match.player1Id;
+      match.turnDeadlineAt = this.makeTurnDeadline(match);
     }
 
     match.version += 1;
 
     await Promise.all([
+      this.roomRepo.save(room),
       this.matchRepo.save(match),
       this.moveRepo.save(
         this.moveRepo.create({
@@ -465,15 +615,12 @@ export class GameService {
       });
     }
 
-    match.status = 'finished';
-    match.winnerId =
-      userId === match.player1Id ? match.player2Id : match.player1Id;
-    match.turnPlayerId = null;
+    this.finishMatch(
+      room,
+      match,
+      userId === match.player1Id ? match.player2Id : match.player1Id,
+    );
     match.version += 1;
-
-    room.status = 'finished';
-    room.ownerReady = false;
-    room.guestReady = false;
 
     const [savedMatch] = await Promise.all([
       this.matchRepo.save(match),
@@ -518,12 +665,14 @@ export class GameService {
       match.rematchVotes[match.player2Id] === true;
 
     if (bothAccepted) {
+      const turnTimerSeconds = this.readTurnTimerSeconds(match);
       const nextMatch = this.matchRepo.create({
         id: randomUUID(),
         roomId: room.id,
         status: 'setup',
         boardConfig: match.boardConfig,
         ships: match.ships,
+        turnTimerSeconds,
         player1Id: match.player1Id,
         player2Id: match.player2Id,
         player1Placements: null,
@@ -533,11 +682,12 @@ export class GameService {
         turnPlayerId: null,
         winnerId: null,
         setupDeadlineAt: null,
+        turnDeadlineAt: null,
         version: 0,
         rematchVotes: {},
       });
       const savedNext = await this.matchRepo.save(nextMatch);
-      room.currentMatchId = savedNext.id;
+      room.currentMatchId = nextMatch.id;
       room.status = 'setup';
       room.ownerReady = false;
       room.guestReady = false;
@@ -585,13 +735,26 @@ export class GameService {
     roomId: string,
   ): Promise<{ room: RoomSnapshot; match: MatchSnapshot | null }> {
     const room = await this.getRoomOrThrow(roomId);
-    let match = room.currentMatchId
+    const match = room.currentMatchId
       ? await this.matchRepo.findOne({ where: { id: room.currentMatchId } })
       : null;
 
     if (match && room.status === 'setup' && match.status === 'setup') {
       if (this.isSetupExpired(match)) {
         this.forceStartAfterSetupTimeout(room, match);
+        const [savedRoom, savedMatch] = await Promise.all([
+          this.roomRepo.save(room),
+          this.matchRepo.save(match),
+        ]);
+        return {
+          room: this.toRoomSnapshot(savedRoom),
+          match: this.toMatchSnapshot(savedMatch),
+        };
+      }
+    }
+
+    if (match && room.status === 'in_game' && match.status === 'in_progress') {
+      if (this.resolveExpiredTurns(room, match)) {
         const [savedRoom, savedMatch] = await Promise.all([
           this.roomRepo.save(room),
           this.matchRepo.save(match),
@@ -612,7 +775,7 @@ export class GameService {
   async reconnect(
     userId: string,
     params: { roomId?: string; matchId?: string },
-  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
+  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot | null }> {
     let room: RoomEntity | null = null;
     let match: MatchEntity | null = null;
 
@@ -641,11 +804,16 @@ export class GameService {
       });
     }
 
-    if (!match) {
+    if (!match && room.currentMatchId) {
       match = await this.getCurrentMatchOrThrow(room);
     }
 
-    if (room.status === 'setup' && match.status === 'setup' && this.isSetupExpired(match)) {
+    if (
+      match &&
+      room.status === 'setup' &&
+      match.status === 'setup' &&
+      this.isSetupExpired(match)
+    ) {
       this.forceStartAfterSetupTimeout(room, match);
       [room, match] = await Promise.all([
         this.roomRepo.save(room),
@@ -654,11 +822,22 @@ export class GameService {
     }
 
     if (
-      userId !== room.ownerId &&
-      userId !== room.guestId &&
-      userId !== match.player1Id &&
-      userId !== match.player2Id
+      match &&
+      room.status === 'in_game' &&
+      match.status === 'in_progress' &&
+      this.resolveExpiredTurns(room, match)
     ) {
+      [room, match] = await Promise.all([
+        this.roomRepo.save(room),
+        this.matchRepo.save(match),
+      ]);
+    }
+
+    const isRoomMember = userId === room.ownerId || userId === room.guestId;
+    const isMatchMember =
+      !!match && (userId === match.player1Id || userId === match.player2Id);
+
+    if (!isRoomMember && !isMatchMember) {
       throw new BadRequestException({
         error: 'ROOM_MEMBER_ONLY',
         message: 'User is not in this room',
@@ -667,17 +846,24 @@ export class GameService {
 
     return {
       room: this.toRoomSnapshot(room),
-      match: this.toMatchSnapshot(match),
+      match: match ? this.toMatchSnapshot(match) : null,
     };
   }
 
-  private async markRoomFinished(roomId: string): Promise<void> {
-    const room = await this.roomRepo.findOne({ where: { id: roomId } });
-    if (!room) return;
+  private finishMatch(
+    room: RoomEntity,
+    match: MatchEntity,
+    winnerId: string | null,
+  ): void {
     room.status = 'finished';
     room.ownerReady = false;
     room.guestReady = false;
-    await this.roomRepo.save(room);
+
+    match.status = 'finished';
+    match.winnerId = winnerId;
+    match.turnPlayerId = null;
+    match.setupDeadlineAt = null;
+    match.turnDeadlineAt = null;
   }
 
   private async createUniqueRoomCode(): Promise<string> {
@@ -837,13 +1023,55 @@ export class GameService {
     };
   }
 
+  private toRoomListSummary(
+    room: RoomEntity,
+    userId: string,
+    match: MatchEntity | null,
+  ): RoomListSummary {
+    const isRoomMember = room.ownerId === userId || room.guestId === userId;
+    const phase1Config = match ? this.toRoomListPhase1Config(match) : null;
+
+    return {
+      roomId: room.id,
+      roomCode: room.code,
+      status: room.status,
+      accessState: this.toRoomListAccessState(room),
+      occupancy: room.guestId ? '2/2' : '1/2',
+      actionKind: isRoomMember ? 'open' : 'join',
+      phase1Config,
+    };
+  }
+
+  private toRoomListAccessState(
+    room: RoomEntity,
+  ): RoomListSummary['accessState'] {
+    if (room.status === 'in_game') {
+      return 'playing';
+    }
+
+    return room.currentMatchId ? 'ready' : 'setting_up';
+  }
+
+  private toRoomListPhase1Config(
+    match: MatchEntity,
+  ): NonNullable<RoomListSummary['phase1Config']> {
+    return {
+      boardConfig: match.boardConfig,
+      ships: match.ships,
+      turnTimerSeconds: this.readTurnTimerSeconds(match),
+    };
+  }
+
   private toMatchSnapshot(match: MatchEntity): MatchSnapshot {
+    const turnTimerSeconds = this.readTurnTimerSeconds(match);
+
     return {
       id: match.id,
       roomId: match.roomId,
       status: match.status,
       boardConfig: match.boardConfig,
       ships: match.ships,
+      turnTimerSeconds,
       player1Id: match.player1Id,
       player2Id: match.player2Id,
       player1Placements: match.player1Placements,
@@ -852,24 +1080,153 @@ export class GameService {
       player2Shots: match.player2Shots,
       turnPlayerId: match.turnPlayerId,
       winnerId: match.winnerId,
-      setupDeadlineAt: match.setupDeadlineAt
-        ? match.setupDeadlineAt.toISOString()
-        : null,
+      setupDeadlineAt: this.toIsoDateString(match.setupDeadlineAt),
+      turnDeadlineAt: this.toIsoDateString(match.turnDeadlineAt),
       version: match.version,
       rematchVotes: match.rematchVotes,
       updatedAt: match.updatedAt.toISOString(),
     };
   }
 
+  private toDateOrNull(value: unknown): Date | null {
+    return value instanceof Date ? value : null;
+  }
+
+  private toIsoDateString(value: unknown): string | null {
+    const dateValue = this.toDateOrNull(value);
+    return dateValue ? dateValue.toISOString() : null;
+  }
+
+  private readTurnTimerSeconds(
+    match: Pick<MatchEntity, 'turnTimerSeconds'>,
+  ): number {
+    return match.turnTimerSeconds ?? DEFAULT_TURN_TIMER_SECONDS;
+  }
+
   private isSetupExpired(match: MatchEntity): boolean {
-    if (!match.setupDeadlineAt) {
+    const setupDeadlineAt = this.toDateOrNull(match.setupDeadlineAt);
+    if (!setupDeadlineAt) {
       return false;
     }
 
-    return Date.now() >= match.setupDeadlineAt.getTime();
+    return Date.now() >= setupDeadlineAt.getTime();
   }
 
-  private forceStartAfterSetupTimeout(room: RoomEntity, match: MatchEntity): void {
+  private isTurnExpired(match: MatchEntity): boolean {
+    const turnDeadlineAt = this.toDateOrNull(match.turnDeadlineAt);
+    if (!match.turnPlayerId || !turnDeadlineAt) {
+      return false;
+    }
+
+    return Date.now() >= turnDeadlineAt.getTime();
+  }
+
+  private makeTurnDeadline(match: Pick<MatchEntity, 'turnTimerSeconds'>): Date {
+    return new Date(Date.now() + this.readTurnTimerSeconds(match) * 1000);
+  }
+
+  private resolveExpiredTurns(room: RoomEntity, match: MatchEntity): boolean {
+    if (room.status !== 'in_game' || match.status !== 'in_progress') {
+      return false;
+    }
+
+    let changed = false;
+    while (match.status === 'in_progress' && this.isTurnExpired(match)) {
+      this.resolveTimedOutTurn(room, match);
+      changed = true;
+    }
+
+    return changed;
+  }
+
+  private resolveTimedOutTurn(room: RoomEntity, match: MatchEntity): void {
+    const attackerId = match.turnPlayerId;
+    if (!attackerId) {
+      match.turnDeadlineAt = null;
+      return;
+    }
+
+    const attackerShots =
+      attackerId === match.player1Id ? match.player1Shots : match.player2Shots;
+    const target = this.pickRandomAvailableTarget(
+      match.boardConfig,
+      attackerShots,
+    );
+
+    if (!target) {
+      this.finishMatch(room, match, attackerId);
+      match.version += 1;
+      return;
+    }
+
+    const opponentPlacements =
+      attackerId === match.player1Id
+        ? match.player2Placements
+        : match.player1Placements;
+    const hitSet = this.placementHitSet(match.ships, opponentPlacements ?? []);
+    const shotHit = hitSet.has(keyOf(target.x, target.y));
+    const shotRecord: ShotRecord = {
+      x: target.x,
+      y: target.y,
+      isHit: shotHit,
+      at: new Date().toISOString(),
+      by: attackerId,
+      sequence: attackerShots.length + 1,
+      clientMoveId: `timeout:${attackerId}:${target.x}:${target.y}:${attackerShots.length + 1}`,
+      source: 'timeout_auto',
+    };
+
+    if (attackerId === match.player1Id) {
+      match.player1Shots = [...match.player1Shots, shotRecord];
+    } else {
+      match.player2Shots = [...match.player2Shots, shotRecord];
+    }
+
+    const nextShots =
+      attackerId === match.player1Id ? match.player1Shots : match.player2Shots;
+    const destroyed = this.checkFleetDestroyed(
+      match.ships,
+      opponentPlacements ?? [],
+      nextShots,
+    );
+
+    if (destroyed) {
+      this.finishMatch(room, match, attackerId);
+    } else {
+      match.turnPlayerId =
+        attackerId === match.player1Id ? match.player2Id : match.player1Id;
+      match.turnDeadlineAt = this.makeTurnDeadline(match);
+    }
+
+    match.version += 1;
+  }
+
+  private pickRandomAvailableTarget(
+    board: BoardConfig,
+    shots: ShotRecord[],
+  ): { x: number; y: number } | null {
+    const used = new Set(shots.map((shot) => keyOf(shot.x, shot.y)));
+    const available: Array<{ x: number; y: number }> = [];
+
+    for (let y = 0; y < board.rows; y += 1) {
+      for (let x = 0; x < board.cols; x += 1) {
+        if (!used.has(keyOf(x, y))) {
+          available.push({ x, y });
+        }
+      }
+    }
+
+    if (available.length === 0) {
+      return null;
+    }
+
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  private forceStartAfterSetupTimeout(
+    room: RoomEntity,
+    match: MatchEntity,
+  ): void {
     if (!match.player1Placements) {
       match.player1Placements = this.generateRandomPlacements(
         match.boardConfig,
@@ -890,6 +1247,7 @@ export class GameService {
     match.status = 'in_progress';
     match.turnPlayerId = match.player1Id;
     match.setupDeadlineAt = null;
+    match.turnDeadlineAt = this.makeTurnDeadline(match);
     match.version += 1;
   }
 
@@ -901,16 +1259,28 @@ export class GameService {
     const occupied = new Set<string>();
 
     for (const ship of ships) {
-      for (let instanceIndex = 0; instanceIndex < ship.count; instanceIndex += 1) {
+      for (
+        let instanceIndex = 0;
+        instanceIndex < ship.count;
+        instanceIndex += 1
+      ) {
         let placed = false;
 
-        for (let attempt = 0; attempt < RANDOM_PLACEMENT_MAX_ATTEMPTS; attempt += 1) {
+        for (
+          let attempt = 0;
+          attempt < RANDOM_PLACEMENT_MAX_ATTEMPTS;
+          attempt += 1
+        ) {
           const orientation: Orientation =
             Math.random() > 0.5 ? 'horizontal' : 'vertical';
           const maxX =
-            orientation === 'horizontal' ? board.cols - ship.size : board.cols - 1;
+            orientation === 'horizontal'
+              ? board.cols - ship.size
+              : board.cols - 1;
           const maxY =
-            orientation === 'vertical' ? board.rows - ship.size : board.rows - 1;
+            orientation === 'vertical'
+              ? board.rows - ship.size
+              : board.rows - 1;
           const x = Math.floor(Math.random() * (maxX + 1));
           const y = Math.floor(Math.random() * (maxY + 1));
 
@@ -923,7 +1293,9 @@ export class GameService {
           };
 
           const cells = shipCells(candidate, ship.size);
-          const blocked = cells.some((cell) => occupied.has(keyOf(cell.x, cell.y)));
+          const blocked = cells.some((cell) =>
+            occupied.has(keyOf(cell.x, cell.y)),
+          );
           if (blocked) {
             continue;
           }

@@ -44,7 +44,7 @@ export function PlacementSidebar({
   const { t } = useTranslation();
 
   return (
-    <div className='ui-panel flex min-h-0 flex-col gap-2 rounded-md p-3'>
+    <div className='ui-panel flex flex-col gap-2 rounded-md p-3 sm:min-h-0'>
       <div className='relative z-10 space-y-1'>
         <p className='ui-panel-title'>{t('gameSetup.header.step2Label')}</p>
         <p className='text-sm text-(--text-muted)'>
@@ -59,14 +59,14 @@ export function PlacementSidebar({
         <p className={`text-xs ${hasError ? 'text-[#ffb4b4]' : 'text-(--text-muted)'}`}>
           {statusText}
         </p>
-        <div className='flex gap-2'>
-          <div className='flex-1 rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+        <div className='grid gap-2 sm:grid-cols-2'>
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
             <p className='ui-data-label'>{t('gameSetup.step2.deployment')}</p>
             <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
               {placedShipsCount}/{totalRequiredShips}
             </p>
           </div>
-          <div className='flex-1 rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
             <p className='ui-data-label'>{t('gameSetup.placement.orientation')}</p>
             <p className='mt-1 font-mono text-sm uppercase text-(--accent-secondary)'>
               {orientation}
@@ -74,9 +74,9 @@ export function PlacementSidebar({
           </div>
         </div>
         {aiDifficulty && onAiDifficultyChange && (
-          <div className='rounded-sm border border-[rgba(31,136,176,0.36)] bg-black/10 px-3 py-2'>
+          <div className='ui-subpanel rounded-sm px-3 py-2'>
             <p className='ui-data-label mb-2'>{t('gameSetup.aiDifficulty.label')}</p>
-            <div className='flex gap-1'>
+            <div className='grid grid-cols-1 gap-1 sm:grid-cols-3'>
               {(['random', 'learning', 'probability'] as AiDifficulty[]).map((d) => (
                 <button
                   key={d}
@@ -85,7 +85,7 @@ export function PlacementSidebar({
                   className={`ui-button-shell flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                     aiDifficulty === d
                       ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
-                      : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)] text-(--text-muted) hover:text-(--text-main)'
+                      : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                   }`}
                 >
                   {t(`gameSetup.aiDifficulty.${d}`)}
@@ -105,7 +105,7 @@ export function PlacementSidebar({
         </p>
       </div>
 
-      <div className='themed-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pr-1'>
+      <div className='themed-scrollbar space-y-2 overflow-visible pr-1 sm:min-h-0 sm:flex-1 sm:overflow-y-auto'>
         {shipInstances.map((instance) => {
           const key = instanceKey(
             instance.definitionId,
@@ -120,7 +120,7 @@ export function PlacementSidebar({
               className={`rounded-sm border p-2.5 text-xs ${
                 selected
                   ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)]'
-                  : 'border-[rgba(31,136,176,0.36)] bg-[rgba(5,19,30,0.72)]'
+                  : 'ui-state-idle'
               }`}
             >
               <button
@@ -175,7 +175,7 @@ export function PlacementSidebar({
         })}
       </div>
 
-      <div className='grid grid-cols-3 gap-2'>
+      <div className='grid gap-2 sm:grid-cols-3'>
         <Button
           onClick={onRandomPlace}
           className='h-9 rounded-sm text-[10px] tracking-[0.12em]'

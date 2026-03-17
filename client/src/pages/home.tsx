@@ -2,19 +2,17 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { GAME_BRAND_NAME } from '@/constants/branding';
 import { DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
 import { buildRandomPlacements, buildShipInstances } from '@/utils/placementUtils';
-import {
-  Button,
-  SectionStatus,
-  ForgotPasswordModal,
-  LoginModal,
-  RegisterModal,
-  ProfileSetupModal,
-  SettingsModal,
-} from '@/components';
+import { ForgotPasswordModal } from '@/components/modal/ForgotPasswordModal';
+import { LoginModal } from '@/components/modal/LoginModal';
 import type { ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
-import { useModalState } from '@/hooks/useModalState';
+import { ProfileSetupModal } from '@/components/modal/ProfileSetupModal';
+import { RegisterModal } from '@/components/modal/RegisterModal';
+import { SettingsModal } from '@/components/modal/SettingsModal';
+import { Button } from '@/components/ui/Button';
+import { SectionStatus } from '@/components/ui/SectionStatus';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import * as authService from '@/services/authService';
 import {
@@ -66,23 +64,25 @@ export function HomePage() {
   const { user, setUser, logout } = useGlobalContext();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
-  const {
-    modalMode: authModalMode,
-    isModalOpen,
-    openModal,
-    closeModal,
-  } = useModalState<AuthModalMode>();
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode | null>(null);
+  const isModalOpen = authModalMode !== null;
   const navigationState = useMemo(
     () => (location.state as HomeNavigationState | null) ?? null,
     [location.state],
   );
+  const openModal = (mode: AuthModalMode) => {
+    setAuthModalMode(mode);
+  };
+  const closeModal = () => {
+    setAuthModalMode(null);
+  };
 
   useEffect(() => {
     if (!navigationState?.openProfileSetup) {
       return;
     }
 
-    openModal('profileSetup');
+    setAuthModalMode('profileSetup');
     navigate(`${location.pathname}${location.search}`, {
       replace: true,
       state: null,
@@ -92,7 +92,6 @@ export function HomePage() {
     location.search,
     navigate,
     navigationState,
-    openModal,
   ]);
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -219,6 +218,10 @@ export function HomePage() {
   };
 
   const isAnonymous = user?.isAnonymous ?? true;
+  const displayUsername = user?.username?.trim() || t('home.playerStatus.anonymous');
+  const displaySignature = !isAnonymous && user?.signature
+    ? user.signature
+    : '- - -';
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
     'profileSetup',
@@ -328,7 +331,7 @@ export function HomePage() {
         >
           <motion.section
             variants={revealItem}
-            className='flex min-h-112 flex-col justify-between gap-6'
+            className='flex flex-col justify-between gap-6'
           >
             <div className='ui-panel ui-panel-glow rounded-md px-5 py-5 sm:px-7'>
               <div className='relative z-10 flex flex-wrap items-start justify-between gap-4'>
@@ -338,8 +341,8 @@ export function HomePage() {
                   </div>
                   <div className='min-w-0'>
                     <p className='ui-title-eyebrow'>{t('home.title')}</p>
-                    <h1 className='mt-2 text-3xl font-black uppercase tracking-[0.08em] text-(--text-main) sm:text-5xl'>
-                      {t('home.gameTitle')}
+                    <h1 className='mt-2 text-3xl font-black uppercase tracking-[0.08em] text-(--text-main) sm:text-[45px]'>
+                      {GAME_BRAND_NAME}
                     </h1>
                     <p className='mt-2 text-sm font-medium tracking-[0.24em] text-(--text-muted) uppercase'>
                       {t('home.gameSubtitle')}
@@ -347,17 +350,19 @@ export function HomePage() {
                   </div>
                 </div>
 
+                <div className='self-stretch h-px w-full bg-(--border-main) opacity-50'></div>
+
                 <div className='flex items-start gap-4'>
-                  <div className='grid gap-2 text-right'>
+                  <div className='grid min-w-32 shrink-0 justify-items-end gap-2 text-right sm:min-w-35'>
                     {tacticalStats.map((stat) => (
                       <div key={stat.label} className='grid gap-0.5'>
-                        <span className='ui-data-label'>{stat.label}</span>
-                        <span className='ui-data-value text-sm'>{stat.value}</span>
+                        <span className='ui-data-label whitespace-nowrap'>{stat.label}</span>
+                        <span className='ui-data-value text-sm whitespace-nowrap'>{stat.value}</span>
                       </div>
                     ))}
                   </div>
                   <div className='w-px self-stretch bg-(--border-main) opacity-50' />
-                  <div className='space-y-2'>
+                  <div className='min-w-0 flex-1 space-y-2'>
                     <p className='text-xs leading-5 text-(--text-muted)'>
                       {t('home.lore1')}
                     </p>
@@ -380,47 +385,43 @@ export function HomePage() {
                     {t('home.playerStatus.label')}
                   </p>
 
-                  {!user ? (
-                    <>
-                      <p className='mt-3 font-mono text-sm text-(--text-muted)'>
-                        {t('home.playerStatus.anonymous')}
-                      </p>
-                      <p className='mt-4 text-xs font-semibold tracking-[0.18em] text-(--text-subtle) uppercase'>
-                        {t('home.accessRules.anonymous')}
-                      </p>
-                    </>
-                  ) : (
-                    <div className='mt-3 grid gap-2'>
-                      <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
-                        <span className='ui-data-label text-right'>{t('home.profile.username')}</span>
-                        {isAnonymous ? (
-                          <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
-                            {user.username}
-                          </span>
-                        ) : (
-                          <button
-                            type='button'
-                            onClick={() => openModal('profileSetup')}
-                            className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
-                          >
-                            {user.username}
-                          </button>
-                        )}
-                        <span className='ui-data-label text-right'>{t('home.profile.signature')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {user.signature ?? '—'}
+                  <div className='mt-3 grid gap-2'>
+                    <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
+                      <span className='ui-data-label text-right'>{t('home.profile.username')}</span>
+                      {isAnonymous ? (
+                        <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                          {displayUsername}
                         </span>
-                        <span className='ui-data-label text-right'>{t('home.profile.rank')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {/* {user.rank ?? '—'} */} - - -
-                        </span>
-                        <span className='ui-data-label text-right'>{t('home.profile.elo')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {/* {user.elo ?? '—'} */} - - -
-                        </span>
-                      </div>
+                      ) : (
+                        <button
+                          type='button'
+                          onClick={() => openModal('profileSetup')}
+                          className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
+                        >
+                          {displayUsername}
+                        </button>
+                      )}
+                      <span className='ui-data-label text-right'>{t('home.profile.signature')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        {displaySignature}
+                      </span>
+                      <span className='ui-data-label text-right'>{t('home.profile.rank')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        - - -
+                      </span>
+                      <span className='ui-data-label text-right'>{t('home.profile.elo')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        - - -
+                      </span>
                     </div>
-                  )}
+                    <p className='mt-2 text-xs font-semibold text-(--text-subtle)'>
+                      {isAnonymous ? (
+                        t('home.accessRules.anonymous')
+                      ) : ( 
+                        t('home.accessRules.registered')
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -430,14 +431,14 @@ export function HomePage() {
                     <p className='ui-title-eyebrow'>{t('home.systemFeed')}</p>
                   </div>
                   <div className='grid gap-3'>
-                    <div className='rounded-sm border border-(--border-main) bg-black/10 px-3 py-3'>
+                    <div className='ui-subpanel rounded-sm px-3 py-3'>
                       <div className='flex flex-row gap-2 items-center'>
                         <span className='w-2 h-2 rounded-full bg-[#22c55e] animate-pulse' />
                         <p className='ui-data-label'>{t('home.signalLabel')}</p>
                       </div>
                       <p className='mt-1 font-mono text-sm text-(--accent-secondary)'>{t('home.signalStatus')}</p>
                     </div>
-                    <div className='rounded-sm border border-(--border-main) bg-black/10 px-3 py-3'>
+                    <div className='ui-subpanel rounded-sm px-3 py-3'>
                       <div className='flex flex-row gap-2 items-center'>
                         <span className='w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse' />
                         <p className='ui-data-label'>{t('home.operationLabel')}</p>
@@ -448,12 +449,11 @@ export function HomePage() {
                 </div>
               </div>
             </motion.div>
-
           </motion.section>
 
           <motion.aside variants={revealItem} className='ui-panel ui-panel-strong rounded-md p-4 sm:p-5'>
             <div className='relative z-10 flex h-full flex-col gap-5'>
-              <div className='rounded-sm border border-(--border-main) bg-black/10 px-4 py-4'>
+              <div className='ui-subpanel rounded-sm px-4 py-4'>
                 <p className='ui-title-eyebrow'>{t('home.missionQueue')}</p>
                 <h2 className='mt-3 text-2xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
                   {t('home.commandDeck')}
@@ -494,7 +494,7 @@ export function HomePage() {
                   {t('welcome.modals.logout')}
                 </Button>
               ) : (
-                <div className='mt-auto grid gap-3 sm:grid-cols-2'>
+                <div className='grid gap-3 sm:grid-cols-2'>
                   <Button
                     variant='primary'
                     onClick={() => {

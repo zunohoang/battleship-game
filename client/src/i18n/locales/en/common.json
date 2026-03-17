@@ -29,12 +29,12 @@
             "defaultUsername": "Player"
         },
         "accessRules": {
-            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
+            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode.",
+            "registered": "Just one click to play online. Your profile, stats, and progression will be saved for future battles."
         },
-        "gameTitle": "Battleship Command",
         "gameSubtitle": "Tactical interface online",
-        "lore1": "Calibrate fleet behavior, configure tactical scenarios, and launch directly into battle setup from a single command surface.",
-        "lore2": "Fleet controls synchronized. Mission presets and settings are available from the command queue.",
+        "lore1": "From this command center, every warship moves under the same pulse of orders: radar sweeps the sea again, formations are corrected, and a tactical scenario can harden into a live battlespace on a single short command.",
+        "lore2": "Yet every coordinate on the naval chart still carries the echo of old ambushes, where a captain's composure is tested between alarm sirens and radar haze; on open water at night, only a precise order can lead to the decisive shot.",
         "commanderLink": "Commander Link",
         "systemFeed": "System Feed",
         "signalLabel": "Signal",
@@ -64,7 +64,6 @@
     "welcome": {
         "subtitle": "Enter the fierce Naval warfares",
         "title": "Welcome Commander",
-        "gameName": "BATTLESHIP:COMMAND",
         "featureLabels": {
             "webgame": "Instant access",
             "matchmaking": "Fast matchmaking",
@@ -113,6 +112,223 @@
             "progress": "Track match history and player progression."
         }
     },
+    "landing": {
+        "railTitle": "Vertical Sweep",
+        "carousel": {
+            "panelLabel": "Illustration",
+            "swipeHint": "Swipe horizontally on touch devices"
+        },
+        "aria": {
+            "jumpTo": "Jump to slide",
+            "previousPanel": "Previous panel",
+            "nextPanel": "Next panel",
+            "goToPanel": "Go to panel"
+        },
+        "credits": {
+            "label": "Thanks for building with us",
+            "contributors": [
+                {
+                    "name": "Placeholder One",
+                    "githubLabel": "github.com/placeholder-one",
+                    "initials": "P1"
+                },
+                {
+                    "name": "Placeholder Two",
+                    "githubLabel": "github.com/placeholder-two",
+                    "initials": "P2"
+                },
+                {
+                    "name": "Placeholder Three",
+                    "githubLabel": "github.com/placeholder-three",
+                    "initials": "P3"
+                }
+            ],
+            "support": {
+                "label": "Support the team",
+                "title": "If you want to back the project",
+                "description": "Your support helps the team keep polishing the experience, expanding the gameplay, and shipping stronger builds.",
+                "qrLabel": "SUPPORT QR"
+            }
+        },
+        "slides": [
+            {
+                "id": "intro",
+                "layout": "carousel",
+                "number": "01",
+                "railLabel": "Intro",
+                "eyebrow": "Slide 01 / Game Intro",
+                "title": "{{gameName}} turns naval duels into a cinematic command room.",
+                "description": "This opening slide sets the tone of the product: a sci-fi battleship experience that feels immediate, sleek, and ready for live presentation.",
+                "highlights": [
+                    "Sci-fi naval mood",
+                    "Made for live demo",
+                    "One click to play"
+                ],
+                "ctaLabel": "Play now",
+                "ctaHint": "Scroll down to continue the showcase",
+                "panels": [
+                    {
+                        "id": "intro-hero",
+                        "tag": "Scene 01",
+                        "title": "Hero Overview",
+                        "description": "Use the first panel for a bold opening screenshot that introduces the command-deck atmosphere at a glance.",
+                        "frameLabel": "Hero visual placeholder",
+                        "frameHint": "Drop in your strongest opening composition here."
+                    },
+                    {
+                        "id": "intro-world",
+                        "tag": "Scene 02",
+                        "title": "World & Tone",
+                        "description": "This panel can focus on the visual identity of the game: radar glow, tactical glass, and oceanic sci-fi lighting.",
+                        "frameLabel": "Mood visual placeholder",
+                        "frameHint": "Use a close-up that sells the universe and style."
+                    },
+                    {
+                        "id": "intro-hook",
+                        "tag": "Scene 03",
+                        "title": "Why It Feels Different",
+                        "description": "The final panel of the intro should explain why the game is exciting to watch before a single match even begins.",
+                        "frameLabel": "Hook visual placeholder",
+                        "frameHint": "Use a clean shot that supports your spoken hook."
+                    }
+                ]
+            },
+            {
+                "id": "gameplay",
+                "layout": "carousel",
+                "number": "02",
+                "railLabel": "Gameplay",
+                "eyebrow": "Slide 02 / Core Loop",
+                "title": "The match flow is simple to understand and satisfying to follow.",
+                "description": "Use this slide to explain the experience in player language: deploy your fleet, take turns firing, read the board, and sink the opposing fleet first.",
+                "highlights": [
+                    "Deploy ships",
+                    "Take turns firing",
+                    "Read hits and misses"
+                ],
+                "panels": [
+                    {
+                        "id": "gameplay-deploy",
+                        "tag": "Step 01",
+                        "title": "Deploy The Fleet",
+                        "description": "Start with a visual that shows the player preparing their side of the ocean before the first exchange begins.",
+                        "frameLabel": "Deployment placeholder",
+                        "frameHint": "Use a setup or opening battle state capture here."
+                    },
+                    {
+                        "id": "gameplay-fire",
+                        "tag": "Step 02",
+                        "title": "Choose The Shot",
+                        "description": "Show how the player reads the battlefield and commits to a target in a clear, turn-based rhythm.",
+                        "frameLabel": "Targeting placeholder",
+                        "frameHint": "Pick a screenshot that communicates the moment before impact."
+                    },
+                    {
+                        "id": "gameplay-result",
+                        "tag": "Step 03",
+                        "title": "Read The Result",
+                        "description": "End with the board feedback that tells the audience whether the shot landed, missed, or changed the battle pace.",
+                        "frameLabel": "Result placeholder",
+                        "frameHint": "Use a frame that highlights hit and miss clarity."
+                    }
+                ]
+            },
+            {
+                "id": "flow",
+                "layout": "carousel",
+                "number": "03",
+                "railLabel": "Flow",
+                "eyebrow": "Slide 03 / Before Match",
+                "title": "Setup and online entry feel like part of the experience, not a waiting room.",
+                "description": "This slide is about the journey into battle: configure the board, place ships, find a room, and move naturally into an online match.",
+                "highlights": [
+                    "Board setup",
+                    "Ship placement",
+                    "Room to match flow"
+                ],
+                "panels": [
+                    {
+                        "id": "flow-config",
+                        "tag": "Step 01",
+                        "title": "Configure The Match",
+                        "description": "Use this panel to show the player shaping the battlefield before the battle narrative starts.",
+                        "frameLabel": "Config placeholder",
+                        "frameHint": "A fleet or board setup capture fits well here."
+                    },
+                    {
+                        "id": "flow-placement",
+                        "tag": "Step 02",
+                        "title": "Place The Fleet",
+                        "description": "The second panel should explain the setup rhythm visually through a clear placement scene.",
+                        "frameLabel": "Placement placeholder",
+                        "frameHint": "Use a shot of the placement phase with ship silhouettes visible."
+                    },
+                    {
+                        "id": "flow-room",
+                        "tag": "Step 03",
+                        "title": "Find Or Join A Room",
+                        "description": "Show the online layer from the player's perspective: getting ready, joining a room, and moving toward match start.",
+                        "frameLabel": "Online room placeholder",
+                        "frameHint": "Choose a waiting room or room list screenshot later."
+                    }
+                ]
+            },
+            {
+                "id": "bot",
+                "layout": "carousel",
+                "number": "04",
+                "railLabel": "Bot",
+                "eyebrow": "Slide 04 / Bot Behavior",
+                "title": "The bot is easy to explain visually: it watches, reacts, and presses the advantage.",
+                "description": "Keep this part conceptual. The audience only needs to understand how the bot behaves in a match, not how it is implemented under the hood.",
+                "highlights": [
+                    "Searches the field",
+                    "Follows confirmed damage",
+                    "Keeps pressure on the player"
+                ],
+                "panels": [
+                    {
+                        "id": "bot-scan",
+                        "tag": "Phase 01",
+                        "title": "Search Mode",
+                        "description": "Use the first illustration to show the bot probing the field and building pressure before it finds anything important.",
+                        "frameLabel": "Bot scan placeholder",
+                        "frameHint": "A clean board state with early bot actions works well here."
+                    },
+                    {
+                        "id": "bot-hit",
+                        "tag": "Phase 02",
+                        "title": "Reaction After A Hit",
+                        "description": "The second panel should show how the bot changes tone once it confirms a successful strike.",
+                        "frameLabel": "Bot reaction placeholder",
+                        "frameHint": "Use a frame where the bot has clearly locked onto a ship."
+                    },
+                    {
+                        "id": "bot-pressure",
+                        "tag": "Phase 03",
+                        "title": "Pressure And Finish",
+                        "description": "Close the explanation with a visual of the bot keeping momentum and pushing toward a sink.",
+                        "frameLabel": "Bot pressure placeholder",
+                        "frameHint": "A later-match board state is ideal for this panel."
+                    }
+                ]
+            },
+            {
+                "id": "credits",
+                "layout": "finale",
+                "number": "05",
+                "railLabel": "Credits",
+                "eyebrow": "Slide 05 / Thank You",
+                "title": "Thank you to everyone who helped bring this project to life.",
+                "description": "This closing slide is dedicated to the people behind the game and to everyone who supported the project with feedback, time, and energy.",
+                "highlights": [
+                    "Closing thank-you note",
+                    "Member GitHub links",
+                    "Project support QR"
+                ]
+            }
+        ]
+    },
     "gameSetup": {
         "header": {
             "title_fleet": "Configure Your Fleet",
@@ -158,6 +374,13 @@
             "limit": "Limit",
             "fleetTitle": "Fleet",
             "fleetTypes": "Fleet Types",
+            "setupTimer": "Setup Timer",
+            "setupTimerValue": "{{seconds}}s",
+            "setupTimerConfigured": "{{seconds}}s configured",
+            "setupTimerCountdown": "{{remaining}}s / {{total}}s",
+            "setupTimerFixedHint": "Fixed for ship placement",
+            "turnTimer": "Turn Timer",
+            "turnTimerValue": "{{seconds}}s",
             "totalCellsInfo": "Total cells occupied: {{used}} / {{max}} max (50% of board)",
             "noShips": "No ships defined. Add at least one.",
             "shipName": "Name",
@@ -276,7 +499,7 @@
         "INVALID_CREDENTIALS": "Invalid email or password.",
         "USERNAME_REQUIRED": "Username is required.",
         "USERNAME_TOO_LONG": "Username must be at most 20 characters.",
-        "USERNAME_INVALID_FORMAT": "Username can only contain letters and numbers.",
+        "USERNAME_INVALID_FORMAT": "Username can only contain letters, numbers, and spaces.",
         "EMAIL_ALREADY_EXISTS": "This email is already registered.",
         "USERNAME_ALREADY_EXISTS": "This username is already taken.",
         "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
@@ -305,6 +528,10 @@
         "fleetIntact": "FLEET INTACT",
         "compromised": "COMPROMISED",
         "missionLog": "MISSION LOG",
+        "logsTab": "Logs",
+        "chatsTab": "Chats",
+        "chatTitle": "CHAT CHANNEL",
+        "chatPlaceholder": "Chat will arrive in a future update.",
         "quitMission": "QUIT MISSION",
         "tacticalMap": "TACTICAL MAP",
         "statistics": "STATISTICS",
@@ -327,6 +554,10 @@
         "logEnemyMiss": "Enemy launched missile at {{coord}}... MISS!",
         "logBotAHit": "Bot A launched missile at {{coord}}... HIT!",
         "logBotAMiss": "Bot A launched missile at {{coord}}... MISS!",
+        "logEnemyFleetSunk": "Enemy fleet has been sunk.",
+        "logYourFleetSunk": "Your fleet has been sunk.",
+        "logBotAFleetSunk": "Bot A fleet has been sunk.",
+        "logBotBFleetSunk": "Bot B fleet has been sunk.",
         "result": {
             "victorySubtitle": "MISSION STATUS",
             "defeatSubtitle": "MISSION STATUS",
