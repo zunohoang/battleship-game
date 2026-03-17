@@ -11,6 +11,7 @@ import type {
   Shot,
   TurnOwner,
 } from '@/types/game';
+import { DEFAULT_TURN_TIMER_SECONDS } from '@/constants/gameDefaults';
 import {
   buildOccupiedMap,
   buildRandomPlacements,
@@ -24,8 +25,6 @@ import {
   makeLog,
   toCoordLabel,
 } from '@/utils/gamePlayUtils';
-
-const TURN_TIME = 30;
 
 type LocalGameMode = Extract<GameMode, 'bot' | 'botvbot'>;
 type PlayerAttackActor = 'player' | 'botA';
@@ -72,6 +71,10 @@ export function useLocalGamePlaySession({
 }: UseLocalGamePlaySessionParams): UseLocalGamePlaySessionResult {
   const isBotVBot = mode === 'botvbot';
   const { boardConfig, ships } = config;
+  const turnTimerSeconds = Math.max(
+    1,
+    config.turnTimerSeconds || DEFAULT_TURN_TIMER_SECONDS,
+  );
   const shipsById = useMemo(
     () => new Map(ships.map((ship) => [ship.id, ship])),
     [ships],
@@ -100,7 +103,7 @@ export function useLocalGamePlaySession({
   const [turn, setTurn] = useState<TurnOwner>('player');
   const [phase, setPhase] = useState<GamePhase>('playing');
   const [result, setResult] = useState<GameResult | null>(null);
-  const [timer, setTimer] = useState(TURN_TIME);
+  const [timer, setTimer] = useState(turnTimerSeconds);
   const [logEntries, setLogEntries] = useState<MissionLogEntry[]>(() => [
     makeLog(t('gameBattle.logInit'), 'info'),
   ]);
@@ -141,9 +144,9 @@ export function useLocalGamePlaySession({
 
   const resetPlayerTimer = useCallback(() => {
     autoFiredRef.current = false;
-    timerRef.current = TURN_TIME;
-    setTimer(TURN_TIME);
-  }, []);
+    timerRef.current = turnTimerSeconds;
+    setTimer(turnTimerSeconds);
+  }, [turnTimerSeconds]);
 
   const finishGame = useCallback((nextResult: GameResult) => {
     phaseRef.current = 'gameover';

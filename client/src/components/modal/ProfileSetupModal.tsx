@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -32,6 +32,7 @@ export function ProfileSetupModal({
 }: ProfileSetupModalProps) {
   const { t } = useTranslation('common')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const signatureTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const [avatarSrc, setAvatarSrc] = useState(initialAvatar?.trim() || null)
   const [username, setUsername] = useState(initialUsername)
@@ -60,6 +61,30 @@ export function ProfileSetupModal({
     }
     reader.readAsDataURL(file)
   }
+
+  const syncSignatureHeight = (textarea?: HTMLTextAreaElement | null) => {
+    const target = textarea ?? signatureTextareaRef.current
+    if (!target) {
+      return
+    }
+
+    target.style.height = '0px'
+    target.style.height = `${target.scrollHeight}px`
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncSignatureHeight()
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [isOpen, signature])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -157,15 +182,17 @@ export function ProfileSetupModal({
               <span className='font-normal text-(--text-subtle)'>{signature.length}/200</span>
             </div>
             <textarea
+              ref={signatureTextareaRef}
               maxLength={200}
               rows={3}
               value={signature}
               onChange={(e) => {
                 setErrorMessage(null)
                 setSignature(e.target.value)
+                syncSignatureHeight(e.target)
               }}
               placeholder={t('welcome.modals.placeholder.signature')}
-              className='ui-input resize-none rounded-sm px-3 py-2 text-sm'
+              className='ui-input resize-none overflow-hidden rounded-sm px-3 py-2 text-sm'
             />
           </label>
 

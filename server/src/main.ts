@@ -14,7 +14,8 @@ const validationMessages: Record<string, string> = {
   INVALID_EMAIL: 'Invalid email address',
   USERNAME_REQUIRED: 'Username is required',
   USERNAME_TOO_LONG: 'Username must be at most 20 characters',
-  USERNAME_INVALID_FORMAT: 'Username can only contain letters and numbers',
+  USERNAME_INVALID_FORMAT:
+    'Username can only contain letters, numbers, and spaces',
   PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
   PASSWORD_TOO_LONG: 'Password must be at most 72 characters',
   PASSWORD_INVAID_FORMAT: 'Password must be a string',

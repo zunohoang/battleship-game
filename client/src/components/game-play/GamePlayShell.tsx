@@ -61,11 +61,57 @@ function getTurnTimerClasses(turnTimerTone: TurnTimerTone) {
 
 export function GamePlayIdentityCard({
   content,
+  onClick,
+  buttonAriaLabel,
 }: {
   content: HeaderSideContent;
+  onClick?: () => void;
+  buttonAriaLabel?: string;
 }) {
   const isRightAligned = content.align === 'right';
   const initials = content.name.trim().slice(0, 1).toUpperCase() || '?';
+  const cardBody = (
+    <div
+      className={`flex items-center gap-3 ${
+        isRightAligned ? 'lg:flex-row-reverse' : ''
+      }`}
+    >
+      <div className='flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-sm font-black text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.16)] sm:h-11 sm:w-11'>
+        {content.avatarSrc ? (
+          <img
+            src={content.avatarSrc}
+            alt={content.name}
+            className='h-full w-full object-cover'
+          />
+        ) : (
+          initials
+        )}
+      </div>
+
+      <div className='min-w-0 flex-1'>
+        {content.label ? <p className='ui-data-label'>{content.label}</p> : null}
+        <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
+          {content.name}
+        </p>
+        <p className='truncate text-xs text-(--text-muted)'>{content.signature}</p>
+      </div>
+    </div>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type='button'
+        onClick={onClick}
+        aria-label={buttonAriaLabel ?? content.name}
+        className={`ui-panel w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left transition-colors hover:border-(--border-strong) hover:shadow-[0_0_18px_rgba(34,211,238,0.14)] focus-visible:outline-none focus-visible:border-(--ui-outline) focus-visible:shadow-[0_0_0_2px_var(--ui-focus-ring),0_0_18px_rgba(34,211,238,0.2)] sm:px-3 sm:py-2 ${
+          isRightAligned ? 'lg:text-right' : ''
+        }`}
+      >
+        {cardBody}
+      </button>
+    );
+  }
 
   return (
     <div
@@ -73,31 +119,7 @@ export function GamePlayIdentityCard({
         isRightAligned ? 'lg:text-right' : ''
       }`}
     >
-      <div
-        className={`flex items-center gap-3 ${
-          isRightAligned ? 'lg:flex-row-reverse' : ''
-        }`}
-      >
-        <div className='flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-sm font-black text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.16)] sm:h-11 sm:w-11'>
-          {content.avatarSrc ? (
-            <img
-              src={content.avatarSrc}
-              alt={content.name}
-              className='h-full w-full object-cover'
-            />
-          ) : (
-            initials
-          )}
-        </div>
-
-        <div className='min-w-0 flex-1'>
-          {content.label ? <p className='ui-data-label'>{content.label}</p> : null}
-          <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
-            {content.name}
-          </p>
-          <p className='truncate text-xs text-(--text-muted)'>{content.signature}</p>
-        </div>
-      </div>
+      {cardBody}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-export const USERNAME_REGEX = /^[A-Za-z0-9]+$/
+export const USERNAME_REGEX = /^[\p{L}\p{M}\p{N} ]+$/u
 export const SIGNATURE_REGEX = /^[^<>]*$/
 
 export type AuthValidationCode =
@@ -35,7 +35,7 @@ export type ProfileValidationResult = {
 }
 
 function normalizeText(value: string): string {
-  return value.trim()
+  return value.trim().normalize('NFC')
 }
 
 export function validateEmail(email: string): AuthValidationCode | null {

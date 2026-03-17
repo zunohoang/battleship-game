@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { images } from '@/assets';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import type {
@@ -27,6 +26,13 @@ import {
 } from '@/utils/gamePlayUtils';
 
 const EMPTY_SHIPS: ShipDefinition[] = [];
+
+function formatTurnTimer(seconds: number): string {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainder = safeSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+}
 
 type OnlineGamePlayScreenBaseModel = Omit<
   GamePlayScreenModel,
@@ -61,6 +67,7 @@ export function useOnlineGamePlaySession({
   const { t } = useTranslation();
   const { user } = useGlobalContext();
   const currentUserId = user?.id ?? null;
+  const [turnNowMs, setTurnNowMs] = useState<number | null>(null);
 
   const { room, match, connectionState, lastError, reconnect, submitMove } =
     useOnlineRoom(roomId, enabled);
@@ -85,6 +92,24 @@ export function useOnlineGamePlaySession({
       window.clearInterval(intervalId);
     };
   }, [enabled, refresh]);
+
+  useEffect(() => {
+    if (!enabled || !match || match.status !== 'in_progress') {
+      return;
+    }
+
+    const animationFrameId = window.requestAnimationFrame(() => {
+      setTurnNowMs(Date.now());
+    });
+    const intervalId = window.setInterval(() => {
+      setTurnNowMs(Date.now());
+    }, 1000);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.clearInterval(intervalId);
+    };
+  }, [enabled, match?.status, match?.turnDeadlineAt, match?.turnPlayerId, match]);
 
   const boardConfig = match?.boardConfig ?? fallbackConfig?.boardConfig;
   const ships = match?.ships ?? fallbackConfig?.ships ?? EMPTY_SHIPS;
@@ -261,6 +286,35 @@ export function useOnlineGamePlaySession({
       : canFire
         ? t('gameBattle.yourTurn')
         : t('gameBattle.enemyTurn');
+  const turnTimerSecondsLeft = useMemo(() => {
+    if (
+      !enabled ||
+      !match ||
+      match.status !== 'in_progress' ||
+      turnNowMs === null
+    ) {
+      return null;
+    }
+
+    if (!match.turnDeadlineAt) {
+      return null;
+    }
+
+    return Math.max(
+      0,
+      Math.ceil((new Date(match.turnDeadlineAt).getTime() - turnNowMs) / 1000),
+    );
+  }, [enabled, match, turnNowMs]);
+  const turnTimerValue =
+    turnTimerSecondsLeft === null
+      ? '--:--'
+      : formatTurnTimer(turnTimerSecondsLeft);
+  const turnTimerTone =
+    turnTimerSecondsLeft === null
+      ? 'muted'
+      : turnTimerSecondsLeft <= 10
+        ? 'warning'
+        : 'default';
 
   const loadingFallback = useMemo<GamePlayLoadingFallback | null>(() => {
     if (!enabled || (boardConfig && ships.length > 0)) {
@@ -285,8 +339,8 @@ export function useOnlineGamePlaySession({
         turnKey: `${match?.version ?? 'pending'}-${turnLabel}`,
         turnLabel,
         turnTone: canFire ? 'active' : 'alert',
-        turnTimerValue: '--:--',
-        turnTimerTone: 'muted',
+        turnTimerValue,
+        turnTimerTone,
         leftContent: {
           avatarSrc: user?.avatar?.trim() || null,
           label: 'COMMANDER',
@@ -295,7 +349,7 @@ export function useOnlineGamePlaySession({
           align: 'left',
         },
         rightContent: {
-          avatarSrc: images.botAvatar,
+          avatarSrc: null,
           label: 'OPPONENT',
           name: 'Đối thủ',
           signature: '- - -',
@@ -338,6 +392,8 @@ export function useOnlineGamePlaySession({
     shipsById,
     t,
     turnLabel,
+    turnTimerTone,
+    turnTimerValue,
     user?.avatar,
     user?.signature,
     user?.username,

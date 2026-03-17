@@ -29,7 +29,8 @@
             "defaultUsername": "Player"
         },
         "accessRules": {
-            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode."
+            "anonymous": "Anonymous players can only play with bot or bot vs bot. Login is required for online mode.",
+            "registered": "Just one click to play online. Your profile, stats, and progression will be saved for future battles."
         },
         "gameSubtitle": "Tactical interface online",
         "lore1": "From this command center, every warship moves under the same pulse of orders: radar sweeps the sea again, formations are corrected, and a tactical scenario can harden into a live battlespace on a single short command.",
@@ -373,6 +374,13 @@
             "limit": "Limit",
             "fleetTitle": "Fleet",
             "fleetTypes": "Fleet Types",
+            "setupTimer": "Setup Timer",
+            "setupTimerValue": "{{seconds}}s",
+            "setupTimerConfigured": "{{seconds}}s configured",
+            "setupTimerCountdown": "{{remaining}}s / {{total}}s",
+            "setupTimerFixedHint": "Fixed for ship placement",
+            "turnTimer": "Turn Timer",
+            "turnTimerValue": "{{seconds}}s",
             "totalCellsInfo": "Total cells occupied: {{used}} / {{max}} max (50% of board)",
             "noShips": "No ships defined. Add at least one.",
             "shipName": "Name",
@@ -491,7 +499,7 @@
         "INVALID_CREDENTIALS": "Invalid email or password.",
         "USERNAME_REQUIRED": "Username is required.",
         "USERNAME_TOO_LONG": "Username must be at most 20 characters.",
-        "USERNAME_INVALID_FORMAT": "Username can only contain letters and numbers.",
+        "USERNAME_INVALID_FORMAT": "Username can only contain letters, numbers, and spaces.",
         "EMAIL_ALREADY_EXISTS": "This email is already registered.",
         "USERNAME_ALREADY_EXISTS": "This username is already taken.",
         "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",

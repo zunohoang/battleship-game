@@ -29,7 +29,8 @@
             "defaultUsername": "Người chơi"
         },
         "accessRules": {
-            "anonymous": "Người chơi ẩn danh chỉ có thể chơi với bot hoặc bot vs bot. Cần đăng nhập để chơi online."
+            "anonymous": "Người chơi ẩn danh chỉ có thể chơi với bot hoặc bot vs bot. Cần đăng nhập để chơi online.",
+            "registered": "Chỉ cần một cú click để chơi online. Hồ sơ, thống kê và tiến độ của bạn sẽ được lưu lại cho các trận đấu trong tương lai."
         },
         "gameSubtitle": "Giao diện tác chiến trực tuyến",
         "lore1": "Từ trung tâm chỉ huy này, từng chiến hạm được đồng bộ trong cùng một nhịp lệnh: radar quét lại mặt biển, đội hình được hiệu chỉnh, và kịch bản tác chiến sẵn sàng chuyển thành trận địa chỉ sau một mệnh lệnh ngắn gọn.",
@@ -369,10 +370,17 @@
             "columnsLabel": "Cột",
             "boardInfo": "Bàn cờ: {{rows}} {{cols}} = {{cells}} ô",
             "deploymentCapacity": "Sức chứa triển khai",
-            "fleetLoad": "Tải trọng đội tàu",
+            "fleetLoad": "Tải trọng",
             "limit": "Giới hạn",
             "fleetTitle": "Đội tàu",
             "fleetTypes": "Loại tàu",
+            "setupTimer": "Bộ đếm thời gian",
+            "setupTimerValue": "{{seconds}}s",
+            "setupTimerConfigured": "{{seconds}}s đã cấu hình",
+            "setupTimerCountdown": "{{remaining}}s / {{total}}s",
+            "setupTimerFixedHint": "Cố định cho giai đoạn đặt tàu",
+            "turnTimer": "Thời gian lượt",
+            "turnTimerValue": "{{seconds}}s",
             "totalCellsInfo": "Tổng ô chiếm: {{used}} / {{max}} tối đa (50% bàn cờ)",
             "noShips": "Chưa có tàu nào. Vui lòng thêm ít nhất một tàu.",
             "shipName": "Tên",
@@ -491,7 +499,7 @@
         "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
         "USERNAME_REQUIRED": "Tên người dùng là bắt buộc.",
         "USERNAME_TOO_LONG": "Tên người dùng tối đa 20 ký tự.",
-        "USERNAME_INVALID_FORMAT": "Tên người dùng chỉ được chứa chữ cái và số.",
+        "USERNAME_INVALID_FORMAT": "Tên người dùng chỉ được chứa chữ cái, số và khoảng trắng.",
         "EMAIL_ALREADY_EXISTS": "Email này đã được đăng ký.",
         "USERNAME_ALREADY_EXISTS": "Tên người dùng này đã được sử dụng.",
         "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",

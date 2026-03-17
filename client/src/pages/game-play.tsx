@@ -23,6 +23,7 @@ import { useGamePlayMusic } from '@/hooks/useGamePlayMusic';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import { useLocalGamePlaySession } from '@/hooks/useLocalGamePlaySession';
 import { useOnlineGamePlaySession } from '@/hooks/useOnlineGamePlaySession';
+import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
 import type {
   BoardConfig,
   GameConfig,
@@ -40,6 +41,7 @@ const EMPTY_BOARD_CONFIG: BoardConfig = { rows: 0, cols: 0 };
 const EMPTY_GAME_CONFIG: GameConfig = {
   boardConfig: EMPTY_BOARD_CONFIG,
   ships: [],
+  turnTimerSeconds: 30,
 };
 const EMPTY_PLACEMENTS: PlacedShip[] = [];
 
@@ -485,6 +487,32 @@ export function GamePlayPage() {
     fallbackPlacements: onlineState?.placements,
     enabled: isOnlineMode && !!onlineState,
   });
+  const currentUserId = user?.id ?? null;
+  const onlineOpponentId =
+    currentUserId === match?.player1Id
+      ? match.player2Id
+      : currentUserId === match?.player2Id
+        ? match.player1Id
+        : null;
+  const { getProfileById } = usePlayerProfiles([currentUserId, onlineOpponentId]);
+  const currentPlayerProfile = getProfileById(currentUserId);
+  const opponentProfile = getProfileById(onlineOpponentId);
+  const onlineLeftHeaderContent = createHeaderContent({
+    avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar,
+    label: 'COMMANDER',
+    name: currentPlayerProfile?.username ?? user?.username,
+    fallbackName: 'Commander',
+    signature: currentPlayerProfile?.signature ?? user?.signature,
+    align: 'left',
+  });
+  const onlineRightHeaderContent = createHeaderContent({
+    avatarSrc: opponentProfile?.avatar,
+    label: 'OPPONENT',
+    name: opponentProfile?.username,
+    fallbackName: onlineOpponentId ? `#${onlineOpponentId.slice(0, 8)}` : 'Opponent',
+    signature: opponentProfile?.signature,
+    align: 'right',
+  });
 
   useEffect(() => {
     if (isOnlineMode) {
@@ -538,6 +566,11 @@ export function GamePlayPage() {
         key={`online:${room?.roomCode ?? onlineState.roomId}`}
         model={{
           ...onlineModel,
+          header: {
+            ...onlineModel.header,
+            leftContent: onlineLeftHeaderContent,
+            rightContent: onlineRightHeaderContent,
+          },
           actions: {
             onQuit: () => navigate('/game/rooms'),
             showEncryptedChannel: true,

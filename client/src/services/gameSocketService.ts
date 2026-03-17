@@ -6,6 +6,7 @@ import type {
   JoinRoomPayload,
   MatchMovePayload,
   MatchSnapshot,
+  RoomListSummary,
   RoomActionPayload,
   RoomReadyPayload,
   RoomSnapshot,
@@ -109,7 +110,7 @@ class GameSocketService {
     this.socket?.emit('room:configureSetup', payload, ack);
   }
 
-  listRooms(ack?: SocketAck<{ rooms: RoomSnapshot[] }>): void {
+  listRooms(ack?: SocketAck<{ rooms: RoomListSummary[] }>): void {
     this.socket?.emit('room:list', ack);
   }
 

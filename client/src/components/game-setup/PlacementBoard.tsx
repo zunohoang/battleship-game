@@ -11,11 +11,11 @@ import type { BoardConfig, PlacedShip, ShipDefinition } from '@/types/game';
 import { buildOccupiedMap, cellKey, instanceKey } from '@/utils/placementUtils';
 
 interface PlacementBoardProps {
-    boardConfig: BoardConfig;
-    ships: ShipDefinition[];
-    placements: PlacedShip[];
-    selectedInstanceKey: string | null;
-    onPlaceAt: (x: number, y: number) => void;
+  boardConfig: BoardConfig;
+  ships: ShipDefinition[];
+  placements: PlacedShip[];
+  selectedInstanceKey: string | null;
+  onPlaceAt: (x: number, y: number) => void;
 }
 
 function toShipSpriteSize(size: number): ShipSpriteSize | null {
@@ -82,15 +82,15 @@ export function PlacementBoard({
       const nextCellSize = Math.floor(
         Math.min(
           (element.clientWidth - axisAllowance -
-                        (boardConfig.cols - 1) * 4) /
-                        boardConfig.cols,
+            (boardConfig.cols - 1) * 4) /
+            boardConfig.cols,
           (element.clientHeight - axisAllowance -
-                        (boardConfig.rows - 1) * 4) /
-                        boardConfig.rows,
+            (boardConfig.rows - 1) * 4) /
+            boardConfig.rows,
         ),
       );
 
-      setCellSize(Math.max(8, nextCellSize));
+      setCellSize(Math.max(12, nextCellSize));
     };
 
     updateCellSize();
@@ -108,9 +108,9 @@ export function PlacementBoard({
   const boardOffsetX = axisSize + cellGap;
   const boardOffsetY = axisSize + cellGap;
   const boardPixelWidth =
-        boardConfig.cols * cellSize + (boardConfig.cols - 1) * cellGap;
+    boardConfig.cols * cellSize + (boardConfig.cols - 1) * cellGap;
   const boardPixelHeight =
-        boardConfig.rows * cellSize + (boardConfig.rows - 1) * cellGap;
+    boardConfig.rows * cellSize + (boardConfig.rows - 1) * cellGap;
   const fullPixelWidth = boardOffsetX + boardPixelWidth;
   const fullPixelHeight = boardOffsetY + boardPixelHeight;
   const boardStyle = {
@@ -133,17 +133,17 @@ export function PlacementBoard({
       if (!ship) return null;
 
       const selected =
-                selectedInstanceKey ===
-                instanceKey(placement.definitionId, placement.instanceIndex);
+        selectedInstanceKey ===
+        instanceKey(placement.definitionId, placement.instanceIndex);
       const spriteSize = toShipSpriteSize(ship.size);
       const renderWidth =
-                placement.orientation === 'horizontal'
-                  ? ship.size * cellSize + (ship.size - 1) * cellGap
-                  : cellSize;
+        placement.orientation === 'horizontal'
+          ? ship.size * cellSize + (ship.size - 1) * cellGap
+          : cellSize;
       const renderHeight =
-                placement.orientation === 'vertical'
-                  ? ship.size * cellSize + (ship.size - 1) * cellGap
-                  : cellSize;
+        placement.orientation === 'vertical'
+          ? ship.size * cellSize + (ship.size - 1) * cellGap
+          : cellSize;
 
       const baseStyle = {
         left: `${placement.x * (cellSize + cellGap)}px`,
@@ -153,16 +153,16 @@ export function PlacementBoard({
       };
 
       const spriteStyle =
-                spriteMeta && spriteSize
-                  ? getShipSpriteStyle(
-                    images.battleShipSheet,
-                    spriteMeta,
-                    toSpriteDirectionFromPlacement(placement.orientation),
-                    spriteSize,
-                    renderWidth,
-                    renderHeight,
-                  )
-                  : null;
+        spriteMeta && spriteSize
+          ? getShipSpriteStyle(
+            images.battleShipSheet,
+            spriteMeta,
+            toSpriteDirectionFromPlacement(placement.orientation),
+            spriteSize,
+            renderWidth,
+            renderHeight,
+          )
+          : null;
 
       return {
         key: instanceKey(
@@ -182,7 +182,7 @@ export function PlacementBoard({
   return (
     <div
       ref={boardViewportRef}
-      className='ui-panel ui-panel-strong min-h-0 overflow-hidden rounded-md p-3 sm:p-4'
+      className='ui-panel ui-panel-strong min-h-80 overflow-auto rounded-md p-3 sm:min-h-0 sm:overflow-hidden sm:p-4'
     >
       <div className='flex h-full w-full items-center justify-center'>
         <div
@@ -242,12 +242,12 @@ export function PlacementBoard({
                     cellKey(x, y),
                   );
                   const isSelectedPlaced =
-                                        occupied &&
-                                        selectedInstanceKey ===
-                                            instanceKey(
-                                              occupied.definitionId,
-                                              occupied.instanceIndex,
-                                            );
+                    occupied &&
+                    selectedInstanceKey ===
+                      instanceKey(
+                        occupied.definitionId,
+                        occupied.instanceIndex,
+                      );
 
                   return (
                     <button

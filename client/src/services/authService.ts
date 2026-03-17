@@ -52,6 +52,13 @@ export interface UpdateProfileResponse {
   }
 }
 
+export interface UserProfileResponse {
+  id: string
+  username: string
+  avatar: string | null
+  signature: string | null
+}
+
 export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
   const response = await apiClient.post<RegisterResponse>('/auth/register', payload)
   return response.data
@@ -90,5 +97,10 @@ export async function updateProfile(
     formData,
   )
 
+  return response.data
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfileResponse> {
+  const response = await apiClient.get<UserProfileResponse>(`/users/${userId}/profile`)
   return response.data
 }

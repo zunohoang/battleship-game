@@ -44,7 +44,7 @@ export function PlacementSidebar({
   const { t } = useTranslation();
 
   return (
-    <div className='ui-panel flex min-h-0 flex-col gap-2 rounded-md p-3'>
+    <div className='ui-panel flex flex-col gap-2 rounded-md p-3 sm:min-h-0'>
       <div className='relative z-10 space-y-1'>
         <p className='ui-panel-title'>{t('gameSetup.header.step2Label')}</p>
         <p className='text-sm text-(--text-muted)'>
@@ -59,7 +59,7 @@ export function PlacementSidebar({
         <p className={`text-xs ${hasError ? 'text-[#ffb4b4]' : 'text-(--text-muted)'}`}>
           {statusText}
         </p>
-        <div className='flex gap-2'>
+        <div className='grid gap-2 sm:grid-cols-2'>
           <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
             <p className='ui-data-label'>{t('gameSetup.step2.deployment')}</p>
             <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
@@ -76,7 +76,7 @@ export function PlacementSidebar({
         {aiDifficulty && onAiDifficultyChange && (
           <div className='ui-subpanel rounded-sm px-3 py-2'>
             <p className='ui-data-label mb-2'>{t('gameSetup.aiDifficulty.label')}</p>
-            <div className='flex gap-1'>
+            <div className='grid grid-cols-1 gap-1 sm:grid-cols-3'>
               {(['random', 'learning', 'probability'] as AiDifficulty[]).map((d) => (
                 <button
                   key={d}
@@ -105,7 +105,7 @@ export function PlacementSidebar({
         </p>
       </div>
 
-      <div className='themed-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pr-1'>
+      <div className='themed-scrollbar space-y-2 overflow-visible pr-1 sm:min-h-0 sm:flex-1 sm:overflow-y-auto'>
         {shipInstances.map((instance) => {
           const key = instanceKey(
             instance.definitionId,
@@ -175,7 +175,7 @@ export function PlacementSidebar({
         })}
       </div>
 
-      <div className='grid grid-cols-3 gap-2'>
+      <div className='grid gap-2 sm:grid-cols-3'>
         <Button
           onClick={onRandomPlace}
           className='h-9 rounded-sm text-[10px] tracking-[0.12em]'

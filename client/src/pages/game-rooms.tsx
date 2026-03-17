@@ -1,59 +1,211 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
-import type { RoomSnapshot } from '@/types/game';
+import type {
+  RoomListAccessState,
+  RoomListOccupancy,
+  RoomListSummary,
+  RoomStatus,
+} from '@/types/game';
 
 type PendingAction = 'none' | 'creating' | 'joining';
-type Phase1Filter = 'all' | 'ready' | 'pending';
-type OccupancyFilter = 'all' | 'empty' | 'full';
-type SortFilter = 'newest' | 'oldest' | 'roomCode';
+type RoomFilterKey = 'status' | 'accessState' | 'occupancy';
+type StatusFilter = 'all' | RoomStatus;
+type AccessStateFilter = 'all' | RoomListAccessState;
+type OccupancyFilter = 'all' | RoomListOccupancy;
 
 type RoomFilters = {
-  phase1: Phase1Filter;
+  status: StatusFilter;
+  accessState: AccessStateFilter;
   occupancy: OccupancyFilter;
-  sort: SortFilter;
+};
+
+type FilterOption = {
+  value: string;
+  label: string;
 };
 
 const DEFAULT_FILTERS: RoomFilters = {
-  phase1: 'all',
+  status: 'all',
+  accessState: 'all',
   occupancy: 'all',
-  sort: 'newest',
 };
 
-function sortRooms(rooms: RoomSnapshot[], sort: SortFilter): RoomSnapshot[] {
-  const next = [...rooms];
+const columnGridClassName = 'grid min-w-[980px] grid-cols-[minmax(160px,0.7fr)_1px_minmax(150px,1fr)_1px_minmax(180px,1fr)_1px_minmax(132px,0.75fr)_1px_minmax(172px,1fr)] items-stretch gap-0';
+const headerPanelClassName = 'cursor-pointer ui-button-shell ui-button-default flex h-15 w-full items-center rounded-sm border px-5 py-3 text-left md:px-6';
+const rowCellClassName = 'flex h-10 min-w-0 items-center px-4 py-2';
+const dividerClassName = 'h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]';
 
-  if (sort === 'roomCode') {
-    return next.sort((left, right) => left.roomCode.localeCompare(right.roomCode));
+const statusLabelMap: Record<RoomStatus, string> = {
+  waiting: 'Waiting',
+  setup: 'Setup',
+  in_game: 'In Game',
+  finished: 'Finished',
+  closed: 'Closed',
+};
+
+const accessStateLabelMap: Record<RoomListAccessState, string> = {
+  setting_up: 'Setting Up',
+  ready: 'Ready',
+  playing: 'Playing',
+};
+
+const occupancyLabelMap: Record<RoomListOccupancy, string> = {
+  '1/2': '1/2',
+  '2/2': '2/2',
+};
+
+const statusOptions: FilterOption[] = [
+  { value: 'all', label: 'All' },
+  { value: 'waiting', label: 'Waiting' },
+  { value: 'setup', label: 'Setup' },
+  { value: 'in_game', label: 'In Game' },
+  { value: 'finished', label: 'Finished' },
+  { value: 'closed', label: 'Closed' },
+];
+
+const accessStateOptions: FilterOption[] = [
+  { value: 'all', label: 'All' },
+  { value: 'setting_up', label: 'Setting Up' },
+  { value: 'ready', label: 'Ready' },
+  { value: 'playing', label: 'Playing' },
+];
+
+const occupancyOptions: FilterOption[] = [
+  { value: 'all', label: 'All' },
+  { value: '1/2', label: '1/2' },
+  { value: '2/2', label: '2/2' },
+];
+
+function getRoomActionState(
+  roomItem: RoomListSummary,
+  pendingAction: PendingAction,
+) {
+  if (roomItem.actionKind === 'open') {
+    return {
+      label: pendingAction === 'joining' ? 'Joining...' : 'Join Room',
+      disabled: pendingAction === 'joining',
+    };
   }
 
-  return next.sort((left, right) => {
-    const leftTime = new Date(left.updatedAt).getTime();
-    const rightTime = new Date(right.updatedAt).getTime();
-    return sort === 'oldest' ? leftTime - rightTime : rightTime - leftTime;
-  });
+  if (roomItem.occupancy === '2/2') {
+    return {
+      label: 'Room Full',
+      disabled: true,
+    };
+  }
+
+  if (!roomItem.phase1Config) {
+    return {
+      label: 'Phase 1 Pending',
+      disabled: true,
+    };
+  }
+
+  return {
+    label: pendingAction === 'joining' ? 'Joining...' : 'Join Room',
+    disabled: pendingAction === 'joining',
+  };
 }
 
-function isPhase1Pending(room: RoomSnapshot): boolean {
-  return !room.currentMatchId;
+function summarizeFleet(
+  ships: NonNullable<RoomListSummary['phase1Config']>['ships'],
+) {
+  const totalCells = ships.reduce(
+    (sum: number, ship) => sum + ship.size * ship.count,
+    0,
+  );
+  return {
+    shipTypes: ships.length,
+    totalCells,
+  };
 }
 
-function isRoomFull(room: RoomSnapshot, currentUserId: string | null): boolean {
-  return !!room.guestId && room.guestId !== currentUserId;
+function FilterHeader({
+  label,
+  currentLabel,
+  isOpen,
+  options,
+  onToggle,
+  onSelect,
+}: {
+  label: string;
+  currentLabel: string;
+  isOpen: boolean;
+  options: FilterOption[];
+  onToggle: () => void;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div className='relative px-3'>
+      <button
+        type='button'
+        className={headerPanelClassName}
+        aria-expanded={isOpen}
+        aria-haspopup='listbox'
+        onClick={onToggle}
+      >
+        <div className='min-w-0 flex-1'>
+          <p className='ui-data-label'>{label}</p>
+          <p className='truncate font-mono text-lg font-black uppercase text-(--text-main)'>
+            {currentLabel}
+          </p>
+        </div>
+        <span
+          aria-hidden='true'
+          className='ml-3 flex h-5 w-5 items-center justify-center text-(--text-muted)'
+        >
+          <ChevronDown
+            size={18}
+            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className='ui-panel ui-panel-strong absolute left-0 top-full z-20 mt-2 w-full min-w-44 rounded-sm p-2 shadow-[0_12px_28px_rgba(2,12,20,0.28)]'>
+          <div role='listbox' className='grid gap-1'>
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type='button'
+                onClick={() => onSelect(option.value)}
+                className='cursor-pointer ui-button-shell ui-button-default rounded-sm border px-4 py-2 text-left text-xs font-bold uppercase tracking-[0.14em]'
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
-function isOwnRoom(room: RoomSnapshot, currentUserId: string | null): boolean {
-  return room.ownerId === currentUserId || room.guestId === currentUserId;
+function StaticHeaderCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className=''>
+      <div className='flex h-15 w-full items-center rounded-sm px-5 py-3 text-left md:px-6'>
+        <div className='min-w-0 flex-1'>
+          <p className='ui-data-label'>{label}</p>
+          <p className='truncate font-mono text-lg font-black uppercase text-(--text-main)'>
+            {value}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function GameRoomsPage() {
   const navigate = useNavigate();
-  const { isLoggedIn, user } = useGlobalContext();
-  const currentUserId = user?.id ?? null;
+  const filterBarRef = useRef<HTMLDivElement | null>(null);
+  const { isLoggedIn } = useGlobalContext();
   const {
     rooms,
     room,
@@ -66,8 +218,9 @@ export function GameRoomsPage() {
   const [roomCode, setRoomCode] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [pendingAction, setPendingAction] = useState<PendingAction>('none');
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [openFilter, setOpenFilter] = useState<RoomFilterKey | null>(null);
   const [filters, setFilters] = useState<RoomFilters>(DEFAULT_FILTERS);
+  const [selectedRoomPreview, setSelectedRoomPreview] = useState<RoomListSummary | null>(null);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -98,34 +251,102 @@ export function GameRoomsPage() {
     });
   }, [match?.id, navigate, pendingAction, room]);
 
+  useEffect(() => {
+    if (!lastError || pendingAction === 'none') {
+      return;
+    }
+
+    const resetPendingActionTimeoutId = window.setTimeout(() => {
+      setPendingAction('none');
+    }, 0);
+
+    return () => {
+      window.clearTimeout(resetPendingActionTimeoutId);
+    };
+  }, [lastError, pendingAction]);
+
+  useEffect(() => {
+    if (!openFilter) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!filterBarRef.current?.contains(event.target as Node)) {
+        setOpenFilter(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenFilter(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openFilter]);
+
+  const selectedRoom =
+    selectedRoomPreview === null
+      ? null
+      : rooms.find((roomItem) => roomItem.roomId === selectedRoomPreview.roomId) ??
+        selectedRoomPreview;
+
   const filteredRooms = useMemo(() => {
-    const next = rooms.filter((openRoom) => {
-      if (filters.phase1 === 'ready' && isPhase1Pending(openRoom)) {
+    return rooms.filter((openRoom) => {
+      if (filters.status !== 'all' && openRoom.status !== filters.status) {
         return false;
       }
 
-      if (filters.phase1 === 'pending' && !isPhase1Pending(openRoom)) {
+      if (
+        filters.accessState !== 'all' &&
+        openRoom.accessState !== filters.accessState
+      ) {
         return false;
       }
 
-      const roomHasGuest = !!openRoom.guestId;
-      if (filters.occupancy === 'empty' && roomHasGuest) {
-        return false;
-      }
-
-      if (filters.occupancy === 'full' && !roomHasGuest) {
+      if (
+        filters.occupancy !== 'all' &&
+        openRoom.occupancy !== filters.occupancy
+      ) {
         return false;
       }
 
       return true;
     });
-
-    return sortRooms(next, filters.sort);
   }, [filters, rooms]);
 
   const canJoinByCode = roomCode.trim().length >= 4;
-  const toggleClassName =
-    'cursor-pointer ui-button-shell h-10 rounded-sm border px-3 text-xs font-bold tracking-[0.14em] uppercase transition-colors';
+  const hasActiveFilters =
+    filters.status !== 'all' ||
+    filters.accessState !== 'all' ||
+    filters.occupancy !== 'all';
+
+  const handleRoomAction = (roomItem: RoomListSummary) => {
+    setSelectedRoomPreview(null);
+    setPendingAction('joining');
+    joinRoom({ roomId: roomItem.roomId });
+  };
+
+  const handleRowPreview = (roomItem: RoomListSummary) => {
+    setSelectedRoomPreview(roomItem);
+  };
+
+  const handleFilterSelect = (
+    filterKey: RoomFilterKey,
+    value: string,
+  ) => {
+    setFilters((current) => ({
+      ...current,
+      [filterKey]: value,
+    }));
+    setOpenFilter(null);
+  };
 
   return (
     <motion.main
@@ -229,191 +450,296 @@ export function GameRoomsPage() {
             <div className='flex flex-wrap items-center justify-between gap-3'>
               <div>
                 <h2 className='font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
-                  Public Rooms
+                  Available Rooms
                 </h2>
                 <p className='mt-1 text-sm text-(--text-muted)'>
                   {filteredRooms.length} shown / {rooms.length} total
                 </p>
               </div>
 
-              <Button className='h-10 w-auto px-4' onClick={() => setIsFilterModalOpen(true)}>
-                Filters
-              </Button>
+              <div className='flex gap-2'>
+                <Button
+                  className='h-10 w-auto px-4'
+                  disabled={!hasActiveFilters}
+                  onClick={() => {
+                    setFilters(DEFAULT_FILTERS);
+                    setOpenFilter(null);
+                  }}
+                >
+                  Reset Filters
+                </Button>
+              </div>
             </div>
 
-            <div className='mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1'>
-              {filteredRooms.length === 0 ? (
-                <div className='ui-subpanel rounded-sm px-4 py-6 text-sm text-(--text-muted)'>
-                  {rooms.length === 0
-                    ? 'No public rooms yet. Create one and complete phase 1 in the waiting room.'
-                    : 'No rooms match the selected filters.'}
+            <div className='mt-4 min-h-0 flex-1 overflow-auto'>
+              <div className='min-w-[980px]'>
+                <div ref={filterBarRef} className='ui-subpanel rounded-sm p-3'>
+                  <div className={columnGridClassName}>
+                    <StaticHeaderCell label='RoomCode' value='Code' />
+
+                    <div aria-hidden='true' className={dividerClassName} />
+
+                    <FilterHeader
+                      label='Status'
+                      currentLabel={
+                        filters.status === 'all'
+                          ? 'All'
+                          : statusLabelMap[filters.status]
+                      }
+                      isOpen={openFilter === 'status'}
+                      options={statusOptions}
+                      onToggle={() =>
+                        setOpenFilter((current) =>
+                          current === 'status' ? null : 'status',
+                        )
+                      }
+                      onSelect={(value) => {
+                        handleFilterSelect('status', value);
+                      }}
+                    />
+
+                    <div aria-hidden='true' className={dividerClassName} />
+
+                    <FilterHeader
+                      label='AccessState'
+                      currentLabel={
+                        filters.accessState === 'all'
+                          ? 'All'
+                          : accessStateLabelMap[filters.accessState]
+                      }
+                      isOpen={openFilter === 'accessState'}
+                      options={accessStateOptions}
+                      onToggle={() =>
+                        setOpenFilter((current) =>
+                          current === 'accessState' ? null : 'accessState',
+                        )
+                      }
+                      onSelect={(value) => {
+                        handleFilterSelect('accessState', value);
+                      }}
+                    />
+
+                    <div aria-hidden='true' className={dividerClassName} />
+
+                    <FilterHeader
+                      label='Occupancy'
+                      currentLabel={
+                        filters.occupancy === 'all'
+                          ? 'All'
+                          : occupancyLabelMap[filters.occupancy]
+                      }
+                      isOpen={openFilter === 'occupancy'}
+                      options={occupancyOptions}
+                      onToggle={() =>
+                        setOpenFilter((current) =>
+                          current === 'occupancy' ? null : 'occupancy',
+                        )
+                      }
+                      onSelect={(value) => {
+                        handleFilterSelect('occupancy', value);
+                      }}
+                    />
+
+                    <div aria-hidden='true' className={dividerClassName} />
+
+                    <StaticHeaderCell label='Join' value='Action' />
+                  </div>
                 </div>
-              ) : (
-                filteredRooms.map((openRoom) => {
-                  const pendingPhase1 = isPhase1Pending(openRoom);
-                  const roomOwnedByUser = isOwnRoom(openRoom, currentUserId);
-                  const roomIsFull = isRoomFull(openRoom, currentUserId);
-                  const canOpenRoom = roomOwnedByUser || (!pendingPhase1 && !roomIsFull);
 
-                  return (
-                    <div
-                      key={openRoom.roomId}
-                      className='ui-subpanel rounded-sm px-4 py-4'
-                    >
-                      <div className='flex flex-wrap items-start justify-between gap-4'>
-                        <div className='min-w-0 flex-1'>
-                          <div className='flex flex-wrap items-center gap-3'>
-                            <div>
-                              <p className='ui-data-label'>Code</p>
-                              <p className='font-mono text-lg font-black tracking-[0.14em] text-(--accent-secondary)'>
-                                {openRoom.roomCode}
-                              </p>
-                            </div>
-                            <span className='rounded-full border border-[rgba(63,203,232,0.32)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-(--text-muted)'>
-                              {pendingPhase1 ? 'Phase 1 pending' : 'Phase 1 ready'}
-                            </span>
-                            <span className='rounded-full border border-[rgba(63,203,232,0.32)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-(--text-muted)'>
-                              {openRoom.guestId ? 'Full' : 'Open'}
-                            </span>
-                          </div>
+                <div className='themed-scrollbar mt-3 flex min-h-0 flex-col gap-2 overflow-y-auto pr-1'>
+                  {filteredRooms.length === 0 ? (
+                    <div className='ui-subpanel rounded-sm px-4 py-6 text-sm text-(--text-muted)'>
+                      {rooms.length === 0
+                        ? 'No rooms are available right now. Create one or join by code.'
+                        : 'No rooms match the selected filters.'}
+                    </div>
+                  ) : (
+                    filteredRooms.map((roomItem) => {
+                      const actionState = getRoomActionState(
+                        roomItem,
+                        pendingAction,
+                      );
 
-                          <div className='mt-3 grid gap-1 text-sm text-(--text-muted)'>
-                            <p>Status: <span className='font-mono text-(--text-main)'>{openRoom.status}</span></p>
-                            <p>
-                              Access:{' '}
-                              <span className='font-mono text-(--text-main)'>{openRoom.visibility}</span>
-                            </p>
-                            <p>
-                              Updated:{' '}
-                              <span className='font-mono text-(--text-main)'>
-                                {new Date(openRoom.updatedAt).toLocaleString()}
-                              </span>
-                            </p>
-                          </div>
-
-                          <p className='mt-3 text-xs uppercase tracking-[0.16em] text-(--text-subtle)'>
-                            {roomOwnedByUser
-                              ? 'Your room is waiting for the next action.'
-                              : pendingPhase1
-                                ? 'Host is still configuring phase 1.'
-                                : roomIsFull
-                                  ? 'This room already has an opponent.'
-                                  : 'Room is ready for an opponent to join.'}
-                          </p>
-                        </div>
-
-                        <Button
-                          className='h-10 w-40'
-                          disabled={!canOpenRoom}
-                          onClick={() => {
-                            setPendingAction('joining');
-                            joinRoom({ roomCode: openRoom.roomCode });
+                      return (
+                        <div
+                          key={roomItem.roomId}
+                          role='button'
+                          tabIndex={0}
+                          className='ui-subpanel cursor-pointer rounded-sm p-3 transition-colors duration-150 hover:border-[rgba(77,223,255,0.44)] focus-visible:border-[rgba(90,229,255,0.65)] focus-visible:outline-none'
+                          onClick={() => handleRowPreview(roomItem)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handleRowPreview(roomItem);
+                            }
                           }}
                         >
-                          {roomOwnedByUser
-                            ? 'Open Room'
-                            : pendingPhase1
-                              ? 'Phase 1 Pending'
-                              : roomIsFull
-                                ? 'Room Full'
-                                : 'Join Room'}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                          <div className={columnGridClassName}>
+                            <div className={rowCellClassName}>
+                              <p className='truncate font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {roomItem.roomCode}
+                              </p>
+                            </div>
+
+                            <div aria-hidden='true' className={dividerClassName} />
+
+                            <div className={rowCellClassName}>
+                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {statusLabelMap[roomItem.status]}
+                              </p>
+                            </div>
+
+                            <div aria-hidden='true' className={dividerClassName} />
+
+                            <div className={rowCellClassName}>
+                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {accessStateLabelMap[roomItem.accessState]}
+                              </p>
+                            </div>
+
+                            <div aria-hidden='true' className={dividerClassName} />
+
+                            <div className={rowCellClassName}>
+                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {roomItem.occupancy}
+                              </p>
+                            </div>
+
+                            <div aria-hidden='true' className={dividerClassName} />
+
+                            <div className={`${rowCellClassName} justify-start`}>
+                              <Button
+                                className='h-10 w-full'
+                                disabled={actionState.disabled}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleRoomAction(roomItem);
+                                }}
+                              >
+                                {actionState.label}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
           </section>
         </div>
       </section>
 
       <Modal
-        isOpen={isFilterModalOpen}
-        title='Room Filters'
-        onClose={() => setIsFilterModalOpen(false)}
+        isOpen={selectedRoom !== null}
+        title='Phase 1 Intel'
+        onClose={() => setSelectedRoomPreview(null)}
+        surfaceClassName='max-w-2xl'
       >
-        <div className='grid gap-4'>
-          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            <span>Phase 1</span>
-            <div className='grid grid-cols-3 gap-2'>
-              {([
-                ['all', 'All'],
-                ['ready', 'Ready'],
-                ['pending', 'Pending'],
-              ] as const).map(([value, label]) => (
-                <button
-                  key={value}
-                  type='button'
-                  onClick={() => setFilters((current) => ({ ...current, phase1: value }))}
-                  className={`${toggleClassName} ${
-                    filters.phase1 === value ? 'ui-button-primary' : 'ui-button-default'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+        {selectedRoom ? (
+          <div className='space-y-4'>
+            <div className='ui-subpanel rounded-sm p-4'>
+              <p className='ui-data-label'>Room code</p>
+              <p className='mt-2 font-mono text-xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                {selectedRoom.roomCode}
+              </p>
+              <p className='mt-2 text-sm text-(--text-muted)'>
+                Previewing the host phase 1 configuration currently published for this room.
+              </p>
+            </div>
+
+            {selectedRoom.phase1Config ? (
+              <>
+                <div className='grid gap-3 sm:grid-cols-4'>
+                  <div className='ui-subpanel rounded-sm p-4'>
+                    <p className='ui-data-label'>Board</p>
+                    <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                      {selectedRoom.phase1Config.boardConfig.rows} x {selectedRoom.phase1Config.boardConfig.cols}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel rounded-sm p-4'>
+                    <p className='ui-data-label'>Fleet types</p>
+                    <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                      {summarizeFleet(selectedRoom.phase1Config.ships).shipTypes}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel rounded-sm p-4'>
+                    <p className='ui-data-label'>Fleet cells</p>
+                    <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                      {summarizeFleet(selectedRoom.phase1Config.ships).totalCells}
+                    </p>
+                  </div>
+
+                  <div className='ui-subpanel rounded-sm p-4'>
+                    <p className='ui-data-label'>Turn timer</p>
+                    <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                      {selectedRoom.phase1Config.turnTimerSeconds}s
+                    </p>
+                  </div>
+                </div>
+
+                <div className='ui-subpanel rounded-sm p-4'>
+                  <div className='flex items-center justify-between gap-3'>
+                    <p className='ui-data-label'>Host fleet configuration</p>
+                    <p className='font-mono text-xs font-bold uppercase tracking-[0.14em] text-(--text-muted)'>
+                      {statusLabelMap[selectedRoom.status]} / {accessStateLabelMap[selectedRoom.accessState]}
+                    </p>
+                  </div>
+
+                  <div className='mt-3 grid gap-2'>
+                    {selectedRoom.phase1Config.ships.map((ship) => (
+                      <div
+                        key={ship.id}
+                        className='flex items-center justify-between rounded-sm border border-[rgba(63,203,232,0.22)] bg-[rgba(7,28,38,0.72)] px-4 py-3'
+                      >
+                        <div>
+                          <p className='font-mono text-sm font-black uppercase tracking-[0.12em] text-(--text-main)'>
+                            {ship.name}
+                          </p>
+                          <p className='mt-1 text-xs uppercase tracking-[0.12em] text-(--text-muted)'>
+                            Size {ship.size}
+                          </p>
+                        </div>
+                        <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--accent-secondary)'>
+                          x{ship.count}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className='ui-subpanel rounded-sm p-4'>
+                <p className='ui-data-label'>Phase 1 status</p>
+                <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                  Pending
+                </p>
+                <p className='mt-2 text-sm text-(--text-muted)'>
+                  The host has not published a phase 1 configuration for this room yet.
+                </p>
+              </div>
+            )}
+
+            <div className='flex justify-end'>
+              {(() => {
+                const actionState = getRoomActionState(selectedRoom, pendingAction);
+
+                return (
+                  <Button
+                    className='h-11 w-full sm:w-52'
+                    disabled={actionState.disabled}
+                    onClick={() => handleRoomAction(selectedRoom)}
+                  >
+                    {actionState.label}
+                  </Button>
+                );
+              })()}
             </div>
           </div>
-
-          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            <span>Occupancy</span>
-            <div className='grid grid-cols-3 gap-2'>
-              {([
-                ['all', 'All'],
-                ['empty', 'Open'],
-                ['full', 'Full'],
-              ] as const).map(([value, label]) => (
-                <button
-                  key={value}
-                  type='button'
-                  onClick={() => setFilters((current) => ({ ...current, occupancy: value }))}
-                  className={`${toggleClassName} ${
-                    filters.occupancy === value ? 'ui-button-primary' : 'ui-button-default'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            <span>Sort</span>
-            <div className='grid grid-cols-3 gap-2'>
-              {([
-                ['newest', 'Newest'],
-                ['oldest', 'Oldest'],
-                ['roomCode', 'Code'],
-              ] as const).map(([value, label]) => (
-                <button
-                  key={value}
-                  type='button'
-                  onClick={() => setFilters((current) => ({ ...current, sort: value }))}
-                  className={`${toggleClassName} ${
-                    filters.sort === value ? 'ui-button-primary' : 'ui-button-default'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className='flex gap-3'>
-            <Button
-              variant='primary'
-              onClick={() => {
-                setFilters(DEFAULT_FILTERS);
-              }}
-            >
-              Reset Filters
-            </Button>
-            <Button onClick={() => setIsFilterModalOpen(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
+        ) : null}
       </Modal>
     </motion.main>
   );

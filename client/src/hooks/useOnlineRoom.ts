@@ -8,6 +8,7 @@ import type {
   MatchSnapshot,
   RoomActionPayload,
   RoomReadyPayload,
+  RoomListSummary,
   RoomSnapshot,
 } from '@/types/game';
 
@@ -17,7 +18,7 @@ interface UseOnlineRoomState {
   socketConnected: boolean;
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
-  rooms: RoomSnapshot[];
+  rooms: RoomListSummary[];
   lastError: string | null;
 }
 

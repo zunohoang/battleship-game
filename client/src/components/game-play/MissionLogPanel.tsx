@@ -9,6 +9,8 @@ export interface MissionLogPanelProps {
   entries: MissionLogEntry[];
   className?: string;
   logHeightClassName?: string;
+  defaultTab?: MissionLogTab;
+  mode?: 'tabs' | 'chat-only';
 }
 
 type MissionLogTab = 'logs' | 'chats';
@@ -74,13 +76,24 @@ export function MissionLogPanel({
   entries,
   className = '',
   logHeightClassName = 'h-28',
+  defaultTab = 'logs',
+  mode = 'tabs',
 }: MissionLogPanelProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [activeTab, setActiveTab] = useState<MissionLogTab>('logs');
-  const isLogsTab = activeTab === 'logs';
-  const panelTitle = isLogsTab ? title : t('gameBattle.chatTitle');
-  const panelSubtitle = isLogsTab ? subtitle : t('gameBattle.chatsTab');
+  const [activeTab, setActiveTab] = useState<MissionLogTab>(defaultTab);
+  const isChatOnly = mode === 'chat-only';
+  const isLogsTab = !isChatOnly && activeTab === 'logs';
+  const panelTitle = isChatOnly
+    ? t('gameBattle.chatTitle')
+    : isLogsTab
+      ? title
+      : t('gameBattle.chatTitle');
+  const panelSubtitle = isChatOnly
+    ? undefined
+    : isLogsTab
+      ? subtitle
+      : t('gameBattle.chatsTab');
 
   useEffect(() => {
     const container = containerRef.current;
@@ -89,24 +102,26 @@ export function MissionLogPanel({
     }
 
     container.scrollTop = container.scrollHeight;
-  }, [activeTab, entries]);
+  }, [activeTab, entries, isChatOnly]);
 
   return (
     <div className={`${className} flex items-stretch gap-3`}>
-      <div className='flex shrink-0 flex-col gap-2'>
-        <MissionLogTabButton
-          active={activeTab === 'logs'}
-          icon={ScrollText}
-          label={t('gameBattle.logsTab')}
-          onClick={() => setActiveTab('logs')}
-        />
-        <MissionLogTabButton
-          active={activeTab === 'chats'}
-          icon={MessageSquare}
-          label={t('gameBattle.chatsTab')}
-          onClick={() => setActiveTab('chats')}
-        />
-      </div>
+      {!isChatOnly ? (
+        <div className='flex shrink-0 flex-col gap-2'>
+          <MissionLogTabButton
+            active={activeTab === 'logs'}
+            icon={ScrollText}
+            label={t('gameBattle.logsTab')}
+            onClick={() => setActiveTab('logs')}
+          />
+          <MissionLogTabButton
+            active={activeTab === 'chats'}
+            icon={MessageSquare}
+            label={t('gameBattle.chatsTab')}
+            onClick={() => setActiveTab('chats')}
+          />
+        </div>
+      ) : null}
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between gap-3'>
           <p className='font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>

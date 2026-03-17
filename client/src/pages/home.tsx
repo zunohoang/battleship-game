@@ -218,6 +218,10 @@ export function HomePage() {
   };
 
   const isAnonymous = user?.isAnonymous ?? true;
+  const displayUsername = user?.username?.trim() || t('home.playerStatus.anonymous');
+  const displaySignature = !isAnonymous && user?.signature
+    ? user.signature
+    : '- - -';
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
     'profileSetup',
@@ -381,47 +385,43 @@ export function HomePage() {
                     {t('home.playerStatus.label')}
                   </p>
 
-                  {!user ? (
-                    <>
-                      <p className='mt-3 font-mono text-sm text-(--text-muted)'>
-                        {t('home.playerStatus.anonymous')}
-                      </p>
-                      <p className='mt-4 text-xs font-semibold tracking-[0.18em] text-(--text-subtle) uppercase'>
-                        {t('home.accessRules.anonymous')}
-                      </p>
-                    </>
-                  ) : (
-                    <div className='mt-3 grid gap-2'>
-                      <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
-                        <span className='ui-data-label text-right'>{t('home.profile.username')}</span>
-                        {isAnonymous ? (
-                          <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
-                            {user.username}
-                          </span>
-                        ) : (
-                          <button
-                            type='button'
-                            onClick={() => openModal('profileSetup')}
-                            className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
-                          >
-                            {user.username}
-                          </button>
-                        )}
-                        <span className='ui-data-label text-right'>{t('home.profile.signature')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {user.signature ?? '- - -'}
+                  <div className='mt-3 grid gap-2'>
+                    <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
+                      <span className='ui-data-label text-right'>{t('home.profile.username')}</span>
+                      {isAnonymous ? (
+                        <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                          {displayUsername}
                         </span>
-                        <span className='ui-data-label text-right'>{t('home.profile.rank')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {/* {user.rank ?? '- - -'} */} - - -
-                        </span>
-                        <span className='ui-data-label text-right'>{t('home.profile.elo')}</span>
-                        <span className='font-mono text-sm text-(--text-main)'>
-                          {/* {user.elo ?? '- - -'} */} - - -
-                        </span>
-                      </div>
+                      ) : (
+                        <button
+                          type='button'
+                          onClick={() => openModal('profileSetup')}
+                          className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
+                        >
+                          {displayUsername}
+                        </button>
+                      )}
+                      <span className='ui-data-label text-right'>{t('home.profile.signature')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        {displaySignature}
+                      </span>
+                      <span className='ui-data-label text-right'>{t('home.profile.rank')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        - - -
+                      </span>
+                      <span className='ui-data-label text-right'>{t('home.profile.elo')}</span>
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        - - -
+                      </span>
                     </div>
-                  )}
+                    <p className='mt-2 text-xs font-semibold text-(--text-subtle)'>
+                      {isAnonymous ? (
+                        t('home.accessRules.anonymous')
+                      ) : ( 
+                        t('home.accessRules.registered')
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
 
