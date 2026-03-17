@@ -8,6 +8,9 @@ export type RoomStatus =
   | 'closed';
 
 export type MatchStatus = 'setup' | 'in_progress' | 'finished';
+export type RoomListAccessState = 'setting_up' | 'ready' | 'playing';
+export type RoomListOccupancy = '1/2' | '2/2';
+export type RoomListActionKind = 'open' | 'join';
 
 export type Orientation = 'horizontal' | 'vertical';
 
@@ -39,6 +42,13 @@ export interface ShotRecord {
   by: string;
   sequence: number;
   clientMoveId: string;
+  source?: 'manual' | 'timeout_auto';
+}
+
+export interface RoomListPhase1Config {
+  boardConfig: BoardConfig;
+  ships: ShipDefinition[];
+  turnTimerSeconds: number;
 }
 
 export interface RoomSnapshot {
@@ -55,12 +65,23 @@ export interface RoomSnapshot {
   updatedAt: string;
 }
 
+export interface RoomListSummary {
+  roomId: string;
+  roomCode: string;
+  status: RoomStatus;
+  accessState: RoomListAccessState;
+  occupancy: RoomListOccupancy;
+  actionKind: RoomListActionKind;
+  phase1Config: RoomListPhase1Config | null;
+}
+
 export interface MatchSnapshot {
   id: string;
   roomId: string;
   status: MatchStatus;
   boardConfig: BoardConfig;
   ships: ShipDefinition[];
+  turnTimerSeconds: number;
   player1Id: string;
   player2Id: string;
   player1Placements: PlacedShip[] | null;
@@ -70,6 +91,7 @@ export interface MatchSnapshot {
   turnPlayerId: string | null;
   winnerId: string | null;
   setupDeadlineAt: string | null;
+  turnDeadlineAt: string | null;
   version: number;
   rematchVotes: Record<string, boolean>;
   updatedAt: string;

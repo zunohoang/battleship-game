@@ -1,5 +1,6 @@
 export const GameEvents = {
   RoomCreate: 'room:create',
+  RoomConfigureSetup: 'room:configureSetup',
   RoomList: 'room:list',
   RoomJoin: 'room:join',
   RoomLeave: 'room:leave',

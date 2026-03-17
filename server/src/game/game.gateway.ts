@@ -7,13 +7,14 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { BadRequestException, Inject } from '@nestjs/common';
+import { BadRequestException, HttpException, Inject } from '@nestjs/common';
 import {
   TOKEN_REPOSITORY,
   type ITokenRepository,
 } from '../auth/infrastructure/security/token.repository';
 import { GameService } from './game.service';
 import {
+  ConfigureRoomSetupDto,
   CreateRoomDto,
   JoinRoomDto,
   MoveDto,
@@ -23,6 +24,12 @@ import {
   RoomReadyDto,
 } from './dto/game-events.dto';
 import { GameEvents } from './constants/game-events.const';
+import type { MatchSnapshot, RoomSnapshot } from './types/game.types';
+
+type RoomUpdatePayload = {
+  room: RoomSnapshot;
+  match: MatchSnapshot | null;
+};
 
 @WebSocketGateway({
   namespace: 'game',
@@ -68,27 +75,33 @@ export class GameGateway {
   ) {
     const userId = this.getUserId(client);
     const room = await this.gameService.createRoom(userId, payload);
-    const match = await this.gameService.initializeMatch(
-      room.roomId,
-      userId,
-      payload.boardConfig,
-      payload.ships,
-    );
-    await client.join(`room:${room.roomId}`);
-
-    const response = {
+    return this.emitRoomUpdate(client, {
       room,
-      match,
-    };
-    this.server
-      .to(`room:${room.roomId}`)
-      .emit(GameEvents.ServerRoomUpdated, response);
-    return response;
+      match: null,
+    });
+  }
+
+  @SubscribeMessage(GameEvents.RoomConfigureSetup)
+  async handleConfigureRoomSetup(
+    @MessageBody() payload: ConfigureRoomSetupDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      return this.emitRoomUpdate(
+        client,
+        await this.gameService.configureRoomSetup(userId, payload),
+      );
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
   }
 
   @SubscribeMessage(GameEvents.RoomList)
-  async handleListRooms() {
-    const rooms = await this.gameService.listOpenRooms();
+  async handleListRooms(@ConnectedSocket() client: Socket) {
+    const userId = this.getUserId(client);
+    const rooms = await this.gameService.listOpenRooms(userId);
     return { rooms };
   }
 
@@ -97,15 +110,19 @@ export class GameGateway {
     @MessageBody() payload: JoinRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
-    const result = await this.gameService.joinRoom(userId, {
-      roomCode: payload.roomCode,
-    });
-    await client.join(`room:${result.room.roomId}`);
-    this.server
-      .to(`room:${result.room.roomId}`)
-      .emit(GameEvents.ServerRoomUpdated, result);
-    return result;
+    try {
+      const userId = this.getUserId(client);
+      return this.emitRoomUpdate(
+        client,
+        await this.gameService.joinRoom(userId, {
+          roomId: payload.roomId,
+          roomCode: payload.roomCode,
+        }),
+      );
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
   }
 
   @SubscribeMessage(GameEvents.RoomStart)
@@ -127,7 +144,11 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     const userId = this.getUserId(client);
-    const result = await this.gameService.markReady(payload.roomId, userId, payload);
+    const result = await this.gameService.markReady(
+      payload.roomId,
+      userId,
+      payload,
+    );
     this.server
       .to(`room:${payload.roomId}`)
       .emit(GameEvents.ServerMatchUpdated, result);
@@ -162,7 +183,7 @@ export class GameGateway {
     await client.leave(`room:${roomId}`);
     this.server
       .to(`room:${roomId}`)
-      .emit(GameEvents.ServerRoomUpdated, { room });
+      .emit(GameEvents.ServerRoomUpdated, { room, match: null });
     return { room };
   }
 
@@ -244,5 +265,49 @@ export class GameGateway {
     }
 
     throw new WsException('Missing roomId in socket auth payload');
+  }
+
+  private emitClientError(client: Socket, error: unknown): void {
+    if (!(error instanceof HttpException)) {
+      return;
+    }
+
+    const response = error.getResponse();
+    const message =
+      typeof response === 'string'
+        ? response
+        : typeof response === 'object' &&
+            response !== null &&
+            'message' in response
+          ? Array.isArray(response.message)
+            ? response.message.join(', ')
+            : String(response.message)
+          : error.message;
+    const errorCode =
+      typeof response === 'object' &&
+      response !== null &&
+      'error' in response &&
+      typeof response.error === 'string'
+        ? response.error
+        : error.name;
+
+    client.emit(GameEvents.ServerError, {
+      error: errorCode,
+      message:
+        errorCode === 'ROOM_SETUP_MISSING'
+          ? 'Host has not finished phase 1 setup yet.'
+          : message,
+    });
+  }
+
+  private async emitRoomUpdate(
+    client: Socket,
+    payload: RoomUpdatePayload,
+  ): Promise<RoomUpdatePayload> {
+    await client.join(`room:${payload.room.roomId}`);
+    this.server
+      .to(`room:${payload.room.roomId}`)
+      .emit(GameEvents.ServerRoomUpdated, payload);
+    return payload;
   }
 }

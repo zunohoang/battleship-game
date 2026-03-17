@@ -31,6 +31,9 @@ export class MatchEntity {
   @Column({ type: 'jsonb' })
   ships: ShipDefinition[];
 
+  @Column({ type: 'integer', default: 30 })
+  turnTimerSeconds: number;
+
   @Column({ type: 'uuid' })
   player1Id: string;
 
@@ -57,6 +60,9 @@ export class MatchEntity {
 
   @Column({ type: 'timestamp with time zone', nullable: true })
   setupDeadlineAt: Date | null;
+
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  turnDeadlineAt: Date | null;
 
   @Column({ type: 'integer', default: 0 })
   version: number;
