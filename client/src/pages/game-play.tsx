@@ -5,9 +5,7 @@ import { Eye, EyeOff, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { images } from '@/assets';
 import { SettingsModal } from '@/components/modal/SettingsModal';
-import {
-  BattleBoardPanel,
-} from '@/components/game-play/GamePlayBattlefield';
+import { BattleBoardPanel } from '@/components/game-play/GamePlayBattlefield';
 import {
   GameOverOverlay,
   StatsOverlay,
@@ -24,6 +22,10 @@ import { useGlobalContext } from '@/hooks/useGlobalContext';
 import { useLocalGamePlaySession } from '@/hooks/useLocalGamePlaySession';
 import { useOnlineGamePlaySession } from '@/hooks/useOnlineGamePlaySession';
 import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
+import {
+  calculateFleetShipStatuses,
+  type FleetShipStatus,
+} from '@/utils/gamePlayUtils';
 import type {
   BoardConfig,
   GameConfig,
@@ -87,6 +89,8 @@ export interface GamePlayScreenModel {
     revealOpponentShips: boolean;
     onFire?: (x: number, y: number) => void;
     isBotVBot: boolean;
+    ownFleetStatus: FleetShipStatus[];
+    opponentFleetStatus: FleetShipStatus[];
   };
   missionLog: {
     entries: MissionLogEntry[];
@@ -110,6 +114,48 @@ export interface GamePlayScreenModel {
     result: GameResult | null;
     onPlayAgain: () => void;
   };
+}
+
+function FleetStatusBar({
+  label,
+  ships,
+}: {
+  label: string;
+  ships: FleetShipStatus[];
+}) {
+  const total = ships.length;
+  const destroyed = ships.filter((ship) => ship.isDestroyed).length;
+  const remaining = Math.max(0, total - destroyed);
+
+  if (total === 0) {
+    return (
+      <p className="font-mono text-[9px] font-bold tracking-[0.14em] text-(--text-subtle)">
+        {label}: --
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <p className="font-mono text-[9px] font-bold tracking-[0.14em] text-(--text-subtle)">
+        {label}: {remaining}/{total}
+      </p>
+      <div className="flex flex-wrap items-center gap-1">
+        {ships.map((ship) => (
+          <span
+            key={ship.key}
+            title={ship.label}
+            className={`h-2 rounded-sm border ${
+              ship.isDestroyed
+                ? 'border-[rgba(255,110,100,0.65)] bg-[rgba(180,40,40,0.52)]'
+                : 'border-[rgba(117,235,255,0.48)] bg-[rgba(34,211,238,0.26)]'
+            }`}
+            style={{ width: `${Math.max(10, ship.size * 8)}px` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function createHeaderContent({
@@ -171,21 +217,21 @@ function GamePlayScreen({
       return;
     }
 
-    setStatsDisplayState((current) =>
-      current === 'open' ? 'hidden' : 'open',
-    );
+    setStatsDisplayState((current) => (current === 'open' ? 'hidden' : 'open'));
   };
 
-  // Skeleton 
+  // Skeleton
   if (!model) {
     return (
-      <GamePlayShell sectionClassName='ui-hud-shell mx-auto flex h-full w-full max-w-3xl items-center justify-center rounded-md p-4'>
-        <div className='ui-panel ui-panel-strong w-full max-w-xl rounded-md p-6 text-center'>
-          <p className='ui-data-label'>{loadingFallback?.label ?? 'GAMEPLAY'}</p>
-          <h1 className='mt-2 font-mono text-xl font-black uppercase tracking-[0.18em] text-(--accent-secondary)'>
+      <GamePlayShell sectionClassName="ui-hud-shell mx-auto flex h-full w-full max-w-3xl items-center justify-center rounded-md p-4">
+        <div className="ui-panel ui-panel-strong w-full max-w-xl rounded-md p-6 text-center">
+          <p className="ui-data-label">
+            {loadingFallback?.label ?? 'GAMEPLAY'}
+          </p>
+          <h1 className="mt-2 font-mono text-xl font-black uppercase tracking-[0.18em] text-(--accent-secondary)">
             {loadingFallback?.title ?? 'Syncing match state'}
           </h1>
-          <p className='mt-4 text-sm leading-7 text-(--text-muted)'>
+          <p className="mt-4 text-sm leading-7 text-(--text-muted)">
             {loadingFallback?.description ??
               'Waiting for the latest game state snapshot.'}
           </p>
@@ -195,13 +241,15 @@ function GamePlayScreen({
   }
 
   const { header, battlefield, missionLog, actions, state } = model;
-  const isStatsVisible = state.phase === 'gameover' || statsDisplayState === 'open';
-  const isStatsMinimized = state.phase === 'gameover' && statsDisplayState === 'minimized';
+  const isStatsVisible =
+    state.phase === 'gameover' || statsDisplayState === 'open';
+  const isStatsMinimized =
+    state.phase === 'gameover' && statsDisplayState === 'minimized';
   const isSettingsExpanded = isStatsVisible && !isStatsMinimized;
   const encryptedChannelValue = actions.encryptedChannelValue ?? '77.2';
   const encryptedChannelDisplay =
     actions.encryptedChannelMaskable && isEncryptedChannelMasked
-      ? actions.encryptedChannelMaskedValue ?? '***'
+      ? (actions.encryptedChannelMaskedValue ?? '***')
       : encryptedChannelValue;
 
   const handleQuit = () => {
@@ -221,39 +269,45 @@ function GamePlayScreen({
 
   return (
     <GamePlayShell>
-      <div className='flex h-[calc(100dvh-2rem)] min-h-[calc(100dvh-2rem)] flex-col gap-1.5 sm:h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4rem)] sm:gap-2 md:h-auto md:min-h-0 md:flex-1 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)] md:gap-3'>
+      <div className="flex h-[calc(100dvh-2rem)] min-h-[calc(100dvh-2rem)] flex-col gap-1.5 sm:h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4rem)] sm:gap-2 md:h-auto md:min-h-0 md:flex-1 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)] md:gap-3">
         {/* Left header based on 2 device type */}
-        <div className='order-1 shrink-0 md:hidden'>
+        <div className="order-1 shrink-0 md:hidden">
           <GamePlayIdentityCard content={header.leftContent} />
         </div>
-        <div className='hidden md:col-start-1 md:row-start-1 md:block lg:w-[30rem] md:justify-self-start'>
+        <div className="hidden md:col-start-1 md:row-start-1 md:block lg:w-[30rem] md:justify-self-start">
           <GamePlayIdentityCard content={header.leftContent} />
         </div>
 
         {/* Turn status on desktop device */}
-        <div className='hidden md:col-start-1 md:col-end-4 md:row-start-1 md:block md:pointer-events-none'>
-          <div className='relative h-full min-h-[4.75rem]'>
-            <div className='absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4'>
+        <div className="hidden md:col-start-1 md:col-end-4 md:row-start-1 md:block md:pointer-events-none">
+          <div className="relative h-full min-h-[4.75rem]">
+            <div className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4">
               <GamePlayTurnStatus
                 turnKey={header.turnKey}
                 turnLabel={header.turnLabel}
                 turnTone={header.turnTone}
                 turnTimerValue={header.turnTimerValue}
                 turnTimerTone={header.turnTimerTone}
-                className='pointer-events-auto md:w-auto md:min-w-[15rem] md:max-w-[18rem]'
+                className="pointer-events-auto md:w-auto md:min-w-[15rem] md:max-w-[18rem]"
               />
             </div>
           </div>
         </div>
 
         {/* Commander panel */}
-        <div className='order-2 min-h-0 basis-0 flex-1 md:col-start-1 md:row-start-2'>
-          <div className='h-full min-h-0'>
+        <div className="order-2 min-h-0 basis-0 flex-1 md:col-start-1 md:row-start-2">
+          <div className="h-full min-h-0">
             <BattleBoardPanel
-              tone='friendly'
+              tone="friendly"
               title={battlefield.ownTitle}
-              rootClassName='h-full gap-1.5 sm:gap-2'
-              panelClassName='p-1.5 sm:p-3'
+              headerAside={
+                <FleetStatusBar
+                  label={t('gameBattle.myFleet')}
+                  ships={battlefield.ownFleetStatus}
+                />
+              }
+              rootClassName="h-full gap-1.5 sm:gap-2"
+              panelClassName="p-1.5 sm:p-3"
               boardProps={{
                 boardConfig: battlefield.boardConfig,
                 ships: battlefield.ships,
@@ -276,7 +330,7 @@ function GamePlayScreen({
         </div>
 
         {/* Turn status on mobile device */}
-        <div className='order-3 shrink-0 px-0.5 sm:px-1 md:hidden'>
+        <div className="order-3 shrink-0 px-0.5 sm:px-1 md:hidden">
           <GamePlayTurnStatus
             turnKey={header.turnKey}
             turnLabel={header.turnLabel}
@@ -287,15 +341,21 @@ function GamePlayScreen({
         </div>
 
         {/* Opponent panel */}
-        <div className='order-4 min-h-0 basis-0 flex-1 md:col-start-3 md:row-start-2'>
-          <div className='h-full min-h-0'>
+        <div className="order-4 min-h-0 basis-0 flex-1 md:col-start-3 md:row-start-2">
+          <div className="h-full min-h-0">
             <BattleBoardPanel
-              tone='hostile'
+              tone="hostile"
               title={battlefield.opponentTitle}
-              rootClassName='h-full gap-1.5 sm:gap-2'
-              panelClassName='p-1.5 sm:p-3'
-              mobileHeaderPosition='bottom'
-              desktopHeaderAlign='right'
+              headerAside={
+                <FleetStatusBar
+                  label={t('gameBattle.enemyWaters')}
+                  ships={battlefield.opponentFleetStatus}
+                />
+              }
+              rootClassName="h-full gap-1.5 sm:gap-2"
+              panelClassName="p-1.5 sm:p-3"
+              mobileHeaderPosition="bottom"
+              desktopHeaderAlign="right"
               boardProps={{
                 boardConfig: battlefield.boardConfig,
                 ships: battlefield.ships,
@@ -326,32 +386,38 @@ function GamePlayScreen({
         </div>
 
         {/* Right header based on 2 device type */}
-        <div className='hidden md:col-start-3 md:row-start-1 md:block lg:w-[30rem] md:justify-self-end'>
+        <div className="hidden md:col-start-3 md:row-start-1 md:block lg:w-[30rem] md:justify-self-end">
           <GamePlayIdentityCard content={header.rightContent} />
         </div>
-        <div className='order-5 shrink-0 md:hidden'>
+        <div className="order-5 shrink-0 md:hidden">
           <GamePlayIdentityCard content={header.rightContent} />
         </div>
 
         {/* VS divider, disabled on mobile */}
-        <div className='hidden md:flex md:col-start-2 md:row-start-2 md:flex-col md:items-center md:justify-center md:gap-3 md:px-1'>
+        <div className="hidden md:flex md:col-start-2 md:row-start-2 md:flex-col md:items-center md:justify-center md:gap-3 md:px-1">
           <div
-            className='h-full w-px opacity-70'
-            style={{ background: 'linear-gradient(to bottom, transparent, var(--border-main))' }}
+            className="h-full w-px opacity-70"
+            style={{
+              background:
+                'linear-gradient(to bottom, transparent, var(--border-main))',
+            }}
           />
-          <p className='font-mono text-lg font-black tracking-[0.22em] text-(--text-subtle)'>
+          <p className="font-mono text-lg font-black tracking-[0.22em] text-(--text-subtle)">
             VS
           </p>
           <div
-            className='h-full w-px opacity-70'
-            style={{ background: 'linear-gradient(to bottom, var(--border-main), transparent)' }}
+            className="h-full w-px opacity-70"
+            style={{
+              background:
+                'linear-gradient(to bottom, var(--border-main), transparent)',
+            }}
           />
         </div>
       </div>
 
-      <div className='mt-2 ui-panel overflow-hidden rounded-md md:mt-3'>
+      <div className="mt-2 ui-panel overflow-hidden rounded-md md:mt-3">
         <MissionLogPanel
-          className='px-3 pt-3 pb-2 sm:px-4'
+          className="px-3 pt-3 pb-2 sm:px-4"
           title={t('gameBattle.missionLog')}
           subtitle={missionLog.subtitle}
           entries={missionLog.entries}
@@ -397,7 +463,10 @@ function GamePlayScreen({
             ) : null}
 
             {/* Quit btn */}
-            <Button onClick={handleQuit} className='h-8 px-3 text-[10px] md:w-auto'>
+            <Button
+              onClick={handleQuit}
+              className="h-8 px-3 text-[10px] md:w-auto"
+            >
               {t('gameBattle.quitMission')}
             </Button>
             {/* Stats btn */}
@@ -413,18 +482,20 @@ function GamePlayScreen({
             </Button>
           </div>
 
-          <div className='flex items-center justify-end gap-2'>
+          <div className="flex items-center justify-end gap-2">
             {/* Encrypt room code if online */}
             {actions.showEncryptedChannel ? (
-              <div className='flex items-center gap-1.5'>
-                <p className='font-mono text-[9px] uppercase tracking-[0.14em] text-(--text-subtle) sm:tracking-[0.18em]'>
+              <div className="flex items-center gap-1.5">
+                <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-(--text-subtle) sm:tracking-[0.18em]">
                   {t('gameBattle.encryptedChannel')} {encryptedChannelDisplay}
                 </p>
                 {actions.encryptedChannelMaskable ? (
                   <button
-                    type='button'
-                    onClick={() => setEncryptedChannelMasked((current) => !current)}
-                    className='cursor-pointer flex h-6 w-6 items-center justify-center rounded-sm border border-(--border-main) text-(--text-subtle) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)'
+                    type="button"
+                    onClick={() =>
+                      setEncryptedChannelMasked((current) => !current)
+                    }
+                    className="cursor-pointer flex h-6 w-6 items-center justify-center rounded-sm border border-(--border-main) text-(--text-subtle) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)"
                   >
                     {isEncryptedChannelMasked ? (
                       <Eye size={12} />
@@ -437,15 +508,15 @@ function GamePlayScreen({
             ) : null}
             {/* Settings btn */}
             <button
-              type='button'
+              type="button"
               aria-label={t('settings.title')}
               title={t('settings.title')}
               onClick={() => setIsSettingsModalOpen(true)}
-              className='cursor-pointer flex h-7 w-7 items-center justify-center rounded-sm border border-(--border-main) text-(--accent-secondary) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)'
+              className="cursor-pointer flex h-7 w-7 items-center justify-center rounded-sm border border-(--border-main) text-(--accent-secondary) transition-colors hover:bg-(--accent-soft) hover:text-(--text-main)"
             >
               <SlidersHorizontal size={14} />
             </button>
-            <div className='h-3 w-6 rounded-full bg-[rgba(34,211,238,0.7)] shadow-[0_0_6px_rgba(34,211,238,0.4)]' />
+            <div className="h-3 w-6 rounded-full bg-[rgba(34,211,238,0.7)] shadow-[0_0_6px_rgba(34,211,238,0.4)]" />
           </div>
         </div>
       </div>
@@ -482,7 +553,9 @@ type ValidOnlineGamePlayState = GamePlayLocationState & {
 function hasOnlineMatchState(
   state: GamePlayLocationState | null,
 ): state is ValidOnlineGamePlayState {
-  return typeof state?.roomId === 'string' && typeof state?.matchId === 'string';
+  return (
+    typeof state?.roomId === 'string' && typeof state?.matchId === 'string'
+  );
 }
 
 // Page included all logics for game panel
@@ -497,6 +570,7 @@ export function GamePlayPage() {
   const onlineState = hasOnlineMatchState(state) ? state : null;
   const localMode = localState?.mode === 'botvbot' ? 'botvbot' : 'bot';
   const localAiDifficulty = localState?.aiDifficulty ?? 'random';
+  const localBotVBotSettings = localState?.botVBotSettings;
 
   const {
     boardConfig,
@@ -522,6 +596,7 @@ export function GamePlayPage() {
     playerPlacements: localState?.placements ?? EMPTY_PLACEMENTS,
     initialBotPlacements: localState?.botPlacements,
     aiDifficulty: localState?.aiDifficulty ?? 'random',
+    botVBotSettings: localState?.botVBotSettings,
     t,
     enabled: !isOnlineMode && !!localState,
   });
@@ -547,7 +622,10 @@ export function GamePlayPage() {
       : currentUserId === match?.player2Id
         ? match.player1Id
         : null;
-  const { getProfileById } = usePlayerProfiles([currentUserId, onlineOpponentId]);
+  const { getProfileById } = usePlayerProfiles([
+    currentUserId,
+    onlineOpponentId,
+  ]);
   const currentPlayerProfile = getProfileById(currentUserId);
   const opponentProfile = getProfileById(onlineOpponentId);
   const resolveOnlineChatAuthorLabel = useCallback(
@@ -583,7 +661,9 @@ export function GamePlayPage() {
     avatarSrc: opponentProfile?.avatar,
     label: 'OPPONENT',
     name: opponentProfile?.username,
-    fallbackName: onlineOpponentId ? `#${onlineOpponentId.slice(0, 8)}` : 'Opponent',
+    fallbackName: onlineOpponentId
+      ? `#${onlineOpponentId.slice(0, 8)}`
+      : 'Opponent',
     signature: opponentProfile?.signature,
     align: 'right',
   });
@@ -597,7 +677,9 @@ export function GamePlayPage() {
     }
 
     if (!localState) {
-      navigate('/game/setup', { replace: true });
+      navigate(localMode === 'botvbot' ? '/game/bot-setup' : '/game/setup', {
+        replace: true,
+      });
     }
   }, [isOnlineMode, localState, navigate, onlineState]);
 
@@ -678,41 +760,58 @@ export function GamePlayPage() {
   const leftHeaderContent =
     localMode === 'botvbot'
       ? createHeaderContent({
-        avatarSrc: images.botAvatar,
-        label: 'BOT',
-        name: 'BOT A',
-        fallbackName: 'BOT A',
-        signature: 'RANDOM',
-        fallbackSignature: 'RANDOM',
-        align: 'left',
-      })
+          avatarSrc: images.botAvatar,
+          label: 'BOT',
+          name: 'BOT A',
+          fallbackName: 'BOT A',
+          signature: localBotVBotSettings?.botA.difficulty
+            ? t(
+                `gameSetup.aiDifficulty.${localBotVBotSettings.botA.difficulty}`,
+              )
+            : 'RANDOM',
+          fallbackSignature: 'RANDOM',
+          align: 'left',
+        })
       : createHeaderContent({
-        avatarSrc: user?.avatar,
-        label: 'COMMANDER',
-        name: user?.username,
-        fallbackName: 'Alpha',
-        signature: user?.signature,
-        align: 'left',
-      });
+          avatarSrc: user?.avatar,
+          label: 'COMMANDER',
+          name: user?.username,
+          fallbackName: 'Alpha',
+          signature: user?.signature,
+          align: 'left',
+        });
   const rightHeaderContent =
     localMode === 'botvbot'
       ? createHeaderContent({
-        avatarSrc: images.botAvatar,
-        label: 'BOT',
-        name: 'BOT B',
-        fallbackName: 'BOT B',
-        signature: 'RANDOM',
-        fallbackSignature: 'RANDOM',
-        align: 'right',
-      })
+          avatarSrc: images.botAvatar,
+          label: 'BOT',
+          name: 'BOT B',
+          fallbackName: 'BOT B',
+          signature: localBotVBotSettings?.botB.difficulty
+            ? t(
+                `gameSetup.aiDifficulty.${localBotVBotSettings.botB.difficulty}`,
+              )
+            : 'RANDOM',
+          fallbackSignature: 'RANDOM',
+          align: 'right',
+        })
       : createHeaderContent({
-        avatarSrc: images.botAvatar,
-        label: 'BOT',
-        name: 'AI OPPONENT',
-        fallbackName: 'AI OPPONENT',
-        signature: t(`gameSetup.aiDifficulty.${localAiDifficulty}`),
-        align: 'right',
-      });
+          avatarSrc: images.botAvatar,
+          label: 'BOT',
+          name: 'AI OPPONENT',
+          fallbackName: 'AI OPPONENT',
+          signature: t(`gameSetup.aiDifficulty.${localAiDifficulty}`),
+          align: 'right',
+        });
+
+  const ownFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(playerPlacements, shipsById, botShots),
+    [botShots, playerPlacements, shipsById],
+  );
+  const opponentFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(botPlacements, shipsById, playerShots),
+    [botPlacements, playerShots, shipsById],
+  );
 
   return (
     <GamePlayScreen
@@ -740,7 +839,11 @@ export function GamePlayPage() {
           opponentPlacements: botPlacements,
           ownShots: playerShots,
           incomingShots: botShots,
-          ownTitle: isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.myFleet'),
+          ownFleetStatus,
+          opponentFleetStatus,
+          ownTitle: isBotVBot
+            ? t('gameBattle.botAFleet')
+            : t('gameBattle.myFleet'),
           opponentTitle: isBotVBot
             ? t('gameBattle.botBFleet')
             : t('gameBattle.enemyWaters'),
@@ -763,7 +866,11 @@ export function GamePlayPage() {
         state: {
           phase: localPhase,
           result: localResult,
-          onPlayAgain: () => navigate('/game/setup', { state: { mode: localMode } }),
+          onPlayAgain: () =>
+            navigate(
+              localMode === 'botvbot' ? '/game/bot-setup' : '/game/setup',
+              { state: { mode: localMode } },
+            ),
         },
       }}
     />

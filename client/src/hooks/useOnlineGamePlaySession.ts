@@ -19,6 +19,7 @@ import type {
 } from '@/pages/game-play';
 
 import {
+  calculateFleetShipStatuses,
   formatLogTime,
   makeLog,
   toBattleShots,
@@ -194,6 +195,15 @@ export function useOnlineGamePlaySession({
 
     return [];
   }, [currentUserId, match]);
+
+  const ownFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(ownPlacements, shipsById, incomingShots),
+    [incomingShots, ownPlacements, shipsById],
+  );
+  const opponentFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(opponentPlacements, shipsById, ownShots),
+    [opponentPlacements, ownShots, shipsById],
+  );
 
   const phase: GamePhase =
     enabled && match?.status === 'finished' ? 'gameover' : 'playing';
@@ -377,6 +387,8 @@ export function useOnlineGamePlaySession({
         opponentPlacements,
         ownShots,
         incomingShots,
+        ownFleetStatus,
+        opponentFleetStatus,
         ownTitle: t('gameBattle.myFleet'),
         opponentTitle: t('gameBattle.enemyWaters'),
         canFire,
@@ -395,9 +407,11 @@ export function useOnlineGamePlaySession({
     enabled,
     handlePlayerFire,
     incomingShots,
+    opponentFleetStatus,
     logEntries,
     match,
     opponentPlacements,
+    ownFleetStatus,
     ownPlacements,
     ownShots,
     phase,

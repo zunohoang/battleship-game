@@ -1,5 +1,5 @@
 import type { BotTarget, BotTurnContext, GameBot } from '@/services/bots/types';
-import { cellKey } from '@/utils/placementUtils';
+import { cellKey } from '@/services/bots/core/shared/placementUtils';
 
 function buildAvailableTargets(context: BotTurnContext): BotTarget[] {
   const targets: BotTarget[] = [];
@@ -23,6 +23,8 @@ export class EasyBot implements GameBot {
     const availableTargets = buildAvailableTargets(context);
     if (availableTargets.length === 0) return null;
 
-    return availableTargets[Math.floor(Math.random() * availableTargets.length)];
+    return availableTargets[
+      Math.floor(Math.random() * availableTargets.length)
+    ];
   }
 }
