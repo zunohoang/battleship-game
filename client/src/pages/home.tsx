@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GAME_BRAND_NAME } from '@/constants/branding';
-import { DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
 import { ForgotPasswordModal } from '@/components/modal/ForgotPasswordModal';
 import { LoginModal } from '@/components/modal/LoginModal';
 import type { ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
