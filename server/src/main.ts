@@ -11,7 +11,10 @@ import { HttpExceptionFilter } from './common/infrastructure/filters/http-except
 import { AppLoggerService } from './common/infrastructure/logger/app-logger.service';
 
 const validationMessages: Record<string, string> = {
+  CHAT_MESSAGE_REQUIRED: 'Message content is required',
+  CHAT_MESSAGE_TOO_LONG: 'Message content must be at most 280 characters',
   INVALID_EMAIL: 'Invalid email address',
+  ROOM_ID_INVALID: 'Room ID is invalid',
   USERNAME_REQUIRED: 'Username is required',
   USERNAME_TOO_LONG: 'Username must be at most 20 characters',
   USERNAME_INVALID_FORMAT:

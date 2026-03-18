@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { ChatModule } from '../chat/chat.module';
 import { GameGateway } from './game.gateway';
 import { GameService } from './game.service';
 import { MatchEntity } from './infrastructure/persistence/relational/entities/match.entity';
@@ -10,6 +11,7 @@ import { RoomEntity } from './infrastructure/persistence/relational/entities/roo
 @Module({
   imports: [
     AuthModule,
+    ChatModule,
     TypeOrmModule.forFeature([RoomEntity, MatchEntity, MoveEntity]),
   ],
   providers: [GameGateway, GameService],

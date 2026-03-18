@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MissionLogPanel } from '@/components/game-play/MissionLogPanel';
@@ -38,12 +38,15 @@ export function WaitingRoomPage() {
   const roomId = state.roomId;
   const matchId = state.matchId;
   const {
+    connectionState,
     room,
     match,
+    chatMessages,
     lastError,
     startRoom,
     reconnect,
     leaveRoom,
+    sendChatMessage,
   } = useOnlineRoom(roomId);
 
   const currentUserId = user?.id ?? null;
@@ -66,6 +69,7 @@ export function WaitingRoomPage() {
     !!match;
   const [isProfileSetupOpen, setProfileSetupOpen] = useState(false);
   const [isOpponentProfileOpen, setOpponentProfileOpen] = useState(false);
+  const [chatDraft, setChatDraft] = useState('');
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -137,10 +141,7 @@ export function WaitingRoomPage() {
     };
   }, [match]);
 
-  const waitingRoomFeed = useMemo(
-    () => [],
-    [],
-  );
+  const waitingRoomFeed = useMemo(() => [], []);
   const { getProfileById, refreshProfiles } = usePlayerProfiles([currentUserId, opponentUserId]);
   const currentPlayerProfile = getProfileById(currentUserId);
   const opponentProfile = getProfileById(opponentUserId);
@@ -269,6 +270,33 @@ export function WaitingRoomPage() {
         signature: refreshedCurrentProfile.signature,
       });
     }
+  };
+
+  const resolveChatAuthorLabel = useCallback(
+    (senderId: string) => {
+      if (senderId === currentUserId) {
+        return currentIdentity.name;
+      }
+
+      if (senderId === opponentUserId) {
+        return opponentIdentity.name;
+      }
+
+      return t('gameBattle.chatOpponentLabel');
+    },
+    [currentIdentity.name, currentUserId, opponentIdentity.name, opponentUserId, t],
+  );
+
+  const isChatDisabled = connectionState !== 'connected' || !room;
+
+  const handleSendChat = () => {
+    const content = chatDraft.trim();
+    if (!content || isChatDisabled) {
+      return;
+    }
+
+    sendChatMessage(content, room?.roomId);
+    setChatDraft('');
   };
 
   return (
@@ -402,11 +430,41 @@ export function WaitingRoomPage() {
               className='px-3 pt-3 pb-2 sm:px-4'
               title='WAITING ROOM FEED'
               entries={waitingRoomFeed}
+              chatMessages={chatMessages}
+              currentUserId={currentUserId}
               mode='chat-only'
+              isChatDisabled={isChatDisabled}
+              showComposer={false}
               logHeightClassName='h-11 sm:h-32'
+              resolveChatAuthorLabel={resolveChatAuthorLabel}
             />
             <div className='border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
-              <div className='grid gap-2 md:flex md:flex-wrap'>
+              <div className='flex flex-wrap items-center gap-2'>
+                <div className='flex min-w-0 items-center gap-2 md:mr-2 md:flex-1'>
+                  <button
+                    type='button'
+                    onClick={handleSendChat}
+                    disabled={isChatDisabled || chatDraft.trim().length === 0}
+                    className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
+                  >
+                    {t('gameBattle.chatSend')}
+                  </button>
+                  <input
+                    type='text'
+                    value={chatDraft}
+                    onChange={(event) => setChatDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        handleSendChat();
+                      }
+                    }}
+                    placeholder={t('gameBattle.chatInputPlaceholder')}
+                    disabled={isChatDisabled}
+                    maxLength={280}
+                    className='w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
+                  />
+                </div>
                 <Button
                   className='h-8 px-3 text-[10px] md:w-auto'
                   onClick={() => navigate('/home')}

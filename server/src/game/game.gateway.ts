@@ -12,6 +12,11 @@ import {
   TOKEN_REPOSITORY,
   type ITokenRepository,
 } from '../auth/infrastructure/security/token.repository';
+import { ChatService } from '../chat/chat.service';
+import {
+  ChatHistoryDto,
+  SendChatMessageDto,
+} from '../chat/dto/chat-events.dto';
 import { GameService } from './game.service';
 import {
   ConfigureRoomSetupDto,
@@ -41,6 +46,7 @@ export class GameGateway {
   constructor(
     @Inject(TOKEN_REPOSITORY)
     private readonly tokenRepository: ITokenRepository,
+    private readonly chatService: ChatService,
     private readonly gameService: GameService,
   ) {}
 
@@ -228,6 +234,48 @@ export class GameGateway {
       .to(`room:${roomId}`)
       .emit(GameEvents.ServerMatchUpdated, result);
     return result;
+  }
+
+  @SubscribeMessage(GameEvents.ChatHistory)
+  async handleChatHistory(
+    @MessageBody() payload: ChatHistoryDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      const roomId = payload.roomId ?? this.readRoomIdFromSocket(client);
+      const messages = await this.chatService.getRecentMessages(userId, roomId);
+      const response = { roomId, messages };
+      client.emit(GameEvents.ServerChatHistory, response);
+      return response;
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
+  }
+
+  @SubscribeMessage(GameEvents.ChatSendMessage)
+  async handleChatSendMessage(
+    @MessageBody() payload: SendChatMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      const roomId = payload.roomId ?? this.readRoomIdFromSocket(client);
+      const message = await this.chatService.sendMessage(
+        userId,
+        roomId,
+        payload?.content,
+      );
+      this.server.to(`room:${roomId}`).emit(GameEvents.ServerChatMessage, {
+        roomId,
+        message,
+      });
+      return { roomId, message };
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
   }
 
   private extractToken(client: Socket): string {

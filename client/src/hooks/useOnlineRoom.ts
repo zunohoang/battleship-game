@@ -11,6 +11,7 @@ import type {
   RoomListSummary,
   RoomSnapshot,
 } from '@/types/game';
+import type { ChatMessage } from '@/types/chat';
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
 
@@ -19,7 +20,21 @@ interface UseOnlineRoomState {
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
   rooms: RoomListSummary[];
+  chatMessages: ChatMessage[];
   lastError: string | null;
+}
+
+function mergeChatMessages(
+  currentMessages: ChatMessage[],
+  incomingMessages: ChatMessage[],
+): ChatMessage[] {
+  const messageMap = new Map(currentMessages.map((message) => [message.id, message]));
+
+  for (const message of incomingMessages) {
+    messageMap.set(message.id, message);
+  }
+
+  return [...messageMap.values()].sort((left, right) => left.sequence - right.sequence);
 }
 
 export function useOnlineRoom(initialRoomId?: string, enabled = true) {
@@ -28,6 +43,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     room: null,
     match: null,
     rooms: [],
+    chatMessages: [],
     lastError: null,
   });
 
@@ -52,9 +68,17 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
         socketConnected: socket.connected,
         lastError: null,
       }));
+
+      if (socket.connected && initialRoomId) {
+        gameSocketService.requestChatHistory({ roomId: initialRoomId });
+      }
     }, 0);
 
     const onConnect = () => {
+      if (initialRoomId) {
+        gameSocketService.requestChatHistory({ roomId: initialRoomId });
+      }
+
       setState((current) => ({
         ...current,
         socketConnected: true,
@@ -92,6 +116,26 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       }));
     });
 
+    const offChatHistory = gameSocketService.onChatHistory((payload) => {
+      setState((current) => ({
+        ...current,
+        chatMessages:
+          payload.roomId === initialRoomId || !initialRoomId
+            ? mergeChatMessages([], payload.messages)
+            : current.chatMessages,
+      }));
+    });
+
+    const offChatMessage = gameSocketService.onChatMessage((payload) => {
+      setState((current) => ({
+        ...current,
+        chatMessages:
+          payload.roomId === initialRoomId || !initialRoomId
+            ? mergeChatMessages(current.chatMessages, [payload.message])
+            : current.chatMessages,
+      }));
+    });
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
 
@@ -100,6 +144,8 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       offRoom();
       offMatch();
       offError();
+      offChatHistory();
+      offChatMessage();
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       gameSocketService.disconnect();
@@ -210,9 +256,21 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
         ...current,
         room: response.room,
         match: null,
+        chatMessages: [],
       }));
     });
   }, []);
+
+  const requestChatHistory = useCallback((roomId?: string) => {
+    gameSocketService.requestChatHistory(roomId ? { roomId } : undefined);
+  }, []);
+
+  const sendChatMessage = useCallback(
+    (content: string, roomId?: string) => {
+      gameSocketService.sendMessage(roomId ? { roomId, content } : { content });
+    },
+    [],
+  );
 
   return useMemo(
     () => ({
@@ -220,6 +278,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       room: state.room,
       match: state.match,
       rooms: state.rooms,
+      chatMessages: state.chatMessages,
       lastError: state.lastError,
       listRooms,
       createRoom,
@@ -230,17 +289,22 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       reconnect,
       submitMove,
       leaveRoom,
+      requestChatHistory,
+      sendChatMessage,
     }),
     [
       connectionState,
       createRoom,
       configureRoomSetup,
-      joinRoom,
       leaveRoom,
+      joinRoom,
       listRooms,
       markReady,
       reconnect,
+      requestChatHistory,
+      sendChatMessage,
       startRoom,
+      state.chatMessages,
       state.lastError,
       state.match,
       state.room,
