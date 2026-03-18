@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { images } from '@/assets';
 import { GAME_PLAY_BOARD_RENDER } from '@/constants/gamePlayBoard';
 import type {
@@ -13,7 +7,11 @@ import type {
   ShipDefinition,
   Shot,
 } from '@/types/game';
-import { buildOccupiedMap, cellKey, instanceKey } from '@/utils/placementUtils';
+import {
+  buildOccupiedMap,
+  cellKey,
+  instanceKey,
+} from '@/services/bots/core/shared/placementUtils';
 import {
   extractShipSpriteSheetMeta,
   getShipSpriteStyle,
@@ -87,7 +85,9 @@ function BattleBoard({
   const [cellSize, setCellSize] = useState<number>(
     GAME_PLAY_BOARD_RENDER.initialCellSize,
   );
-  const [spriteMeta, setSpriteMeta] = useState<ShipSpriteSheetMeta | null>(null);
+  const [spriteMeta, setSpriteMeta] = useState<ShipSpriteSheetMeta | null>(
+    null,
+  );
 
   const shipsById = useMemo(
     () => new Map(ships.map((ship) => [ship.id, ship])),
@@ -131,16 +131,14 @@ function BattleBoard({
     const updateCellSize = () => {
       const nextCellSize = Math.floor(
         Math.min(
-          (
-            element.clientWidth -
+          (element.clientWidth -
             GAME_PLAY_BOARD_RENDER.axisAllowance -
-            (boardConfig.cols - 1) * GAME_PLAY_BOARD_RENDER.defaultCellGap
-          ) / boardConfig.cols,
-          (
-            element.clientHeight -
+            (boardConfig.cols - 1) * GAME_PLAY_BOARD_RENDER.defaultCellGap) /
+            boardConfig.cols,
+          (element.clientHeight -
             GAME_PLAY_BOARD_RENDER.axisAllowance -
-            (boardConfig.rows - 1) * GAME_PLAY_BOARD_RENDER.defaultCellGap
-          ) / boardConfig.rows,
+            (boardConfig.rows - 1) * GAME_PLAY_BOARD_RENDER.defaultCellGap) /
+            boardConfig.rows,
         ),
       );
 
@@ -189,60 +187,65 @@ function BattleBoard({
 
   const placedShipSprites = revealShips
     ? placements
-      .map((placement) => {
-        const ship = shipsById.get(placement.definitionId);
-        if (!ship) {
-          return null;
-        }
+        .map((placement) => {
+          const ship = shipsById.get(placement.definitionId);
+          if (!ship) {
+            return null;
+          }
 
-        const spriteSize = toShipSpriteSize(ship.size);
-        const renderWidth =
-          placement.orientation === 'horizontal'
-            ? ship.size * cellSize + (ship.size - 1) * cellGap
-            : cellSize;
-        const renderHeight =
-          placement.orientation === 'vertical'
-            ? ship.size * cellSize + (ship.size - 1) * cellGap
-            : cellSize;
+          const spriteSize = toShipSpriteSize(ship.size);
+          const renderWidth =
+            placement.orientation === 'horizontal'
+              ? ship.size * cellSize + (ship.size - 1) * cellGap
+              : cellSize;
+          const renderHeight =
+            placement.orientation === 'vertical'
+              ? ship.size * cellSize + (ship.size - 1) * cellGap
+              : cellSize;
 
-        const baseStyle = {
-          left: `${placement.x * (cellSize + cellGap)}px`,
-          top: `${placement.y * (cellSize + cellGap)}px`,
-          width: `${renderWidth}px`,
-          height: `${renderHeight}px`,
-        };
+          const baseStyle = {
+            left: `${placement.x * (cellSize + cellGap)}px`,
+            top: `${placement.y * (cellSize + cellGap)}px`,
+            width: `${renderWidth}px`,
+            height: `${renderHeight}px`,
+          };
 
-        const spriteStyle =
-          spriteMeta && spriteSize
-            ? getShipSpriteStyle(
-              images.battleShipSheet,
-              spriteMeta,
-              toSpriteDirectionFromPlacement(placement.orientation),
-              spriteSize,
-              renderWidth,
-              renderHeight,
-            )
-            : null;
+          const spriteStyle =
+            spriteMeta && spriteSize
+              ? getShipSpriteStyle(
+                  images.battleShipSheet,
+                  spriteMeta,
+                  toSpriteDirectionFromPlacement(placement.orientation),
+                  spriteSize,
+                  renderWidth,
+                  renderHeight,
+                )
+              : null;
 
-        return {
-          key: instanceKey(placement.definitionId, placement.instanceIndex),
-          ship,
-          baseStyle,
-          spriteStyle,
-        };
-      })
-      .filter((sprite): sprite is NonNullable<typeof sprite> => sprite !== null)
+          return {
+            key: instanceKey(placement.definitionId, placement.instanceIndex),
+            ship,
+            baseStyle,
+            spriteStyle,
+          };
+        })
+        .filter(
+          (sprite): sprite is NonNullable<typeof sprite> => sprite !== null,
+        )
     : [];
 
   return (
-    <div ref={boardViewportRef} className='h-full w-full overflow-hidden'>
-      <div className='flex h-full w-full items-center justify-center'>
+    <div ref={boardViewportRef} className="h-full w-full overflow-hidden">
+      <div className="flex h-full w-full items-center justify-center">
         <div
-          className='relative'
-          style={{ width: `${fullPixelWidth}px`, height: `${fullPixelHeight}px` }}
+          className="relative"
+          style={{
+            width: `${fullPixelWidth}px`,
+            height: `${fullPixelHeight}px`,
+          }}
         >
           <div
-            className='absolute grid text-center font-mono text-[10px] font-bold text-(--text-subtle)'
+            className="absolute grid text-center font-mono text-[10px] font-bold text-(--text-subtle)"
             style={{
               ...axisColumnStyle,
               left: `${boardOffsetX}px`,
@@ -257,7 +260,7 @@ function BattleBoard({
           </div>
 
           <div
-            className='absolute grid text-center font-mono text-[10px] font-bold text-(--text-subtle)'
+            className="absolute grid text-center font-mono text-[10px] font-bold text-(--text-subtle)"
             style={{
               ...axisRowStyle,
               left: 0,
@@ -276,7 +279,7 @@ function BattleBoard({
           </div>
 
           <div
-            className='absolute grid'
+            className="absolute grid"
             style={{
               ...boardStyle,
               left: `${boardOffsetX}px`,
@@ -307,7 +310,7 @@ function BattleBoard({
                 return (
                   <button
                     key={key}
-                    type='button'
+                    type="button"
                     onClick={canFire ? () => onFire(x, y) : undefined}
                     className={cellClassName}
                     style={{ width: `${cellSize}px`, height: `${cellSize}px` }}
@@ -319,7 +322,7 @@ function BattleBoard({
           </div>
 
           <div
-            className='pointer-events-none absolute'
+            className="pointer-events-none absolute"
             style={{
               left: `${boardOffsetX}px`,
               top: `${boardOffsetY}px`,
@@ -330,13 +333,13 @@ function BattleBoard({
             {placedShipSprites.map((sprite) => (
               <div
                 key={sprite.key}
-                className='absolute rounded-md'
+                className="absolute rounded-md"
                 style={sprite.baseStyle}
               >
                 {sprite.spriteStyle ? (
-                  <div className='h-full w-full' style={sprite.spriteStyle} />
+                  <div className="h-full w-full" style={sprite.spriteStyle} />
                 ) : (
-                  <div className='flex h-full w-full items-center justify-center rounded-md bg-[rgba(34,211,238,0.7)] text-[10px] font-bold text-[#04131f]'>
+                  <div className="flex h-full w-full items-center justify-center rounded-md bg-[rgba(34,211,238,0.7)] text-[10px] font-bold text-[#04131f]">
                     {sprite.ship.name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
@@ -345,7 +348,7 @@ function BattleBoard({
           </div>
 
           <div
-            className='pointer-events-none absolute'
+            className="pointer-events-none absolute"
             style={{
               left: `${boardOffsetX}px`,
               top: `${boardOffsetY}px`,
@@ -360,7 +363,7 @@ function BattleBoard({
               return (
                 <div
                   key={cellKey(shot.x, shot.y)}
-                  className='absolute flex items-center justify-center'
+                  className="absolute flex items-center justify-center"
                   style={{
                     left: `${markerLeft}px`,
                     top: `${markerTop}px`,
@@ -370,7 +373,7 @@ function BattleBoard({
                 >
                   {shot.isHit ? (
                     <span
-                      className='select-none'
+                      className="select-none"
                       style={{
                         fontSize: `${Math.max(
                           GAME_PLAY_BOARD_RENDER.hitMarkerMinFontSize,
@@ -383,15 +386,19 @@ function BattleBoard({
                     </span>
                   ) : (
                     <span
-                      className='rounded-full bg-(--miss-color) opacity-70'
+                      className="rounded-full bg-(--miss-color) opacity-70"
                       style={{
                         width: `${Math.max(
                           GAME_PLAY_BOARD_RENDER.missMarkerMinSize,
-                          Math.round(cellSize * GAME_PLAY_BOARD_RENDER.missMarkerRatio),
+                          Math.round(
+                            cellSize * GAME_PLAY_BOARD_RENDER.missMarkerRatio,
+                          ),
                         )}px`,
                         height: `${Math.max(
                           GAME_PLAY_BOARD_RENDER.missMarkerMinSize,
-                          Math.round(cellSize * GAME_PLAY_BOARD_RENDER.missMarkerRatio),
+                          Math.round(
+                            cellSize * GAME_PLAY_BOARD_RENDER.missMarkerRatio,
+                          ),
                         )}px`,
                         display: 'block',
                       }}
@@ -404,7 +411,7 @@ function BattleBoard({
 
           {!revealShips && (
             <div
-              className='pointer-events-none absolute'
+              className="pointer-events-none absolute"
               style={{
                 left: `${boardOffsetX}px`,
                 top: `${boardOffsetY}px`,
@@ -413,12 +420,17 @@ function BattleBoard({
               }}
             >
               {shots
-                .filter((shot) => shot.isHit && occupiedMap.has(cellKey(shot.x, shot.y)))
+                .filter(
+                  (shot) =>
+                    shot.isHit && occupiedMap.has(cellKey(shot.x, shot.y)),
+                )
                 .map((shot) => {
                   const occupiedCell = occupiedMap.get(cellKey(shot.x, shot.y));
                   return occupiedCell ? { ...shot, occupiedCell } : null;
                 })
-                .filter((shot): shot is NonNullable<typeof shot> => shot !== null)
+                .filter(
+                  (shot): shot is NonNullable<typeof shot> => shot !== null,
+                )
                 .filter((_, index, allShots) => {
                   return (
                     index ===
@@ -462,7 +474,7 @@ export function BattleBoardPanel({
         }`.trim()}
       >
         <span className={`h-2.5 w-2.5 rounded-full ${getToneClasses(tone)}`} />
-        <p className='ui-tactical-caption'>{title}</p>
+        <p className="ui-tactical-caption">{title}</p>
       </div>
       {headerAside ?? null}
     </div>
@@ -471,7 +483,7 @@ export function BattleBoardPanel({
   return (
     <div className={`flex min-h-0 flex-col gap-2 ${rootClassName}`.trim()}>
       {mobileHeaderPosition === 'bottom' ? (
-        <div className='hidden md:block'>{header}</div>
+        <div className="hidden md:block">{header}</div>
       ) : (
         header
       )}
@@ -484,7 +496,7 @@ export function BattleBoardPanel({
       </div>
 
       {mobileHeaderPosition === 'bottom' ? (
-        <div className='md:hidden'>{header}</div>
+        <div className="md:hidden">{header}</div>
       ) : null}
     </div>
   );

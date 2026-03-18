@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AiDifficulty,
+  BotVBotSettings,
   GameConfig,
   GameMode,
   GamePhase,
@@ -15,9 +16,10 @@ import { DEFAULT_TURN_TIMER_SECONDS } from '@/constants/gameDefaults';
 import {
   buildOccupiedMap,
   buildRandomPlacements,
+  buildStrategicPlacements,
   buildShipInstances,
   cellKey,
-} from '@/utils/placementUtils';
+} from '@/services/bots/core/shared/placementUtils';
 import {
   botFireRandom,
   checkAllSunk,
@@ -36,6 +38,7 @@ interface UseLocalGamePlaySessionParams {
   playerPlacements: PlacedShip[];
   initialBotPlacements?: PlacedShip[];
   aiDifficulty: AiDifficulty;
+  botVBotSettings?: BotVBotSettings;
   t: Translate;
   enabled?: boolean;
 }
@@ -66,6 +69,7 @@ export function useLocalGamePlaySession({
   playerPlacements,
   initialBotPlacements,
   aiDifficulty,
+  botVBotSettings,
   t,
   enabled = true,
 }: UseLocalGamePlaySessionParams): UseLocalGamePlaySessionResult {
@@ -79,6 +83,8 @@ export function useLocalGamePlaySession({
     () => new Map(ships.map((ship) => [ship.id, ship])),
     [ships],
   );
+  const botADifficulty = botVBotSettings?.botA.difficulty ?? 'random';
+  const botBDifficulty = botVBotSettings?.botB.difficulty ?? 'random';
 
   const [botPlacements] = useState<PlacedShip[]>(() => {
     if (initialBotPlacements?.length) {
@@ -86,6 +92,28 @@ export function useLocalGamePlaySession({
     }
 
     const shipInstances = buildShipInstances(ships);
+
+    if (isBotVBot) {
+      const strategy = botVBotSettings?.botB.placementStrategy ?? 'random';
+      if (strategy === 'strategic') {
+        return (
+          buildStrategicPlacements(shipInstances, boardConfig, shipsById) ??
+          buildRandomPlacements(shipInstances, boardConfig, shipsById) ??
+          []
+        );
+      }
+
+      return buildRandomPlacements(shipInstances, boardConfig, shipsById) ?? [];
+    }
+
+    if (aiDifficulty === 'probability') {
+      return (
+        buildStrategicPlacements(shipInstances, boardConfig, shipsById) ??
+        buildRandomPlacements(shipInstances, boardConfig, shipsById) ??
+        []
+      );
+    }
+
     return buildRandomPlacements(shipInstances, boardConfig, shipsById) ?? [];
   });
 
@@ -196,15 +224,37 @@ export function useLocalGamePlaySession({
         return;
       }
 
+      if (isHit) {
+        turnRef.current = 'player';
+        setTurn('player');
+        if (actor === 'player') {
+          resetPlayerTimer();
+        }
+        return;
+      }
+
       turnRef.current = 'bot';
       setTurn('bot');
     },
-    [appendLog, botOccupied, botPlacements, enabled, finishGame, shipsById, t],
+    [
+      appendLog,
+      botOccupied,
+      botPlacements,
+      enabled,
+      finishGame,
+      resetPlayerTimer,
+      shipsById,
+      t,
+    ],
   );
 
   const handlePlayerFire = useCallback(
     (x: number, y: number) => {
-      if (!enabled || phaseRef.current !== 'playing' || turnRef.current !== 'player') {
+      if (
+        !enabled ||
+        phaseRef.current !== 'playing' ||
+        turnRef.current !== 'player'
+      ) {
         return;
       }
 
@@ -263,7 +313,9 @@ export function useLocalGamePlaySession({
         boardConfig,
         ships,
         currentShots,
-        isBotVBot ? 'random' : aiDifficulty,
+        isBotVBot ? botBDifficulty : aiDifficulty,
+        playerPlacements,
+        shipsById,
       );
 
       if (!target) {
@@ -276,10 +328,9 @@ export function useLocalGamePlaySession({
       setBotShots(nextShots);
 
       appendLog(
-        t(
-          isHit ? 'gameBattle.logEnemyHit' : 'gameBattle.logEnemyMiss',
-          { coord: toCoordLabel(target.x, target.y) },
-        ),
+        t(isHit ? 'gameBattle.logEnemyHit' : 'gameBattle.logEnemyMiss', {
+          coord: toCoordLabel(target.x, target.y),
+        }),
         isHit ? 'enemy' : 'miss',
       );
 
@@ -296,6 +347,12 @@ export function useLocalGamePlaySession({
         return;
       }
 
+      if (isHit) {
+        turnRef.current = 'bot';
+        setTurn('bot');
+        return;
+      }
+
       turnRef.current = 'player';
       setTurn('player');
       resetPlayerTimer();
@@ -309,6 +366,8 @@ export function useLocalGamePlaySession({
     aiDifficulty,
     appendLog,
     boardConfig,
+    botBDifficulty,
+    botShots,
     enabled,
     finishGame,
     isBotVBot,
@@ -333,7 +392,15 @@ export function useLocalGamePlaySession({
         return;
       }
 
-      const target = botFireRandom(boardConfig, playerShotsRef.current);
+      const currentShots = playerShotsRef.current;
+      const target = getBotShot(
+        boardConfig,
+        ships,
+        currentShots,
+        botADifficulty,
+        botPlacements,
+        shipsById,
+      );
       if (!target) {
         return;
       }
@@ -345,7 +412,19 @@ export function useLocalGamePlaySession({
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [boardConfig, enabled, isBotVBot, phase, processPlayerAttack, turn]);
+  }, [
+    boardConfig,
+    botADifficulty,
+    botPlacements,
+    enabled,
+    isBotVBot,
+    phase,
+    playerShots,
+    processPlayerAttack,
+    ships,
+    shipsById,
+    turn,
+  ]);
 
   const turnLabel = isBotVBot
     ? turn === 'player'
@@ -370,7 +449,8 @@ export function useLocalGamePlaySession({
     turnLabel,
     isBotVBot,
     isBotThinking: enabled && turn === 'bot' && phase === 'playing',
-    canPlayerFire: enabled && !isBotVBot && turn === 'player' && phase === 'playing',
+    canPlayerFire:
+      enabled && !isBotVBot && turn === 'player' && phase === 'playing',
     logEntries,
     handlePlayerFire,
   };
