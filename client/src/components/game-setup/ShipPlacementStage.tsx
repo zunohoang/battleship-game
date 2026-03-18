@@ -8,7 +8,7 @@ import {
   buildShipInstances,
   canPlace,
   instanceKey,
-} from '@/utils/placementUtils';
+} from '@/services/bots/core/shared/placementUtils';
 import type {
   AiDifficulty,
   BoardConfig,
@@ -39,7 +39,9 @@ export function ShipPlacementStage({
   onAiDifficultyChange,
 }: ShipPlacementStageProps) {
   const { t } = useTranslation();
-  const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(null);
+  const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(
+    null,
+  );
   const [errorText, setErrorText] = useState('');
 
   const shipsById = useMemo(
@@ -51,10 +53,7 @@ export function ShipPlacementStage({
     () =>
       new Map(
         placements.map((placement) => [
-          instanceKey(
-            placement.definitionId,
-            placement.instanceIndex,
-          ),
+          instanceKey(placement.definitionId, placement.instanceIndex),
           placement,
         ]),
       ),
@@ -70,10 +69,8 @@ export function ShipPlacementStage({
       selectedInstanceKey !== null &&
       shipInstances.some(
         (instance) =>
-          instanceKey(
-            instance.definitionId,
-            instance.instanceIndex,
-          ) === selectedInstanceKey,
+          instanceKey(instance.definitionId, instance.instanceIndex) ===
+          selectedInstanceKey,
       );
 
     if (selectedIsValid) {
@@ -96,10 +93,8 @@ export function ShipPlacementStage({
     return (
       shipInstances.find(
         (instance) =>
-          instanceKey(
-            instance.definitionId,
-            instance.instanceIndex,
-          ) === effectiveSelectedInstanceKey,
+          instanceKey(instance.definitionId, instance.instanceIndex) ===
+          effectiveSelectedInstanceKey,
       ) ?? null
     );
   }, [effectiveSelectedInstanceKey, shipInstances]);
@@ -107,7 +102,7 @@ export function ShipPlacementStage({
   const totalRequiredShips = shipInstances.length;
   const placedShipsCount = placements.length;
   const allShipsPlaced =
-        totalRequiredShips > 0 && placedShipsCount === totalRequiredShips;
+    totalRequiredShips > 0 && placedShipsCount === totalRequiredShips;
 
   const handlePlaceAt = (x: number, y: number) => {
     if (!selectedInstance) {
@@ -123,7 +118,8 @@ export function ShipPlacementStage({
     );
     const placementsWithoutCurrent = placements.filter(
       (placement) =>
-        instanceKey(placement.definitionId, placement.instanceIndex) !== currentKey,
+        instanceKey(placement.definitionId, placement.instanceIndex) !==
+        currentKey,
     );
     const occupiedWithoutCurrent = buildOccupiedMap(
       placementsWithoutCurrent,
@@ -146,9 +142,7 @@ export function ShipPlacementStage({
         occupiedWithoutCurrent,
       )
     ) {
-      setErrorText(
-        t('gameSetup.placement.cannotPlaceHere'),
-      );
+      setErrorText(t('gameSetup.placement.cannotPlaceHere'));
       return;
     }
 
@@ -160,31 +154,25 @@ export function ShipPlacementStage({
         !nextPlacements.some(
           (placement) =>
             placement.definitionId === instance.definitionId &&
-              placement.instanceIndex === instance.instanceIndex,
+            placement.instanceIndex === instance.instanceIndex,
         ),
     );
 
     if (nextUnplaced) {
       setSelectedInstanceKey(
-        instanceKey(
-          nextUnplaced.definitionId,
-          nextUnplaced.instanceIndex,
-        ),
+        instanceKey(nextUnplaced.definitionId, nextUnplaced.instanceIndex),
       );
     }
   };
 
-  const handleRemovePlaced = (
-    definitionId: string,
-    instanceIndex: number,
-  ) => {
+  const handleRemovePlaced = (definitionId: string, instanceIndex: number) => {
     setErrorText('');
     onPlacementsChange(
       placements.filter(
         (placement) =>
           !(
             placement.definitionId === definitionId &&
-              placement.instanceIndex === instanceIndex
+            placement.instanceIndex === instanceIndex
           ),
       ),
     );
@@ -205,9 +193,7 @@ export function ShipPlacementStage({
     );
 
     if (!nextPlacements) {
-      setErrorText(
-        t('gameSetup.placement.randomPlacementFailed'),
-      );
+      setErrorText(t('gameSetup.placement.randomPlacementFailed'));
       return;
     }
 
@@ -220,14 +206,15 @@ export function ShipPlacementStage({
     );
   };
 
-  const statusText = errorText ||
+  const statusText =
+    errorText ||
     (allShipsPlaced
       ? t('gameSetup.placement.allShipsPlaced')
       : t('gameSetup.placement.placementInstructions'));
 
   return (
-    <div className='flex flex-col gap-3 sm:h-full sm:min-h-0'>
-      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1fr)_32rem]'>
+    <div className="flex flex-col gap-3 sm:h-full sm:min-h-0">
+      <div className="grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1fr)_32rem]">
         <PlacementBoard
           boardConfig={boardConfig}
           ships={ships}

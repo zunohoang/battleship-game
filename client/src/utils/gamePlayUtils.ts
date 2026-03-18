@@ -1,3 +1,5 @@
+import { HardBot } from '@/services/bots/hardBot';
+import type { BotShot } from '@/services/bots/types';
 import type {
   AiDifficulty,
   BoardConfig,
@@ -8,7 +10,25 @@ import type {
   ShotRecord,
   Shot,
 } from '@/types/game';
-import { cellKey, getShipCells } from '@/utils/placementUtils';
+import {
+  cellKey,
+  getShipCells,
+  instanceKey,
+} from '@/services/bots/core/shared/placementUtils';
+
+interface ShipTrackingState {
+  size: number;
+  remainingCells: number;
+  hitCells: Set<string>;
+  isSunk: boolean;
+}
+
+export interface FleetShipStatus {
+  key: string;
+  label: string;
+  size: number;
+  isDestroyed: boolean;
+}
 
 let logId = 0;
 
@@ -98,6 +118,38 @@ export function calculateShotStats(shots: Shot[]) {
   };
 }
 
+export function calculateFleetShipStatuses(
+  placements: PlacedShip[],
+  shipsById: Map<string, ShipDefinition>,
+  shots: Shot[],
+): FleetShipStatus[] {
+  const hitKeys = new Set(
+    shots.filter((shot) => shot.isHit).map((shot) => cellKey(shot.x, shot.y)),
+  );
+
+  return placements
+    .map((placement) => {
+      const ship = shipsById.get(placement.definitionId);
+      if (!ship) {
+        return null;
+      }
+
+      const cells = getShipCells(placement, ship.size);
+      const isDestroyed = cells.every((cell) =>
+        hitKeys.has(cellKey(cell.x, cell.y)),
+      );
+      const suffix = ship.count > 1 ? ` ${placement.instanceIndex + 1}` : '';
+
+      return {
+        key: instanceKey(placement.definitionId, placement.instanceIndex),
+        label: `${ship.name}${suffix}`,
+        size: ship.size,
+        isDestroyed,
+      };
+    })
+    .filter((entry): entry is FleetShipStatus => entry !== null);
+}
+
 export function botFireRandom(
   boardConfig: BoardConfig,
   shots: Shot[],
@@ -154,107 +206,136 @@ export function botFireLearning(
   return botFireRandom(boardConfig, shots);
 }
 
-export function botFireProbability(
-  boardConfig: BoardConfig,
-  ships: ShipDefinition[],
+function buildShipTracking(
+  targetPlacements: PlacedShip[],
+  targetShipsById: Map<string, ShipDefinition>,
+) {
+  const cellToInstance = new Map<
+    string,
+    { instanceKey: string; size: number }
+  >();
+  const instanceState = new Map<string, ShipTrackingState>();
+
+  for (const placement of targetPlacements) {
+    const ship = targetShipsById.get(placement.definitionId);
+    if (!ship) {
+      continue;
+    }
+
+    const key = instanceKey(placement.definitionId, placement.instanceIndex);
+    const cells = getShipCells(placement, ship.size);
+
+    instanceState.set(key, {
+      size: ship.size,
+      remainingCells: cells.length,
+      hitCells: new Set<string>(),
+      isSunk: false,
+    });
+
+    for (const cell of cells) {
+      cellToInstance.set(cellKey(cell.x, cell.y), {
+        instanceKey: key,
+        size: ship.size,
+      });
+    }
+  }
+
+  return { cellToInstance, instanceState };
+}
+
+function buildSinkAwareBotShots(
   shots: Shot[],
-): { x: number; y: number } | null {
-  const shotSet = new Set(shots.map((shot) => cellKey(shot.x, shot.y)));
-  const hitSet = new Set(
-    shots.filter((shot) => shot.isHit).map((shot) => cellKey(shot.x, shot.y)),
+  targetPlacements: PlacedShip[],
+  targetShipsById: Map<string, ShipDefinition>,
+): { botShots: BotShot[]; remainingShipSizes: number[] } {
+  const { cellToInstance, instanceState } = buildShipTracking(
+    targetPlacements,
+    targetShipsById,
   );
-  const missSet = new Set(
-    shots.filter((shot) => !shot.isHit).map((shot) => cellKey(shot.x, shot.y)),
-  );
-  const density = new Map<string, number>();
 
-  for (const ship of ships) {
-    for (const orientation of ['horizontal', 'vertical'] as const) {
-      const maxCol =
-        orientation === 'horizontal'
-          ? boardConfig.cols - ship.size
-          : boardConfig.cols - 1;
-      const maxRow =
-        orientation === 'vertical'
-          ? boardConfig.rows - ship.size
-          : boardConfig.rows - 1;
+  const botShots: BotShot[] = [];
 
-      for (let y = 0; y <= maxRow; y += 1) {
-        for (let x = 0; x <= maxCol; x += 1) {
-          let valid = true;
-          let hasHit = false;
+  for (const shot of shots) {
+    const key = cellKey(shot.x, shot.y);
+    const shotEntry: BotShot = {
+      x: shot.x,
+      y: shot.y,
+      isHit: shot.isHit,
+    };
 
-          for (let index = 0; index < ship.size; index += 1) {
-            const cellX = x + (orientation === 'horizontal' ? index : 0);
-            const cellY = y + (orientation === 'vertical' ? index : 0);
-            const key = cellKey(cellX, cellY);
-
-            if (missSet.has(key)) {
-              valid = false;
-              break;
-            }
-
-            if (hitSet.has(key)) {
-              hasHit = true;
-            }
-          }
-
-          if (!valid) {
-            continue;
-          }
-
-          const weight = hasHit ? 3 : 1;
-          for (let index = 0; index < ship.size; index += 1) {
-            const cellX = x + (orientation === 'horizontal' ? index : 0);
-            const cellY = y + (orientation === 'vertical' ? index : 0);
-            const key = cellKey(cellX, cellY);
-
-            if (!shotSet.has(key)) {
-              density.set(key, (density.get(key) ?? 0) + weight);
-            }
+    if (shot.isHit) {
+      const mapped = cellToInstance.get(key);
+      if (mapped) {
+        shotEntry.shipInstanceKey = mapped.instanceKey;
+        const state = instanceState.get(mapped.instanceKey);
+        if (state && !state.hitCells.has(key)) {
+          state.hitCells.add(key);
+          state.remainingCells = Math.max(0, state.remainingCells - 1);
+          if (state.remainingCells === 0 && !state.isSunk) {
+            state.isSunk = true;
+            shotEntry.didSink = true;
+            shotEntry.sunkShipSize = state.size;
           }
         }
       }
     }
+
+    botShots.push(shotEntry);
   }
 
-  if (density.size === 0) {
-    return botFireRandom(boardConfig, shots);
-  }
-
-  let bestTarget: { x: number; y: number } | null = null;
-  let bestScore = 0;
-
-  for (const [key, score] of density.entries()) {
-    if (score <= bestScore) {
-      continue;
+  const remainingShipSizes: number[] = [];
+  for (const state of instanceState.values()) {
+    if (!state.isSunk) {
+      remainingShipSizes.push(state.size);
     }
-
-    bestScore = score;
-    const [x, y] = key.split(',');
-    bestTarget = {
-      x: parseInt(x, 10),
-      y: parseInt(y, 10),
-    };
   }
 
-  return bestTarget ?? botFireRandom(boardConfig, shots);
+  return { botShots, remainingShipSizes };
 }
 
+const hardBot = new HardBot();
 export function getBotShot(
   boardConfig: BoardConfig,
   ships: ShipDefinition[],
   shots: Shot[],
   difficulty: AiDifficulty,
+  targetPlacements?: PlacedShip[],
+  targetShipsById?: Map<string, ShipDefinition>,
 ): { x: number; y: number } | null {
   if (difficulty === 'learning') {
     return botFireLearning(boardConfig, shots);
   }
 
   if (difficulty === 'probability') {
-    return botFireProbability(boardConfig, ships, shots);
+    const attemptedShots = new Set(
+      shots.map((shot) => cellKey(shot.x, shot.y)),
+    );
+    let botShots: BotShot[] = shots.map((shot) => ({
+      x: shot.x,
+      y: shot.y,
+      isHit: shot.isHit,
+    }));
+    let remainingShipSizes: number[] | undefined;
+
+    if (targetPlacements && targetShipsById) {
+      const analyzed = buildSinkAwareBotShots(
+        shots,
+        targetPlacements,
+        targetShipsById,
+      );
+      botShots = analyzed.botShots;
+      remainingShipSizes = analyzed.remainingShipSizes;
+    }
+
+    return hardBot.pickTarget({
+      boardConfig,
+      attemptedShots,
+      shots: botShots,
+      shipSizes: ships.map((ship) => ship.size),
+      remainingShipSizes,
+      lastShot: botShots[botShots.length - 1],
+    });
   }
 
   return botFireRandom(boardConfig, shots);
 }
-
