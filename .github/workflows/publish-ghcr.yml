@@ -132,6 +132,7 @@ jobs:
           COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN || '' }}
           DB_SYNCHRONIZE: ${{ vars.DB_SYNCHRONIZE || 'false' }}
           DB_LOGGING: ${{ vars.DB_LOGGING || 'false' }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -139,11 +140,15 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: SERVER_IMAGE,CLIENT_IMAGE,PORT,CLIENT_PORT,CLIENT_URL,DB_PORT,DB_NAME,DB_USER,DB_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,ACCESS_TOKEN_EXPIRES_IN,REFRESH_TOKEN_EXPIRES_IN,REFRESH_TOKEN_ABSOLUTE_TTL_DAYS,REFRESH_TOKEN_COOKIE_NAME,REFRESH_TOKEN_COOKIE_MAX_AGE_MS,COOKIE_SECURE,COOKIE_SAME_SITE,COOKIE_PATH,COOKIE_DOMAIN,DB_SYNCHRONIZE,DB_LOGGING,GHCR_USERNAME,GHCR_TOKEN
+          envs: SERVER_IMAGE,CLIENT_IMAGE,PORT,CLIENT_PORT,CLIENT_URL,DB_PORT,DB_NAME,DB_USER,DB_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,ACCESS_TOKEN_EXPIRES_IN,REFRESH_TOKEN_EXPIRES_IN,REFRESH_TOKEN_ABSOLUTE_TTL_DAYS,REFRESH_TOKEN_COOKIE_NAME,REFRESH_TOKEN_COOKIE_MAX_AGE_MS,COOKIE_SECURE,COOKIE_SAME_SITE,COOKIE_PATH,COOKIE_DOMAIN,DB_SYNCHRONIZE,DB_LOGGING,REDIS_PASSWORD,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -eu
             if [ -z "${CLIENT_URL}" ]; then
               echo "CLIENT_URL is required (set vars.CLIENT_URL or secrets.CLIENT_URL)"
+              exit 1
+            fi
+            if [ -z "${REDIS_PASSWORD}" ]; then
+              echo "REDIS_PASSWORD is required (set secrets.REDIS_PASSWORD)"
               exit 1
             fi
             mkdir -p "${{ secrets.SERVER_DEPLOY_PATH }}"
@@ -171,12 +176,14 @@ jobs:
             COOKIE_DOMAIN=${COOKIE_DOMAIN}
             DB_SYNCHRONIZE=${DB_SYNCHRONIZE}
             DB_LOGGING=${DB_LOGGING}
+            REDIS_PASSWORD=${REDIS_PASSWORD}
             EOF
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
             docker compose --env-file .env.production -f docker-compose.prod.yml pull
 
             # Ensure database is ready, then run migrations before app rollout.
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d postgres
+            docker compose --env-file .env.production -f docker-compose.prod.yml up -d --force-recreate redis
             docker compose --env-file .env.production -f docker-compose.prod.yml run --rm server npx typeorm -d dist/database/data-source.js migration:run
 
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d server client
