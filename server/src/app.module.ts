@@ -7,6 +7,7 @@ import { CommonModule } from './common/common.module';
 import { GameModule } from './game/game.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
+import { ForumModule } from './forum/forum.module';
 import { getDatabaseConfig } from './database/database.config';
 
 @Module({
@@ -24,6 +25,7 @@ import { getDatabaseConfig } from './database/database.config';
     AuthModule,
     ProfileModule,
     GameModule,
+    ForumModule,
   ],
   controllers: [AppController],
   providers: [AppService],

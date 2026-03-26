@@ -248,6 +248,11 @@ export function HomePage() {
       label: t('home.menu.settings'),
       disabled: false,
     },
+    {
+      id: 'community',
+      label: t('home.menu.community'),
+      disabled: false,
+    },
   ];
 
   const gameModeMap: Record<string, string> = {
@@ -259,6 +264,11 @@ export function HomePage() {
   const handleGameMode = (id: string) => {
     if (id === 'settings') {
       openModal('settings');
+      return;
+    }
+
+    if (id === 'community') {
+      navigate('/forum');
       return;
     }
 

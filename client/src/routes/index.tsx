@@ -7,6 +7,8 @@ import { GamePlayPage } from '@/pages/game-play';
 import { GameRoomsPage } from '@/pages/game-rooms';
 import { GameSpectatePage } from '@/pages/game-spectate';
 import { WaitingRoomPage } from '@/pages/waiting-room';
+import { ForumFeedPage } from '@/pages/forum-feed';
+import { ForumPostPage } from '@/pages/forum-post';
 import { GameSetupProvider } from '@/store/gameSetupContext';
 import i18n from '@/i18n';
 
@@ -18,6 +20,14 @@ export const appRouter = createBrowserRouter([
   {
     path: '/home',
     element: <HomePage />,
+  },
+  {
+    path: '/forum',
+    element: <ForumFeedPage />,
+  },
+  {
+    path: '/forum/posts/:postId',
+    element: <ForumPostPage />,
   },
   {
     path: '/game/rooms',

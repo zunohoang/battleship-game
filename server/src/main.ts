@@ -24,6 +24,15 @@ const validationMessages: Record<string, string> = {
   PASSWORD_INVAID_FORMAT: 'Password must be a string',
   SIGNATURE_TOO_LONG: 'Signature must be at most 200 characters',
   SIGNATURE_INVALID_FORMAT: 'Signature must not contain HTML tags',
+  FORUM_POST_TITLE_REQUIRED: 'Post title is required',
+  FORUM_POST_TITLE_TOO_LONG: 'Post title must be at most 150 characters',
+  FORUM_POST_CONTENT_REQUIRED: 'Post content is required',
+  FORUM_POST_CONTENT_TOO_LONG: 'Post content must be at most 5000 characters',
+  FORUM_COMMENT_REQUIRED: 'Comment content is required',
+  FORUM_COMMENT_TOO_LONG: 'Comment content must be at most 1200 characters',
+  FORUM_VOTE_INVALID: 'Vote value must be either -1 or 1',
+  FORUM_SORT_INVALID: 'Sort must be newest or top',
+  PAGINATION_INVALID: 'Pagination parameters are invalid',
 };
 
 type ValidationIssue = {
