@@ -10,6 +10,7 @@ import type {
   RoomActionPayload,
   RoomReadyPayload,
   RoomSnapshot,
+  SpectateRoomPayload,
 } from '@/types/game';
 import type { ChatHistoryPayload, ChatMessage, SendChatMessagePayload } from '@/types/chat';
 
@@ -26,6 +27,9 @@ type ServerMatchUpdatedPayload = {
 type SocketErrorPayload = {
   error: string;
   message: string;
+  activeRoomId?: string;
+  activeRoomCode?: string;
+  activeRoomStatus?: string;
 };
 
 // Chat-related payloads
@@ -37,6 +41,11 @@ type ServerChatHistoryPayload = {
 type ServerChatMessagePayload = {
   roomId: string;
   message: ChatMessage;
+};
+
+type ServerSpectatorRoomUpdatedPayload = {
+  room: RoomSnapshot;
+  match: MatchSnapshot;
 };
 //
 interface SocketAck<T> {
@@ -124,6 +133,22 @@ class GameSocketService {
     };
   }
 
+  onSpectatorChatHistory(handler: (payload: ServerChatHistoryPayload) => void): () => void {
+    if (!this.socket) return () => undefined;
+    this.socket.on('server:spectatorChatHistory', handler);
+    return () => {
+      this.socket?.off('server:spectatorChatHistory', handler);
+    };
+  }
+
+  onSpectatorChatMessage(handler: (payload: ServerChatMessagePayload) => void): () => void {
+    if (!this.socket) return () => undefined;
+    this.socket.on('server:spectatorChatMessage', handler);
+    return () => {
+      this.socket?.off('server:spectatorChatMessage', handler);
+    };
+  }
+
   createRoom(
     payload: CreateRoomPayload,
     ack?: SocketAck<ServerRoomUpdatedPayload>,
@@ -144,6 +169,17 @@ class GameSocketService {
 
   joinRoom(payload: JoinRoomPayload, ack?: SocketAck<ServerRoomUpdatedPayload>): void {
     this.socket?.emit('room:join', payload, ack);
+  }
+
+  spectateJoin(
+    payload: SpectateRoomPayload,
+    ack?: SocketAck<ServerSpectatorRoomUpdatedPayload>,
+  ): void {
+    this.socket?.emit('match:spectateJoin', payload, ack);
+  }
+
+  spectateLeave(payload: SpectateRoomPayload, ack?: SocketAck<{ roomId: string }>): void {
+    this.socket?.emit('match:spectateLeave', payload, ack);
   }
 
   startRoom(payload: RoomActionPayload, ack?: SocketAck<ServerRoomUpdatedPayload>): void {
@@ -207,6 +243,38 @@ class GameSocketService {
     }
 
     this.socket.emit('chat:sendMessage', payload);
+  }
+
+  requestSpectatorChatHistory(
+    payload: SpectateRoomPayload,
+    ack?: SocketAck<ServerChatHistoryPayload>,
+  ): void {
+    if (!this.socket) {
+      return;
+    }
+
+    if (ack) {
+      this.socket.emit('spectator:chatHistory', payload, ack);
+      return;
+    }
+
+    this.socket.emit('spectator:chatHistory', payload);
+  }
+
+  sendSpectatorMessage(
+    payload: { roomId: string; content: string },
+    ack?: SocketAck<ServerChatMessagePayload>,
+  ): void {
+    if (!this.socket) {
+      return;
+    }
+
+    if (ack) {
+      this.socket.emit('spectator:sendMessage', payload, ack);
+      return;
+    }
+
+    this.socket.emit('spectator:sendMessage', payload);
   }
 }
 

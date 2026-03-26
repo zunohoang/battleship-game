@@ -1,4 +1,8 @@
 import { UserEntity } from '../auth/infrastructure/persistence/relational/entities/user.entity';
+import { ForumCommentEntity } from '../forum/infrastructure/persistence/relational/entities/forum-comment.entity';
+import { ForumCommentVoteEntity } from '../forum/infrastructure/persistence/relational/entities/forum-comment-vote.entity';
+import { ForumPostEntity } from '../forum/infrastructure/persistence/relational/entities/forum-post.entity';
+import { ForumPostVoteEntity } from '../forum/infrastructure/persistence/relational/entities/forum-post-vote.entity';
 import { MatchEntity } from '../game/infrastructure/persistence/relational/entities/match.entity';
 import { MoveEntity } from '../game/infrastructure/persistence/relational/entities/move.entity';
 import { RoomEntity } from '../game/infrastructure/persistence/relational/entities/room.entity';
@@ -22,7 +26,16 @@ export function getDatabaseConfig(readEnv: EnvReader): DataSourceOptions {
 
   const baseConfig: DataSourceOptions = {
     type: 'postgres',
-    entities: [UserEntity, RoomEntity, MatchEntity, MoveEntity],
+    entities: [
+      UserEntity,
+      RoomEntity,
+      MatchEntity,
+      MoveEntity,
+      ForumPostEntity,
+      ForumCommentEntity,
+      ForumPostVoteEntity,
+      ForumCommentVoteEntity,
+    ],
     migrations: [`${__dirname}/migrations/*{.ts,.js}`],
     synchronize,
     logging,

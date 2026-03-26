@@ -13,6 +13,7 @@
             "playBot": "Play with bot",
             "botVsBot": "Bot vs bot",
             "settings": "Settings",
+            "community": "Community",
             "login": "Login",
             "register": "Register"
         },
@@ -483,6 +484,37 @@
         "unmuteVolume": "Unmute {{channel}}",
         "close": "Close"
     },
+    "forum": {
+        "feed": {
+            "eyebrow": "Community Forum",
+            "title": "Fleet Community",
+            "sortNewest": "Newest",
+            "sortTop": "Top",
+            "createPost": "Create post",
+            "titlePlaceholder": "Post title",
+            "contentPlaceholder": "Share your thoughts with the fleet...",
+            "loginStateReady": "You are connected. Publish when ready.",
+            "loginStateRequired": "Login is required to post, comment, and vote.",
+            "creating": "Publishing...",
+            "publish": "Publish",
+            "loading": "Loading forum data...",
+            "empty": "No posts yet. Be the first to open a thread.",
+            "comments": "comments",
+            "upvote": "Upvote",
+            "downvote": "Downvote",
+            "score": "Score",
+            "page": "Page",
+            "prev": "Previous",
+            "next": "Next"
+        },
+        "post": {
+            "back": "Back to forum",
+            "addComment": "Add comment",
+            "commentPlaceholder": "Write your comment...",
+            "submitting": "Sending...",
+            "submitComment": "Send comment"
+        }
+    },
     "errors": {
         "SESSION_EXPIRED_TITLE": "Session expired",
         "notFound": "Page not found",
@@ -507,6 +539,18 @@
         "PASSWORD_MISMATCH": "Passwords do not match.",
         "SIGNATURE_TOO_LONG": "Signature must be at most 200 characters.",
         "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
+        "FORUM_POST_NOT_FOUND": "Post was not found.",
+        "FORUM_COMMENT_NOT_FOUND": "Comment was not found.",
+        "FORUM_FORBIDDEN": "You can only edit your own post or comment.",
+        "FORUM_POST_TITLE_REQUIRED": "Post title is required.",
+        "FORUM_POST_TITLE_TOO_LONG": "Post title must be at most 150 characters.",
+        "FORUM_POST_CONTENT_REQUIRED": "Post content is required.",
+        "FORUM_POST_CONTENT_TOO_LONG": "Post content must be at most 5000 characters.",
+        "FORUM_COMMENT_REQUIRED": "Comment content is required.",
+        "FORUM_COMMENT_TOO_LONG": "Comment content must be at most 1200 characters.",
+        "FORUM_VOTE_INVALID": "Vote must be either upvote or downvote.",
+        "FORUM_SORT_INVALID": "Invalid sort option.",
+        "PAGINATION_INVALID": "Invalid pagination parameters.",
         "USER_NOT_FOUND": "User not found.",
         "UNKNOWN_ERROR": "Something went wrong. Please try again."
     },

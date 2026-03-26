@@ -8,7 +8,11 @@ import {
   type ShipSpriteSize,
 } from '@/utils/shipSpriteSheet';
 import type { BoardConfig, PlacedShip, ShipDefinition } from '@/types/game';
-import { buildOccupiedMap, cellKey, instanceKey } from '@/utils/placementUtils';
+import {
+  buildOccupiedMap,
+  cellKey,
+  instanceKey,
+} from '@/services/bots/core/shared/placementUtils';
 
 interface PlacementBoardProps {
   boardConfig: BoardConfig;
@@ -81,11 +85,9 @@ export function PlacementBoard({
       const axisAllowance = 28;
       const nextCellSize = Math.floor(
         Math.min(
-          (element.clientWidth - axisAllowance -
-            (boardConfig.cols - 1) * 4) /
+          (element.clientWidth - axisAllowance - (boardConfig.cols - 1) * 4) /
             boardConfig.cols,
-          (element.clientHeight - axisAllowance -
-            (boardConfig.rows - 1) * 4) /
+          (element.clientHeight - axisAllowance - (boardConfig.rows - 1) * 4) /
             boardConfig.rows,
         ),
       );
@@ -155,45 +157,40 @@ export function PlacementBoard({
       const spriteStyle =
         spriteMeta && spriteSize
           ? getShipSpriteStyle(
-            images.battleShipSheet,
-            spriteMeta,
-            toSpriteDirectionFromPlacement(placement.orientation),
-            spriteSize,
-            renderWidth,
-            renderHeight,
-          )
+              images.battleShipSheet,
+              spriteMeta,
+              toSpriteDirectionFromPlacement(placement.orientation),
+              spriteSize,
+              renderWidth,
+              renderHeight,
+            )
           : null;
 
       return {
-        key: instanceKey(
-          placement.definitionId,
-          placement.instanceIndex,
-        ),
+        key: instanceKey(placement.definitionId, placement.instanceIndex),
         selected,
         ship,
         baseStyle,
         spriteStyle,
       };
     })
-    .filter(
-      (sprite): sprite is NonNullable<typeof sprite> => sprite !== null,
-    );
+    .filter((sprite): sprite is NonNullable<typeof sprite> => sprite !== null);
 
   return (
     <div
       ref={boardViewportRef}
-      className='ui-panel ui-panel-strong min-h-80 overflow-auto rounded-md p-3 sm:min-h-0 sm:overflow-hidden sm:p-4'
+      className="ui-panel ui-panel-strong min-h-80 overflow-auto rounded-md p-3 sm:min-h-0 sm:overflow-hidden sm:p-4"
     >
-      <div className='flex h-full w-full items-center justify-center'>
+      <div className="flex h-full w-full items-center justify-center">
         <div
-          className='relative'
+          className="relative"
           style={{
             width: `${fullPixelWidth}px`,
             height: `${fullPixelHeight}px`,
           }}
         >
           <div
-            className='absolute left-0 top-0 grid text-center font-mono text-[10px] font-bold text-(--text-subtle)'
+            className="absolute left-0 top-0 grid text-center font-mono text-[10px] font-bold text-(--text-subtle)"
             style={{
               ...axisColumnStyle,
               left: `${boardOffsetX}px`,
@@ -207,7 +204,7 @@ export function PlacementBoard({
           </div>
 
           <div
-            className='absolute left-0 top-0 grid text-center font-mono text-[10px] font-bold text-(--text-subtle)'
+            className="absolute left-0 top-0 grid text-center font-mono text-[10px] font-bold text-(--text-subtle)"
             style={{
               ...axisRowStyle,
               top: `${boardOffsetY}px`,
@@ -228,7 +225,7 @@ export function PlacementBoard({
           </div>
 
           <div
-            className='absolute grid'
+            className="absolute grid"
             style={{
               ...boardStyle,
               left: `${boardOffsetX}px`,
@@ -236,41 +233,34 @@ export function PlacementBoard({
             }}
           >
             {Array.from({ length: boardConfig.rows }).map((_, y) =>
-              Array.from({ length: boardConfig.cols }).map(
-                (__, x) => {
-                  const occupied = occupiedMap.get(
-                    cellKey(x, y),
-                  );
-                  const isSelectedPlaced =
-                    occupied &&
-                    selectedInstanceKey ===
-                      instanceKey(
-                        occupied.definitionId,
-                        occupied.instanceIndex,
-                      );
+              Array.from({ length: boardConfig.cols }).map((__, x) => {
+                const occupied = occupiedMap.get(cellKey(x, y));
+                const isSelectedPlaced =
+                  occupied &&
+                  selectedInstanceKey ===
+                    instanceKey(occupied.definitionId, occupied.instanceIndex);
 
-                  return (
-                    <button
-                      key={cellKey(x, y)}
-                      type='button'
-                      onClick={() => onPlaceAt(x, y)}
-                      className='ui-grid-cell rounded-md'
-                      data-occupied={occupied ? 'true' : 'false'}
-                      data-selected={isSelectedPlaced ? 'true' : 'false'}
-                      style={{
-                        width: `${cellSize}px`,
-                        height: `${cellSize}px`,
-                      }}
-                      title={`${toColumnLabel(x)}${y + 1}`}
-                    />
-                  );
-                },
-              ),
+                return (
+                  <button
+                    key={cellKey(x, y)}
+                    type="button"
+                    onClick={() => onPlaceAt(x, y)}
+                    className="ui-grid-cell rounded-md"
+                    data-occupied={occupied ? 'true' : 'false'}
+                    data-selected={isSelectedPlaced ? 'true' : 'false'}
+                    style={{
+                      width: `${cellSize}px`,
+                      height: `${cellSize}px`,
+                    }}
+                    title={`${toColumnLabel(x)}${y + 1}`}
+                  />
+                );
+              }),
             )}
           </div>
 
           <div
-            className='pointer-events-none absolute'
+            className="pointer-events-none absolute"
             style={{
               left: `${boardOffsetX}px`,
               top: `${boardOffsetY}px`,
@@ -289,15 +279,10 @@ export function PlacementBoard({
                 style={sprite.baseStyle}
               >
                 {sprite.spriteStyle ? (
-                  <div
-                    className='h-full w-full'
-                    style={sprite.spriteStyle}
-                  />
+                  <div className="h-full w-full" style={sprite.spriteStyle} />
                 ) : (
-                  <div className='flex h-full w-full items-center justify-center rounded-md bg-[rgba(34,211,238,0.7)] text-[10px] font-bold text-[#04131f]'>
-                    {sprite.ship.name
-                      .slice(0, 1)
-                      .toUpperCase()}
+                  <div className="flex h-full w-full items-center justify-center rounded-md bg-[rgba(34,211,238,0.7)] text-[10px] font-bold text-[#04131f]">
+                    {sprite.ship.name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
               </div>
