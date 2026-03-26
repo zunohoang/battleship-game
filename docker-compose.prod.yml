@@ -21,10 +21,9 @@ services:
     image: redis:7-alpine
     container_name: p-btship-redis
     restart: unless-stopped
-    ports:
-      - '${REDIS_PORT:-6379}:6379'
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -63,7 +62,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
       CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-80}
       CHAT_HISTORY_TTL_SECONDS: ${CHAT_HISTORY_TTL_SECONDS:-43200}
     ports:
