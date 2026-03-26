@@ -86,6 +86,13 @@ function getRoomActionState(
   roomItem: RoomListSummary,
   pendingAction: PendingAction,
 ) {
+  if (roomItem.actionKind === 'watch') {
+    return {
+      label: 'Watch Live',
+      disabled: pendingAction !== 'none',
+    };
+  }
+
   if (roomItem.actionKind === 'open') {
     return {
       label: pendingAction === 'joining' ? 'Joining...' : 'Join Room',
@@ -211,6 +218,7 @@ export function GameRoomsPage() {
     room,
     match,
     lastError,
+    activeRoomHint,
     listRooms,
     createRoom,
     joinRoom,
@@ -322,6 +330,7 @@ export function GameRoomsPage() {
   }, [filters, rooms]);
 
   const canJoinByCode = roomCode.trim().length >= 4;
+  const hasActiveRoomLock = activeRoomHint !== null;
   const hasActiveFilters =
     filters.status !== 'all' ||
     filters.accessState !== 'all' ||
@@ -329,6 +338,12 @@ export function GameRoomsPage() {
 
   const handleRoomAction = (roomItem: RoomListSummary) => {
     setSelectedRoomPreview(null);
+
+    if (roomItem.actionKind === 'watch') {
+      navigate(`/game/spectate/${roomItem.roomId}`);
+      return;
+    }
+
     setPendingAction('joining');
     joinRoom({ roomId: roomItem.roomId });
   };
@@ -398,6 +413,7 @@ export function GameRoomsPage() {
               <Button
                 variant='primary'
                 className='h-11'
+                disabled={hasActiveRoomLock}
                 onClick={() => {
                   setPendingAction('creating');
                   createRoom({ visibility });
@@ -418,7 +434,7 @@ export function GameRoomsPage() {
               />
               <Button
                 className='h-11'
-                disabled={!canJoinByCode}
+                disabled={!canJoinByCode || hasActiveRoomLock}
                 onClick={() => {
                   setPendingAction('joining');
                   joinRoom({ roomCode: roomCode.trim() });
@@ -442,6 +458,26 @@ export function GameRoomsPage() {
                 <p className='mt-4 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
                   {lastError}
                 </p>
+              ) : null}
+
+              {activeRoomHint ? (
+                <div className='mt-3 space-y-2 rounded-sm border border-[rgba(63,203,232,0.35)] bg-[rgba(7,28,38,0.78)] p-3'>
+                  <p className='text-xs font-bold uppercase tracking-[0.12em] text-(--text-muted)'>
+                    Active room lock: {activeRoomHint.roomCode ?? activeRoomHint.roomId.slice(0, 8)}
+                  </p>
+                  <Button
+                    className='h-10 w-full'
+                    onClick={() =>
+                      navigate('/game/waiting', {
+                        state: {
+                          roomId: activeRoomHint.roomId,
+                        },
+                      })
+                    }
+                  >
+                    Return to room
+                  </Button>
+                </div>
               ) : null}
             </div>
           </aside>

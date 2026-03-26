@@ -12,6 +12,19 @@ import { MatchEntity } from '../game/infrastructure/persistence/relational/entit
 import { RoomEntity } from '../game/infrastructure/persistence/relational/entities/room.entity';
 import type { ChatMessageSnapshot } from './types/chat.types';
 
+interface RedisPipelineLike {
+  rpush(key: string, value: string): RedisPipelineLike;
+  ltrim(key: string, start: number, stop: number): RedisPipelineLike;
+  expire(key: string, seconds: number): RedisPipelineLike;
+  exec(): Promise<unknown>;
+}
+
+interface RedisClientLike {
+  lrange(key: string, start: number, stop: number): Promise<string[]>;
+  incr(key: string): Promise<number>;
+  pipeline(): RedisPipelineLike;
+}
+
 @Injectable()
 export class ChatService {
   private readonly historyLimit: number;
@@ -41,13 +54,29 @@ export class ChatService {
   ): Promise<ChatMessageSnapshot[]> {
     await this.assertRoomMember(roomId, userId);
 
-    const serializedMessages = await this.redisService
-      .getClient()
-      .lrange(this.messagesKey(roomId), 0, -1);
+    return this.getMessagesByChannel(this.messagesKey(roomId));
+  }
 
-    return serializedMessages
-      .map((value) => this.parseMessage(value))
-      .filter((message): message is ChatMessageSnapshot => message !== null);
+  async getRecentSpectatorMessages(
+    roomId: string,
+  ): Promise<ChatMessageSnapshot[]> {
+    return this.getMessagesByChannel(this.spectatorMessagesKey(roomId));
+  }
+
+  async sendSpectatorMessage(
+    userId: string,
+    roomId: string,
+    content: unknown,
+  ): Promise<ChatMessageSnapshot> {
+    const normalizedContent = this.normalizeMessageContent(content);
+    return this.pushMessage(this.spectatorMessagesKey(roomId), {
+      id: randomUUID(),
+      roomId,
+      senderId: userId,
+      content: normalizedContent,
+      sequence: 0,
+      sentAt: new Date().toISOString(),
+    });
   }
 
   async sendMessage(
@@ -57,6 +86,32 @@ export class ChatService {
   ): Promise<ChatMessageSnapshot> {
     await this.assertRoomMember(roomId, userId);
 
+    const normalizedContent = this.normalizeMessageContent(content);
+    return this.pushMessage(this.messagesKey(roomId), {
+      id: randomUUID(),
+      roomId,
+      senderId: userId,
+      content: normalizedContent,
+      sequence: 0,
+      sentAt: new Date().toISOString(),
+    });
+  }
+
+  private async getMessagesByChannel(
+    messageKey: string,
+  ): Promise<ChatMessageSnapshot[]> {
+    const serializedMessages = await this.redisClient().lrange(
+      messageKey,
+      0,
+      -1,
+    );
+
+    return serializedMessages
+      .map((value) => this.parseMessage(value))
+      .filter((message): message is ChatMessageSnapshot => message !== null);
+  }
+
+  private normalizeMessageContent(content: unknown): string {
     if (typeof content !== 'string') {
       throw new BadRequestException({
         error: 'CHAT_MESSAGE_REQUIRED',
@@ -79,26 +134,29 @@ export class ChatService {
       });
     }
 
-    const sequence = await this.redisService
-      .getClient()
-      .incr(this.sequenceKey(roomId));
-    const message: ChatMessageSnapshot = {
-      id: randomUUID(),
-      roomId,
-      senderId: userId,
-      content: normalizedContent,
+    return normalizedContent;
+  }
+
+  private async pushMessage(
+    messageKey: string,
+    message: ChatMessageSnapshot,
+  ): Promise<ChatMessageSnapshot> {
+    const sequenceKey = this.sequenceKey(messageKey);
+
+    const sequence = await this.redisClient().incr(sequenceKey);
+    const resolvedMessage: ChatMessageSnapshot = {
+      ...message,
       sequence,
-      sentAt: new Date().toISOString(),
     };
 
-    const pipeline = this.redisService.getClient().pipeline();
-    pipeline.rpush(this.messagesKey(roomId), JSON.stringify(message));
-    pipeline.ltrim(this.messagesKey(roomId), -this.historyLimit, -1);
-    pipeline.expire(this.messagesKey(roomId), this.historyTtlSeconds);
-    pipeline.expire(this.sequenceKey(roomId), this.historyTtlSeconds);
+    const pipeline = this.redisClient().pipeline();
+    pipeline.rpush(messageKey, JSON.stringify(resolvedMessage));
+    pipeline.ltrim(messageKey, -this.historyLimit, -1);
+    pipeline.expire(messageKey, this.historyTtlSeconds);
+    pipeline.expire(sequenceKey, this.historyTtlSeconds);
     await pipeline.exec();
 
-    return message;
+    return resolvedMessage;
   }
 
   private async assertRoomMember(
@@ -142,8 +200,12 @@ export class ChatService {
     return `chat:room:${roomId}:messages`;
   }
 
-  private sequenceKey(roomId: string): string {
-    return `chat:room:${roomId}:sequence`;
+  private spectatorMessagesKey(roomId: string): string {
+    return `chat:spectator:${roomId}:messages`;
+  }
+
+  private sequenceKey(messageKey: string): string {
+    return `${messageKey}:sequence`;
   }
 
   private parseMessage(value: string): ChatMessageSnapshot | null {
@@ -152,5 +214,9 @@ export class ChatService {
     } catch {
       return null;
     }
+  }
+
+  private redisClient(): RedisClientLike {
+    return this.redisService.getClient() as unknown as RedisClientLike;
   }
 }

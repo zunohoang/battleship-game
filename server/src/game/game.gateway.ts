@@ -27,6 +27,8 @@ import {
   RematchVoteDto,
   RoomActionDto,
   RoomReadyDto,
+  SpectateRoomDto,
+  SpectatorSendChatDto,
 } from './dto/game-events.dto';
 import { GameEvents } from './constants/game-events.const';
 import type { MatchSnapshot, RoomSnapshot } from './types/game.types';
@@ -79,12 +81,17 @@ export class GameGateway {
     @MessageBody() payload: CreateRoomDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
-    const room = await this.gameService.createRoom(userId, payload);
-    return this.emitRoomUpdate(client, {
-      room,
-      match: null,
-    });
+    try {
+      const userId = this.getUserId(client);
+      const room = await this.gameService.createRoom(userId, payload);
+      return this.emitRoomUpdate(client, {
+        room,
+        match: null,
+      });
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
   }
 
   @SubscribeMessage(GameEvents.RoomConfigureSetup)
@@ -171,7 +178,44 @@ export class GameGateway {
     this.server
       .to(`room:${match.roomId}`)
       .emit(GameEvents.ServerMatchUpdated, { match });
+    this.server
+      .to(this.spectatorRoom(match.roomId))
+      .emit(GameEvents.ServerMatchUpdated, {
+        match: this.gameService.toSpectatorMatchSnapshot(match),
+      });
     return { match };
+  }
+
+  @SubscribeMessage(GameEvents.MatchSpectateJoin)
+  async handleSpectateJoin(
+    @MessageBody() payload: SpectateRoomDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      const state = await this.gameService.spectateJoin(userId, payload.roomId);
+      await client.join(this.spectatorRoom(payload.roomId));
+      client.emit(GameEvents.ServerSpectatorChatHistory, {
+        roomId: payload.roomId,
+        messages: await this.chatService.getRecentSpectatorMessages(
+          payload.roomId,
+        ),
+      });
+
+      return state;
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
+  }
+
+  @SubscribeMessage(GameEvents.MatchSpectateLeave)
+  async handleSpectateLeave(
+    @MessageBody() payload: SpectateRoomDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    await client.leave(this.spectatorRoom(payload.roomId));
+    return { roomId: payload.roomId };
   }
 
   @SubscribeMessage(GameEvents.RoomState)
@@ -215,6 +259,11 @@ export class GameGateway {
     this.server
       .to(`room:${roomId}`)
       .emit(GameEvents.ServerMatchUpdated, { match });
+    this.server
+      .to(this.spectatorRoom(roomId))
+      .emit(GameEvents.ServerMatchUpdated, {
+        match: this.gameService.toSpectatorMatchSnapshot(match),
+      });
     return { match };
   }
 
@@ -233,7 +282,62 @@ export class GameGateway {
     this.server
       .to(`room:${roomId}`)
       .emit(GameEvents.ServerMatchUpdated, result);
+    this.server
+      .to(this.spectatorRoom(roomId))
+      .emit(GameEvents.ServerMatchUpdated, {
+        ...result,
+        match: this.gameService.toSpectatorMatchSnapshot(result.match),
+      });
     return result;
+  }
+
+  @SubscribeMessage(GameEvents.SpectatorChatHistory)
+  async handleSpectatorChatHistory(
+    @MessageBody() payload: SpectateRoomDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      await this.gameService.spectateJoin(userId, payload.roomId);
+
+      const messages = await this.chatService.getRecentSpectatorMessages(
+        payload.roomId,
+      );
+      const response = { roomId: payload.roomId, messages };
+      client.emit(GameEvents.ServerSpectatorChatHistory, response);
+      return response;
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
+  }
+
+  @SubscribeMessage(GameEvents.SpectatorChatSendMessage)
+  async handleSpectatorChatSendMessage(
+    @MessageBody() payload: SpectatorSendChatDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      const userId = this.getUserId(client);
+      await this.gameService.spectateJoin(userId, payload.roomId);
+
+      const message = await this.chatService.sendSpectatorMessage(
+        userId,
+        payload.roomId,
+        payload.content,
+      );
+      const response = {
+        roomId: payload.roomId,
+        message,
+      };
+      this.server
+        .to(this.spectatorRoom(payload.roomId))
+        .emit(GameEvents.ServerSpectatorChatMessage, response);
+      return response;
+    } catch (error) {
+      this.emitClientError(client, error);
+      throw error;
+    }
   }
 
   @SubscribeMessage(GameEvents.ChatHistory)
@@ -339,12 +443,23 @@ export class GameGateway {
         ? response.error
         : error.name;
 
+    const resolvedMessage =
+      errorCode === 'ROOM_SETUP_MISSING'
+        ? 'Host has not finished phase 1 setup yet.'
+        : message;
+
+    if (typeof response === 'object' && response !== null) {
+      client.emit(GameEvents.ServerError, {
+        ...response,
+        error: errorCode,
+        message: resolvedMessage,
+      });
+      return;
+    }
+
     client.emit(GameEvents.ServerError, {
       error: errorCode,
-      message:
-        errorCode === 'ROOM_SETUP_MISSING'
-          ? 'Host has not finished phase 1 setup yet.'
-          : message,
+      message: resolvedMessage,
     });
   }
 
@@ -357,5 +472,9 @@ export class GameGateway {
       .to(`room:${payload.room.roomId}`)
       .emit(GameEvents.ServerRoomUpdated, payload);
     return payload;
+  }
+
+  private spectatorRoom(roomId: string): string {
+    return `room:${roomId}:spectators`;
   }
 }

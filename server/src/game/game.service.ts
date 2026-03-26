@@ -29,6 +29,11 @@ import {
 const RANDOM_PLACEMENT_MAX_ATTEMPTS = 300;
 const DEFAULT_TURN_TIMER_SECONDS = 30;
 const DEFAULT_SETUP_TIMER_SECONDS = 60;
+const ACTIVE_ROOM_STATUSES: Array<RoomEntity['status']> = [
+  'waiting',
+  'setup',
+  'in_game',
+];
 
 function keyOf(x: number, y: number): string {
   return `${x},${y}`;
@@ -72,6 +77,17 @@ export class GameService {
     userId: string,
     payload: CreateRoomDto,
   ): Promise<RoomSnapshot> {
+    const activeRoom = await this.findUserActiveRoom(userId);
+    if (activeRoom) {
+      throw new BadRequestException({
+        error: 'USER_ALREADY_IN_ACTIVE_ROOM',
+        message: 'User is already in an active room',
+        activeRoomId: activeRoom.id,
+        activeRoomCode: activeRoom.code,
+        activeRoomStatus: activeRoom.status,
+      });
+    }
+
     const code = await this.createUniqueRoomCode();
     const room = this.roomRepo.create({
       id: randomUUID(),
@@ -94,11 +110,11 @@ export class GameService {
       this.roomRepo.find({
         where: [
           {
-            status: 'waiting',
+            status: In(ACTIVE_ROOM_STATUSES),
             ownerId: userId,
           },
           {
-            status: 'waiting',
+            status: In(ACTIVE_ROOM_STATUSES),
             guestId: userId,
           },
         ],
@@ -106,10 +122,16 @@ export class GameService {
         take: 25,
       }),
       this.roomRepo.find({
-        where: {
-          status: 'waiting',
-          visibility: 'public',
-        },
+        where: [
+          {
+            status: 'waiting',
+            visibility: 'public',
+          },
+          {
+            status: 'in_game',
+            visibility: 'public',
+          },
+        ],
         order: { updatedAt: 'DESC' },
         take: 50,
       }),
@@ -124,7 +146,8 @@ export class GameService {
         }
         const isRoomMember = room.ownerId === userId || room.guestId === userId;
         const canShowFromRoomList =
-          room.visibility === 'public' && room.status === 'waiting';
+          room.visibility === 'public' &&
+          (room.status === 'waiting' || room.status === 'in_game');
 
         if (!isRoomMember && !canShowFromRoomList) {
           return false;
@@ -188,6 +211,17 @@ export class GameService {
       throw new NotFoundException({
         error: 'ROOM_NOT_FOUND',
         message: 'Room not found',
+      });
+    }
+
+    const activeRoom = await this.findUserActiveRoom(userId);
+    if (activeRoom && activeRoom.id !== room.id) {
+      throw new BadRequestException({
+        error: 'USER_ALREADY_IN_ACTIVE_ROOM',
+        message: 'User is already in an active room',
+        activeRoomId: activeRoom.id,
+        activeRoomCode: activeRoom.code,
+        activeRoomStatus: activeRoom.status,
       });
     }
 
@@ -850,6 +884,33 @@ export class GameService {
     };
   }
 
+  async spectateJoin(
+    userId: string,
+    roomId: string,
+  ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
+    const room = await this.getRoomOrThrow(roomId);
+    const match = await this.getCurrentMatchOrThrow(room);
+
+    this.assertSpectatorAccess(room, match, userId);
+
+    return {
+      room: this.toRoomSnapshot(room),
+      match: this.toSpectatorMatchSnapshot(this.toMatchSnapshot(match)),
+    };
+  }
+
+  toSpectatorMatchSnapshot(match: MatchSnapshot): MatchSnapshot {
+    if (match.status === 'finished') {
+      return match;
+    }
+
+    return {
+      ...match,
+      player1Placements: null,
+      player2Placements: null,
+    };
+  }
+
   private finishMatch(
     room: RoomEntity,
     match: MatchEntity,
@@ -877,6 +938,22 @@ export class GameService {
     throw new BadRequestException({
       error: 'ROOM_CODE_UNAVAILABLE',
       message: 'Could not allocate room code',
+    });
+  }
+
+  private async findUserActiveRoom(userId: string): Promise<RoomEntity | null> {
+    return this.roomRepo.findOne({
+      where: [
+        {
+          ownerId: userId,
+          status: In(ACTIVE_ROOM_STATUSES),
+        },
+        {
+          guestId: userId,
+          status: In(ACTIVE_ROOM_STATUSES),
+        },
+      ],
+      order: { updatedAt: 'DESC' },
     });
   }
 
@@ -1037,9 +1114,46 @@ export class GameService {
       status: room.status,
       accessState: this.toRoomListAccessState(room),
       occupancy: room.guestId ? '2/2' : '1/2',
-      actionKind: isRoomMember ? 'open' : 'join',
+      actionKind: isRoomMember
+        ? 'open'
+        : room.status === 'in_game'
+          ? 'watch'
+          : 'join',
       phase1Config,
     };
+  }
+
+  private assertSpectatorAccess(
+    room: RoomEntity,
+    match: MatchEntity,
+    userId: string,
+  ): void {
+    const isPlayer =
+      room.ownerId === userId ||
+      room.guestId === userId ||
+      match.player1Id === userId ||
+      match.player2Id === userId;
+
+    if (isPlayer) {
+      throw new BadRequestException({
+        error: 'SPECTATOR_PLAYER_FORBIDDEN',
+        message: 'Players cannot spectate their own match',
+      });
+    }
+
+    if (room.visibility !== 'public') {
+      throw new NotFoundException({
+        error: 'ROOM_NOT_FOUND',
+        message: 'Room not found',
+      });
+    }
+
+    if (room.status !== 'in_game' || match.status !== 'in_progress') {
+      throw new BadRequestException({
+        error: 'SPECTATOR_NOT_AVAILABLE',
+        message: 'This room is not available for spectating',
+      });
+    }
   }
 
   private toRoomListAccessState(

@@ -79,7 +79,7 @@ export type RoomStatus =
 export type MatchStatus = 'setup' | 'in_progress' | 'finished';
 export type RoomListAccessState = 'setting_up' | 'ready' | 'playing';
 export type RoomListOccupancy = '1/2' | '2/2';
-export type RoomListActionKind = 'open' | 'join';
+export type RoomListActionKind = 'open' | 'join' | 'watch';
 
 export interface RoomListPhase1Config {
   boardConfig: BoardConfig;
@@ -162,6 +162,10 @@ export interface ConfigureRoomSetupPayload {
 export interface JoinRoomPayload {
   roomId?: string;
   roomCode?: string;
+}
+
+export interface SpectateRoomPayload {
+  roomId: string;
 }
 
 export interface RoomReadyPayload {

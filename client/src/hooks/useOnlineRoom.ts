@@ -22,6 +22,11 @@ interface UseOnlineRoomState {
   rooms: RoomListSummary[];
   chatMessages: ChatMessage[];
   lastError: string | null;
+  activeRoomHint: {
+    roomId: string;
+    roomCode?: string;
+    status?: string;
+  } | null;
 }
 
 function mergeChatMessages(
@@ -45,6 +50,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     rooms: [],
     chatMessages: [],
     lastError: null,
+    activeRoomHint: null,
   });
 
   useEffect(() => {
@@ -113,6 +119,14 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       setState((current) => ({
         ...current,
         lastError: payload.message || payload.error,
+        activeRoomHint:
+          payload.error === 'USER_ALREADY_IN_ACTIVE_ROOM' && payload.activeRoomId
+            ? {
+              roomId: payload.activeRoomId,
+              roomCode: payload.activeRoomCode,
+              status: payload.activeRoomStatus,
+            }
+            : null,
       }));
     });
 
@@ -181,6 +195,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
         room: response.room,
         match: response.match,
         lastError: null,
+        activeRoomHint: null,
       }));
     });
   }, []);
@@ -192,6 +207,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
         room: response.room,
         match: response.match,
         lastError: null,
+        activeRoomHint: null,
       }));
     });
   }, []);
@@ -280,6 +296,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       rooms: state.rooms,
       chatMessages: state.chatMessages,
       lastError: state.lastError,
+      activeRoomHint: state.activeRoomHint,
       listRooms,
       createRoom,
       configureRoomSetup,
@@ -306,6 +323,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       startRoom,
       state.chatMessages,
       state.lastError,
+      state.activeRoomHint,
       state.match,
       state.room,
       state.rooms,

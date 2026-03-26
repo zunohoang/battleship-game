@@ -7,7 +7,9 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   Max,
+  MinLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -101,6 +103,11 @@ export class RoomActionDto {
   roomId: string;
 }
 
+export class SpectateRoomDto {
+  @IsUUID()
+  roomId: string;
+}
+
 export class RoomReadyDto {
   @IsUUID()
   roomId: string;
@@ -141,4 +148,14 @@ export class ReconnectDto {
 export class RematchVoteDto {
   @IsBoolean()
   accept: boolean;
+}
+
+export class SpectatorSendChatDto {
+  @IsUUID(undefined, { message: 'ROOM_ID_INVALID' })
+  roomId: string;
+
+  @IsString({ message: 'CHAT_MESSAGE_REQUIRED' })
+  @MinLength(1, { message: 'CHAT_MESSAGE_REQUIRED' })
+  @MaxLength(280, { message: 'CHAT_MESSAGE_TOO_LONG' })
+  content: string;
 }

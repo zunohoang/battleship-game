@@ -5,6 +5,7 @@ import { NotFound } from '@/pages/not-found';
 import { GameSetupPage } from '@/pages/game-setup';
 import { GamePlayPage } from '@/pages/game-play';
 import { GameRoomsPage } from '@/pages/game-rooms';
+import { GameSpectatePage } from '@/pages/game-spectate';
 import { WaitingRoomPage } from '@/pages/waiting-room';
 import { GameSetupProvider } from '@/store/gameSetupContext';
 import i18n from '@/i18n';
@@ -25,6 +26,10 @@ export const appRouter = createBrowserRouter([
   {
     path: '/game/waiting',
     element: <WaitingRoomPage />,
+  },
+  {
+    path: '/game/spectate/:roomId',
+    element: <GameSpectatePage />,
   },
   {
     path: '/game/setup',
