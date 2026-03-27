@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - '${DB_PORT:-5432}:5432'
+      - '${DB_PORT}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT}:6379"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 5s
@@ -42,35 +42,35 @@ services:
       redis:
         condition: service_healthy
     environment:
-      PORT: ${PORT:-3000}
-      NODE_ENV: ${NODE_ENV:-production}
-      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
-      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-jwt-refresh-secret-change-in-production}
-      ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN:-1h}
-      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
-      REFRESH_TOKEN_ABSOLUTE_TTL_DAYS: ${REFRESH_TOKEN_ABSOLUTE_TTL_DAYS:-180}
-      REFRESH_TOKEN_COOKIE_NAME: ${REFRESH_TOKEN_COOKIE_NAME:-refresh_token}
-      REFRESH_TOKEN_COOKIE_MAX_AGE_MS: ${REFRESH_TOKEN_COOKIE_MAX_AGE_MS:-2592000000}
-      COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
-      COOKIE_PATH: ${COOKIE_PATH:-/}
-      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      PORT: ${PORT}
+      NODE_ENV: ${NODE_ENV}
+      CLIENT_URL: ${CLIENT_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN}
+      REFRESH_TOKEN_ABSOLUTE_TTL_DAYS: ${REFRESH_TOKEN_ABSOLUTE_TTL_DAYS}
+      REFRESH_TOKEN_COOKIE_NAME: ${REFRESH_TOKEN_COOKIE_NAME}
+      REFRESH_TOKEN_COOKIE_MAX_AGE_MS: ${REFRESH_TOKEN_COOKIE_MAX_AGE_MS}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE}
+      COOKIE_PATH: ${COOKIE_PATH}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-battleship}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
-      DB_LOGGING: ${DB_LOGGING:-false}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE}
+      DB_LOGGING: ${DB_LOGGING}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
-      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-80}
-      CHAT_HISTORY_TTL_SECONDS: ${CHAT_HISTORY_TTL_SECONDS:-43200}
+      REDIS_DB: ${REDIS_DB}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT}
+      CHAT_HISTORY_TTL_SECONDS: ${CHAT_HISTORY_TTL_SECONDS}
     ports:
-      - '${PORT:-3000}:3000'
+      - '${PORT}:3000'
     volumes:
       - uploads_data:/app/uploads
 
@@ -79,13 +79,13 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     container_name: p-btship-client
     restart: unless-stopped
     depends_on:
       - server
     ports:
-      - '${CLIENT_PORT:-5173}:80'
+      - '${CLIENT_PORT}:80'
 
 volumes:
   postgres_data:

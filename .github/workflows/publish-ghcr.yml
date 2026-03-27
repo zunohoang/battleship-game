@@ -47,7 +47,7 @@ jobs:
           file: ./client/Dockerfile
           push: true
           build-args: |
-            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL || secrets.VITE_API_BASE_URL || format('http://{0}:3000', secrets.SERVER_HOST) }}
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -112,27 +112,30 @@ jobs:
         env:
           SERVER_IMAGE: ghcr.io/${{ github.repository_owner }}/p_btship-server:latest
           CLIENT_IMAGE: ghcr.io/${{ github.repository_owner }}/p_btship-client:latest
-          PORT: ${{ vars.PORT || '3000' }}
-          CLIENT_PORT: ${{ vars.CLIENT_PORT || '8080' }}
-          CLIENT_URL: ${{ vars.CLIENT_URL || secrets.CLIENT_URL }}
-          DB_PORT: ${{ vars.DB_PORT || '5432' }}
+          PORT: ${{ vars.PORT }}
+          CLIENT_PORT: ${{ vars.CLIENT_PORT }}
+          CLIENT_URL: ${{ vars.CLIENT_URL }}
+          DB_PORT: ${{ vars.DB_PORT }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-          ACCESS_TOKEN_EXPIRES_IN: ${{ vars.ACCESS_TOKEN_EXPIRES_IN || '1h' }}
-          REFRESH_TOKEN_EXPIRES_IN: ${{ vars.REFRESH_TOKEN_EXPIRES_IN || '30d' }}
-          REFRESH_TOKEN_ABSOLUTE_TTL_DAYS: ${{ vars.REFRESH_TOKEN_ABSOLUTE_TTL_DAYS || '180' }}
-          REFRESH_TOKEN_COOKIE_NAME: ${{ vars.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token' }}
-          REFRESH_TOKEN_COOKIE_MAX_AGE_MS: ${{ vars.REFRESH_TOKEN_COOKIE_MAX_AGE_MS || '2592000000' }}
-          COOKIE_SECURE: ${{ vars.COOKIE_SECURE || 'true' }}
-          COOKIE_SAME_SITE: ${{ vars.COOKIE_SAME_SITE || 'lax' }}
-          COOKIE_PATH: ${{ vars.COOKIE_PATH || '/' }}
-          COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN || '' }}
-          DB_SYNCHRONIZE: ${{ vars.DB_SYNCHRONIZE || 'false' }}
-          DB_LOGGING: ${{ vars.DB_LOGGING || 'false' }}
+          ACCESS_TOKEN_EXPIRES_IN: ${{ vars.ACCESS_TOKEN_EXPIRES_IN }}
+          REFRESH_TOKEN_EXPIRES_IN: ${{ vars.REFRESH_TOKEN_EXPIRES_IN }}
+          REFRESH_TOKEN_ABSOLUTE_TTL_DAYS: ${{ vars.REFRESH_TOKEN_ABSOLUTE_TTL_DAYS }}
+          REFRESH_TOKEN_COOKIE_NAME: ${{ vars.REFRESH_TOKEN_COOKIE_NAME }}
+          REFRESH_TOKEN_COOKIE_MAX_AGE_MS: ${{ vars.REFRESH_TOKEN_COOKIE_MAX_AGE_MS }}
+          COOKIE_SECURE: ${{ vars.COOKIE_SECURE }}
+          COOKIE_SAME_SITE: ${{ vars.COOKIE_SAME_SITE }}
+          COOKIE_PATH: ${{ vars.COOKIE_PATH }}
+          COOKIE_DOMAIN: ${{ vars.COOKIE_DOMAIN }}
+          DB_SYNCHRONIZE: ${{ vars.DB_SYNCHRONIZE }}
+          DB_LOGGING: ${{ vars.DB_LOGGING }}
+          REDIS_DB: ${{ vars.REDIS_DB }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          CHAT_HISTORY_LIMIT: ${{ vars.CHAT_HISTORY_LIMIT }}
+          CHAT_HISTORY_TTL_SECONDS: ${{ vars.CHAT_HISTORY_TTL_SECONDS }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -140,15 +143,40 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: SERVER_IMAGE,CLIENT_IMAGE,PORT,CLIENT_PORT,CLIENT_URL,DB_PORT,DB_NAME,DB_USER,DB_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,ACCESS_TOKEN_EXPIRES_IN,REFRESH_TOKEN_EXPIRES_IN,REFRESH_TOKEN_ABSOLUTE_TTL_DAYS,REFRESH_TOKEN_COOKIE_NAME,REFRESH_TOKEN_COOKIE_MAX_AGE_MS,COOKIE_SECURE,COOKIE_SAME_SITE,COOKIE_PATH,COOKIE_DOMAIN,DB_SYNCHRONIZE,DB_LOGGING,REDIS_PASSWORD,GHCR_USERNAME,GHCR_TOKEN
+          envs: SERVER_IMAGE,CLIENT_IMAGE,PORT,CLIENT_PORT,CLIENT_URL,DB_PORT,DB_NAME,DB_USER,DB_PASSWORD,JWT_SECRET,JWT_REFRESH_SECRET,ACCESS_TOKEN_EXPIRES_IN,REFRESH_TOKEN_EXPIRES_IN,REFRESH_TOKEN_ABSOLUTE_TTL_DAYS,REFRESH_TOKEN_COOKIE_NAME,REFRESH_TOKEN_COOKIE_MAX_AGE_MS,COOKIE_SECURE,COOKIE_SAME_SITE,COOKIE_PATH,COOKIE_DOMAIN,DB_SYNCHRONIZE,DB_LOGGING,REDIS_DB,REDIS_PASSWORD,CHAT_HISTORY_LIMIT,CHAT_HISTORY_TTL_SECONDS,GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -eu
-            if [ -z "${CLIENT_URL}" ]; then
-              echo "CLIENT_URL is required (set vars.CLIENT_URL or secrets.CLIENT_URL)"
-              exit 1
-            fi
-            if [ -z "${REDIS_PASSWORD}" ]; then
-              echo "REDIS_PASSWORD is required (set secrets.REDIS_PASSWORD)"
+
+            missing_vars=""
+
+            require_env() {
+              var_name="$1"
+              eval "var_value=\${$var_name-}"
+              if [ -z "$var_value" ]; then
+                echo "ERROR: Missing required env: $var_name" >&2
+                missing_vars="$missing_vars $var_name"
+              fi
+            }
+
+            for v in \
+              SERVER_IMAGE CLIENT_IMAGE \
+              PORT CLIENT_PORT CLIENT_URL DB_PORT \
+              DB_NAME DB_USER DB_PASSWORD \
+              JWT_SECRET JWT_REFRESH_SECRET \
+              ACCESS_TOKEN_EXPIRES_IN REFRESH_TOKEN_EXPIRES_IN \
+              REFRESH_TOKEN_ABSOLUTE_TTL_DAYS \
+              REFRESH_TOKEN_COOKIE_NAME REFRESH_TOKEN_COOKIE_MAX_AGE_MS \
+              COOKIE_SECURE COOKIE_SAME_SITE COOKIE_PATH COOKIE_DOMAIN \
+              DB_SYNCHRONIZE DB_LOGGING \
+              REDIS_DB REDIS_PASSWORD \
+              CHAT_HISTORY_LIMIT CHAT_HISTORY_TTL_SECONDS \
+              GHCR_USERNAME GHCR_TOKEN
+            do
+              require_env "$v"
+            done
+
+            if [ -n "$missing_vars" ]; then
+              echo "Deployment aborted. Missing envs:$missing_vars" >&2
               exit 1
             fi
             mkdir -p "${{ secrets.SERVER_DEPLOY_PATH }}"
@@ -176,7 +204,10 @@ jobs:
             COOKIE_DOMAIN=${COOKIE_DOMAIN}
             DB_SYNCHRONIZE=${DB_SYNCHRONIZE}
             DB_LOGGING=${DB_LOGGING}
+            REDIS_DB=${REDIS_DB}
             REDIS_PASSWORD=${REDIS_PASSWORD}
+            CHAT_HISTORY_LIMIT=${CHAT_HISTORY_LIMIT}
+            CHAT_HISTORY_TTL_SECONDS=${CHAT_HISTORY_TTL_SECONDS}
             EOF
             echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USERNAME}" --password-stdin
             docker compose --env-file .env.production -f docker-compose.prod.yml pull
