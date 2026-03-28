@@ -22,6 +22,11 @@ const validationMessages: Record<string, string> = {
   PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
   PASSWORD_TOO_LONG: 'Password must be at most 72 characters',
   PASSWORD_INVAID_FORMAT: 'Password must be a string',
+  CURRENT_PASSWORD_REQUIRED: 'Current password is required',
+  CURRENT_PASSWORD_INVALID: 'Current password must be a string',
+  INVALID_CURRENT_PASSWORD: 'Current password is incorrect',
+  NEW_PASSWORD_SAME_AS_OLD:
+    'New password must be different from your current password',
   SIGNATURE_TOO_LONG: 'Signature must be at most 200 characters',
   SIGNATURE_INVALID_FORMAT: 'Signature must not contain HTML tags',
   FORUM_POST_TITLE_REQUIRED: 'Post title is required',

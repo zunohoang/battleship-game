@@ -27,6 +27,7 @@ export function usePlayerProfiles(userIds: Array<string | null | undefined>) {
       username: user.username,
       avatar: user.avatar,
       signature: user.signature,
+      elo: typeof user.elo === 'number' ? user.elo : 800,
     }
   }, [user])
 

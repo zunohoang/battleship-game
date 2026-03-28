@@ -11,6 +11,7 @@ import {
   USER_REPOSITORY,
   type IUserRepository,
 } from '../auth/infrastructure/persistence/user.repository';
+import { EloMatchService } from '../leaderboard/elo-match.service';
 import { MatchEntity } from './infrastructure/persistence/relational/entities/match.entity';
 import { MoveEntity } from './infrastructure/persistence/relational/entities/move.entity';
 import { RoomEntity } from './infrastructure/persistence/relational/entities/room.entity';
@@ -96,6 +97,7 @@ export class GameService {
     private readonly moveRepo: Repository<MoveEntity>,
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
+    private readonly eloMatchService: EloMatchService,
   ) {}
 
   async createRoom(
@@ -609,6 +611,9 @@ export class GameService {
     const resolvedTimedOutTurn = this.resolveExpiredTurns(room, match);
     if (resolvedTimedOutTurn) {
       await Promise.all([this.roomRepo.save(room), this.matchRepo.save(match)]);
+      if (match.status === 'finished') {
+        await this.eloMatchService.settleMatchElo(match.id);
+      }
     }
 
     if (match.status !== 'in_progress') {
@@ -680,6 +685,7 @@ export class GameService {
       opponentPlacements ?? [],
       userId === match.player1Id ? match.player1Shots : match.player2Shots,
     );
+    const endedBySink = destroyed;
 
     if (destroyed) {
       this.finishMatch(room, match, userId);
@@ -707,6 +713,10 @@ export class GameService {
         }),
       ),
     ]);
+
+    if (endedBySink) {
+      await this.eloMatchService.settleMatchElo(match.id);
+    }
 
     return this.toMatchSnapshot(match);
   }
@@ -736,6 +746,9 @@ export class GameService {
       this.matchRepo.save(match),
       this.roomRepo.save(room),
     ]);
+    if (savedMatch.status === 'finished') {
+      await this.eloMatchService.settleMatchElo(savedMatch.id);
+    }
     return this.toMatchSnapshot(savedMatch);
   }
 
@@ -869,6 +882,9 @@ export class GameService {
           this.roomRepo.save(room),
           this.matchRepo.save(match),
         ]);
+        if (savedMatch.status === 'finished') {
+          await this.eloMatchService.settleMatchElo(savedMatch.id);
+        }
         return {
           room: this.toRoomSnapshot(savedRoom),
           match: this.toMatchSnapshot(savedMatch),
@@ -941,6 +957,9 @@ export class GameService {
         this.roomRepo.save(room),
         this.matchRepo.save(match),
       ]);
+      if (match.status === 'finished') {
+        await this.eloMatchService.settleMatchElo(match.id);
+      }
     }
 
     const isRoomMember = userId === room.ownerId || userId === room.guestId;

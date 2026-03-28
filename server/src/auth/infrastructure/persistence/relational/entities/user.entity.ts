@@ -26,6 +26,9 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 200, nullable: true })
   signature!: string | null;
 
+  @Column({ type: 'integer', default: 800 })
+  elo!: number;
+
   @Column({ type: 'text', nullable: true })
   refreshTokenHash!: string | null;
 

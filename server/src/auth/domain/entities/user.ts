@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { DEFAULT_STARTING_ELO } from '../../../constants/elo.constants';
 
 export interface CreateUserParams {
   email: string;
@@ -6,6 +7,7 @@ export interface CreateUserParams {
   passwordHash: string;
   avatar?: string | null;
   signature?: string | null;
+  elo?: number;
 }
 
 export class User {
@@ -15,6 +17,7 @@ export class User {
   public passwordHash: string;
   public avatar: string | null;
   public signature: string | null;
+  public elo: number;
   public refreshTokenHash: string | null;
   public refreshTokenAbsoluteExpiry: number | null;
 
@@ -25,6 +28,10 @@ export class User {
     this.passwordHash = params.passwordHash;
     this.avatar = params.avatar ?? null;
     this.signature = params.signature ?? null;
+    this.elo =
+      typeof params.elo === 'number' && Number.isFinite(params.elo)
+        ? Math.max(0, Math.round(params.elo))
+        : DEFAULT_STARTING_ELO;
     this.refreshTokenHash = null;
     this.refreshTokenAbsoluteExpiry = null;
   }
@@ -64,6 +71,7 @@ export class User {
       username: this.username,
       avatar: this.avatar,
       signature: this.signature,
+      elo: this.elo,
     };
   }
 }

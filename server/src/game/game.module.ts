@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
+import { LeaderboardModule } from '../leaderboard/leaderboard.module';
 import { GameGateway } from './game.gateway';
 import { GameHistoryController } from './game-history.controller';
 import { GameService } from './game.service';
@@ -13,6 +14,7 @@ import { RoomEntity } from './infrastructure/persistence/relational/entities/roo
   imports: [
     AuthModule,
     ChatModule,
+    LeaderboardModule,
     TypeOrmModule.forFeature([RoomEntity, MatchEntity, MoveEntity]),
   ],
   controllers: [GameHistoryController],

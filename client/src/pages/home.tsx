@@ -22,6 +22,7 @@ import {
   validateLoginInput,
   validateRegisterInput,
 } from '@/utils/authValidation';
+import { getRankTierId } from '@/utils/rankTier';
 
 type AuthModalMode =
   | 'login'
@@ -115,6 +116,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        elo: response.user.elo,
         isAnonymous: false,
       });
 
@@ -159,6 +161,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: null,
+        elo: response.user.elo,
         isAnonymous: false,
       });
 
@@ -178,7 +181,6 @@ export function HomePage() {
       const response = await authService.updateProfile({
         username: payload.username,
         signature: payload.signature,
-        password: payload.password,
         avatarFile: payload.avatarFile,
       });
 
@@ -187,6 +189,7 @@ export function HomePage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        elo: response.user.elo,
         isAnonymous: false,
       });
       closeModal();
@@ -255,6 +258,11 @@ export function HomePage() {
       label: t('home.menu.community'),
       disabled: false,
     },
+    {
+      id: 'leaderboard',
+      label: t('home.menu.leaderboard'),
+      disabled: false,
+    },
   ];
 
   const gameModeMap: Record<string, string> = {
@@ -271,6 +279,11 @@ export function HomePage() {
 
     if (id === 'community') {
       navigate('/forum');
+      return;
+    }
+
+    if (id === 'leaderboard') {
+      navigate('/leaderboard');
       return;
     }
 
@@ -295,7 +308,9 @@ export function HomePage() {
       label: t('home.stats.rank'),
       value: isAnonymous
         ? t('home.stats.rankCadet')
-        : t('home.stats.rankFleetAdmiral'),
+        : user && typeof user.elo === 'number'
+          ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
+          : t('home.stats.rankCadet'),
     },
     {
       label: t('home.stats.status'),
@@ -415,14 +430,18 @@ export function HomePage() {
                       <span className="ui-data-label text-right">
                         {t('home.profile.rank')}
                       </span>
-                      <span className="font-mono text-sm text-(--text-main)">
-                        - - -
+                      <span className="font-mono text-sm leading-snug text-(--text-main)">
+                        {!isAnonymous && user && typeof user.elo === 'number'
+                          ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
+                          : '- - -'}
                       </span>
                       <span className="ui-data-label text-right">
                         {t('home.profile.elo')}
                       </span>
                       <span className="font-mono text-sm text-(--text-main)">
-                        - - -
+                        {!isAnonymous && user && typeof user.elo === 'number'
+                          ? user.elo
+                          : '- - -'}
                       </span>
                       {!isAnonymous && user ? (
                         <>
@@ -597,6 +616,16 @@ export function HomePage() {
         onClose={closeModal}
         onSubmit={handleSubmitProfileSetup}
         onLogout={handleLogout}
+        onUserUpdated={(updated) => {
+          setUser({
+            id: updated.id,
+            username: updated.username,
+            avatar: updated.avatar,
+            signature: updated.signature,
+            elo: updated.elo,
+            isAnonymous: false,
+          });
+        }}
         username={user?.username ?? ''}
         signature={user?.signature}
         avatar={user?.avatar}

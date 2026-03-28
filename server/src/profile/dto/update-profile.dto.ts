@@ -6,7 +6,6 @@ import {
   IsString,
   Matches,
   MaxLength,
-  MinLength,
 } from 'class-validator';
 import {
   SIGNATURE_REGEX,
@@ -29,12 +28,6 @@ export class UpdateProfileDto {
   @MaxLength(200, { message: 'SIGNATURE_TOO_LONG' })
   @Matches(SIGNATURE_REGEX, { message: 'SIGNATURE_INVALID_FORMAT' })
   signature?: string;
-
-  @IsOptional()
-  @IsString({ message: 'PASSWORD_INVAID_FORMAT' })
-  @MinLength(8, { message: 'PASSWORD_TOO_SHORT' })
-  @MaxLength(72, { message: 'PASSWORD_TOO_LONG' })
-  password?: string;
 
   @IsOptional()
   @Allow()

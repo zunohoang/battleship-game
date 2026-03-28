@@ -12,6 +12,8 @@ export type AuthValidationCode =
   | 'SIGNATURE_TOO_LONG'
   | 'SIGNATURE_INVALID_FORMAT'
   | 'PASSWORD_MISMATCH'
+  | 'CURRENT_PASSWORD_REQUIRED'
+  | 'NEW_PASSWORD_SAME_AS_OLD'
 
 export type LoginValidationResult = {
   email: string
@@ -30,7 +32,6 @@ export type RegisterValidationResult = {
 export type ProfileValidationResult = {
   username: string
   signature: string
-  password: string
   errorCode: AuthValidationCode | null
 }
 
@@ -136,7 +137,6 @@ export function validateRegisterInput(
 export function validateProfileInput(
   username: string,
   signature: string,
-  password: string,
 ): ProfileValidationResult {
   const normalizedUsername = normalizeText(username)
   const normalizedSignature = normalizeText(signature)
@@ -144,10 +144,43 @@ export function validateProfileInput(
   return {
     username: normalizedUsername,
     signature: normalizedSignature,
-    password,
     errorCode:
       validateUsername(normalizedUsername) ??
-      validateSignature(normalizedSignature) ??
-      validatePassword(password, false),
+      validateSignature(normalizedSignature),
   }
+}
+
+export type ChangePasswordValidationResult = {
+  currentPassword: string
+  newPassword: string
+  errorCode: AuthValidationCode | null
+}
+
+export function validateChangePasswordInput(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): ChangePasswordValidationResult {
+  if (normalizeText(currentPassword).length === 0) {
+    return {
+      currentPassword,
+      newPassword,
+      errorCode: 'CURRENT_PASSWORD_REQUIRED',
+    }
+  }
+
+  const newErr = validatePassword(newPassword, true)
+  if (newErr) {
+    return { currentPassword, newPassword, errorCode: newErr }
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { currentPassword, newPassword, errorCode: 'PASSWORD_MISMATCH' }
+  }
+
+  if (newPassword === currentPassword) {
+    return { currentPassword, newPassword, errorCode: 'NEW_PASSWORD_SAME_AS_OLD' }
+  }
+
+  return { currentPassword, newPassword, errorCode: null }
 }

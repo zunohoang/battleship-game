@@ -220,7 +220,6 @@ export function WaitingRoomPage() {
       const response = await authService.updateProfile({
         username: payload.username,
         signature: payload.signature,
-        password: payload.password,
         avatarFile: payload.avatarFile,
       });
 
@@ -229,6 +228,7 @@ export function WaitingRoomPage() {
         username: response.user.username,
         avatar: response.user.avatar,
         signature: response.user.signature,
+        elo: response.user.elo,
         isAnonymous: false,
       });
       setProfileSetupOpen(false);
@@ -268,6 +268,7 @@ export function WaitingRoomPage() {
         username: refreshedCurrentProfile.username,
         avatar: refreshedCurrentProfile.avatar,
         signature: refreshedCurrentProfile.signature,
+        elo: refreshedCurrentProfile.elo,
       });
     }
   };
@@ -540,6 +541,16 @@ export function WaitingRoomPage() {
         onClose={() => setProfileSetupOpen(false)}
         onSubmit={handleSubmitProfileSetup}
         onLogout={handleProfileLogout}
+        onUserUpdated={(updated) => {
+          setUser({
+            id: updated.id,
+            username: updated.username,
+            avatar: updated.avatar,
+            signature: updated.signature,
+            elo: updated.elo,
+            isAnonymous: false,
+          });
+        }}
         username={user?.username ?? ''}
         signature={user?.signature}
         avatar={user?.avatar}

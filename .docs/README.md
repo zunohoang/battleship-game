@@ -12,6 +12,9 @@ Muc tieu: Tai lieu hoa toan bo tinh nang theo muc domain, moi domain co du 10 lo
 - Architecture Diagram
 - ERD
 
+## Tai lieu tong hop
+- **00-database** — [ERD toan bo schema Postgres](00-database/10-full-schema-erd.md) (users, game, forum, ELO).
+
 ## Danh muc domain
 1. 01-auth-session
 2. 02-profile
