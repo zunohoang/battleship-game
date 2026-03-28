@@ -8,6 +8,7 @@ import { LoginModal } from '@/components/modal/LoginModal';
 import type { ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
 import { ProfileSetupModal } from '@/components/modal/ProfileSetupModal';
 import { RegisterModal } from '@/components/modal/RegisterModal';
+import { OnlineGameHistoryModal } from '@/components/modal/OnlineGameHistoryModal';
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { Button } from '@/components/ui/Button';
 import { SectionStatus } from '@/components/ui/SectionStatus';
@@ -62,6 +63,7 @@ export function HomePage() {
   const { user, setUser, logout } = useGlobalContext();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [gameHistoryOpen, setGameHistoryOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode | null>(
     null,
   );
@@ -422,6 +424,20 @@ export function HomePage() {
                       <span className="font-mono text-sm text-(--text-main)">
                         - - -
                       </span>
+                      {!isAnonymous && user ? (
+                        <>
+                          <span className="ui-data-label text-right">
+                            {t('home.gameHistory.label')}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setGameHistoryOpen(true)}
+                            className="cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white"
+                          >
+                            {t('home.gameHistory.open')}
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                     <p className="mt-2 text-xs font-semibold text-(--text-subtle)">
                       {isAnonymous
@@ -589,6 +605,11 @@ export function HomePage() {
       <SettingsModal
         isOpen={isModalOpen && authModalMode === 'settings'}
         onClose={closeModal}
+      />
+
+      <OnlineGameHistoryModal
+        isOpen={gameHistoryOpen}
+        onClose={() => setGameHistoryOpen(false)}
       />
     </motion.main>
   );

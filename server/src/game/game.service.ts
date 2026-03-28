@@ -1,17 +1,24 @@
 import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, type Repository } from 'typeorm';
+import {
+  USER_REPOSITORY,
+  type IUserRepository,
+} from '../auth/infrastructure/persistence/user.repository';
 import { MatchEntity } from './infrastructure/persistence/relational/entities/match.entity';
 import { MoveEntity } from './infrastructure/persistence/relational/entities/move.entity';
 import { RoomEntity } from './infrastructure/persistence/relational/entities/room.entity';
 import type {
   BoardConfig,
   MatchSnapshot,
+  OnlineMatchHistoryItem,
+  OnlineMatchShotStats,
   Orientation,
   PlacedShip,
   RoomListSummary,
@@ -62,6 +69,22 @@ function shipCells(
   return out;
 }
 
+function summarizeShots(shots: ShotRecord[]): OnlineMatchShotStats {
+  const hits = shots.filter((shot) => shot.isHit).length;
+  const shotsFired = shots.length;
+  const misses = shotsFired - hits;
+  const accuracy = shotsFired
+    ? Math.round((hits / shotsFired) * 100)
+    : 0;
+
+  return {
+    shotsFired,
+    hits,
+    misses,
+    accuracy,
+  };
+}
+
 @Injectable()
 export class GameService {
   constructor(
@@ -71,6 +94,8 @@ export class GameService {
     private readonly matchRepo: Repository<MatchEntity>,
     @InjectRepository(MoveEntity)
     private readonly moveRepo: Repository<MoveEntity>,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
   ) {}
 
   async createRoom(
@@ -181,6 +206,57 @@ export class GameService {
           : null,
       ),
     );
+  }
+
+  async listOnlineMatchHistory(
+    userId: string,
+    limit: number,
+  ): Promise<OnlineMatchHistoryItem[]> {
+    const take = Math.min(Math.max(limit, 1), 50);
+    const matches = await this.matchRepo.find({
+      where: [
+        { status: 'finished', player1Id: userId },
+        { status: 'finished', player2Id: userId },
+      ],
+      order: { updatedAt: 'DESC' },
+      take,
+    });
+
+    const opponentIds = [
+      ...new Set(
+        matches.map((match) =>
+          match.player1Id === userId ? match.player2Id : match.player1Id,
+        ),
+      ),
+    ];
+
+    const opponentUsers = await Promise.all(
+      opponentIds.map((id) => this.userRepository.findById(id)),
+    );
+    const usernameByOpponentId = new Map(
+      opponentIds.map((id, index) => [
+        id,
+        opponentUsers[index]?.username ?? null,
+      ]),
+    );
+
+    return matches.map((match) => {
+      const isPlayer1 = match.player1Id === userId;
+      const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+      const yourShots = isPlayer1 ? match.player1Shots : match.player2Shots;
+      const opponentShots = isPlayer1 ? match.player2Shots : match.player1Shots;
+
+      return {
+        matchId: match.id,
+        roomId: match.roomId,
+        finishedAt: match.updatedAt.toISOString(),
+        outcome: match.winnerId === userId ? 'win' : 'loss',
+        opponentId,
+        opponentUsername: usernameByOpponentId.get(opponentId) ?? null,
+        yourStats: summarizeShots(yourShots),
+        opponentStats: summarizeShots(opponentShots),
+      };
+    });
   }
 
   async joinRoom(
