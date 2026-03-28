@@ -1,9 +1,11 @@
 # Sequence Diagram - End-to-End Request
 
 ## Pham vi
+
 Luong tong quat request REST va su kien websocket.
 
 ## Mermaid
+
 ```mermaid
 sequenceDiagram
   actor U as User
@@ -25,6 +27,7 @@ sequenceDiagram
 ```
 
 ## Nguon ma lien quan
+
 - client/src/services/axios.ts
 - client/src/services/gameSocketService.ts
 - server/src/auth/auth.controller.ts

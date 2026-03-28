@@ -488,9 +488,18 @@
         "feed": {
             "eyebrow": "Diễn đàn cộng đồng",
             "title": "Cộng đồng hạm đội",
-            "sortNewest": "Mới nhất",
-            "sortTop": "Nổi bật",
+            "backLabel": "Quay lại",
+            "searchEyebrow": "Tìm kiếm",
+            "searchInputPlaceholder": "Tìm theo tiêu đề hoặc nội dung…",
+            "filtersTitle": "Sắp xếp bài viết",
+            "sortNewest": "Gần đây",
+            "sortTop": "Nhiều vote",
+            "sortComments": "Nhiều bình luận",
             "createPost": "Tạo bài viết",
+            "createPostCollapsedHint": "Chia sẻ điều gì đó với hạm đội…",
+            "openFullscreen": "Mở soạn toàn màn hình",
+            "collapseComposer": "Thu gọn",
+            "closeFullscreen": "Đóng",
             "titlePlaceholder": "Tiêu đề bài viết",
             "contentPlaceholder": "Chia sẻ suy nghĩ của bạn với cộng đồng...",
             "loginStateReady": "Bạn đã đăng nhập. Có thể đăng bài ngay.",
@@ -498,6 +507,7 @@
             "creating": "Đang đăng...",
             "publish": "Đăng bài",
             "loading": "Đang tải dữ liệu diễn đàn...",
+            "loadingMore": "Đang tải thêm bài viết…",
             "empty": "Chưa có bài viết nào. Hãy tạo chủ đề đầu tiên.",
             "comments": "bình luận",
             "upvote": "Upvote",
@@ -505,11 +515,15 @@
             "score": "Điểm",
             "page": "Trang",
             "prev": "Trước",
-            "next": "Sau"
+            "next": "Sau",
+            "searchSubmit": "Tìm"
         },
         "post": {
+            "modalTitle": "Bài viết",
             "back": "Về diễn đàn",
             "addComment": "Thêm bình luận",
+            "commentCollapsedHint": "Nhấn để viết bình luận…",
+            "commentsHeading": "Thảo luận",
             "commentPlaceholder": "Nhập bình luận của bạn...",
             "submitting": "Đang gửi...",
             "submitComment": "Gửi bình luận"
@@ -550,6 +564,7 @@
         "FORUM_COMMENT_TOO_LONG": "Nội dung bình luận tối đa 1200 ký tự.",
         "FORUM_VOTE_INVALID": "Vote chỉ nhận upvote hoặc downvote.",
         "FORUM_SORT_INVALID": "Tùy chọn sắp xếp không hợp lệ.",
+        "FORUM_SEARCH_TOO_LONG": "Nội dung tìm kiếm quá dài.",
         "PAGINATION_INVALID": "Tham số phân trang không hợp lệ.",
         "USER_NOT_FOUND": "Không tìm thấy người dùng.",
         "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."

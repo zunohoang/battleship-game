@@ -4,7 +4,9 @@ import type { ForumComment, ForumPost, ForumPostsResponse } from '@/types/forum'
 export async function listPosts(params: {
   page?: number;
   limit?: number;
-  sort?: 'newest' | 'top';
+  sort?: 'newest' | 'top' | 'comments';
+  /** Server: title/content ILIKE match */
+  q?: string;
 }): Promise<ForumPostsResponse> {
   const response = await apiClient.get<ForumPostsResponse>('/forum/posts', {
     params,
