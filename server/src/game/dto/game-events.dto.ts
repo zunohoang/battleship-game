@@ -34,8 +34,8 @@ class ShipDefinitionDto {
   name: string;
 
   @IsInt()
-  @Min(1)
-  @Max(8)
+  @Min(2)
+  @Max(5)
   size: number;
 
   @IsInt()

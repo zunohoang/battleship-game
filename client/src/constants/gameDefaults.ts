@@ -30,7 +30,7 @@ export const DEFAULT_SHIP_DEFINITIONS: ShipDefinition[] = [
 // -------------------------------------------------------
 export const CONFIG_LIMITS = {
   board: { minRows: 5, maxRows: 20, minCols: 5, maxCols: 20 },
-  ship: { minSize: 1, maxSize: 10, minCount: 0, maxCount: 5, maxShipTypes: 8 },
+  ship: { minSize: 2, maxSize: 5, minCount: 0, maxCount: 5, maxShipTypes: 8 },
 } as const
 
 // -------------------------------------------------------

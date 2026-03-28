@@ -61,7 +61,7 @@ function MissionLogTabButton({
 }: MissionLogTabButtonProps) {
   return (
     <button
-      type='button'
+      type="button"
       aria-label={label}
       title={label}
       aria-pressed={active}
@@ -132,9 +132,9 @@ export function MissionLogPanel({
   const renderChatContent = () => {
     if (chatMessages.length === 0) {
       return (
-        <p className='font-mono text-[11px] leading-6'>
-          <span className='text-(--text-subtle)'>[SYS] </span>
-          <span className='text-(--text-muted)'>
+        <p className="font-mono text-[11px] leading-6">
+          <span className="text-(--text-subtle)">[SYS] </span>
+          <span className="text-(--text-muted)">
             {t('gameBattle.chatPlaceholder')}
           </span>
         </p>
@@ -154,12 +154,18 @@ export function MissionLogPanel({
       });
 
       return (
-        <p key={message.id} className='font-mono text-[11px] leading-6'>
-          <span className='text-(--text-subtle)'>[{timeLabel}] </span>
-          <span className={isOwnMessage ? 'text-(--accent-secondary)' : 'text-(--text-subtle)'}>
-            [{authorLabel}] 
+        <p key={message.id} className="font-mono text-[11px] leading-6">
+          <span className="text-(--text-subtle)">[{timeLabel}] </span>
+          <span
+            className={
+              isOwnMessage
+                ? 'text-(--accent-secondary)'
+                : 'text-(--text-subtle)'
+            }
+          >
+            [{authorLabel}]
           </span>
-          <span className='text-(--text-main)'>{message.content}</span>
+          <span className="text-(--text-main)">{message.content}</span>
         </p>
       );
     });
@@ -168,7 +174,7 @@ export function MissionLogPanel({
   return (
     <div className={`${className} flex items-stretch gap-3`}>
       {!isChatOnly ? (
-        <div className='flex shrink-0 flex-col gap-2'>
+        <div className="flex shrink-0 flex-col gap-2">
           <MissionLogTabButton
             active={activeTab === 'logs'}
             icon={ScrollText}
@@ -183,13 +189,13 @@ export function MissionLogPanel({
           />
         </div>
       ) : null}
-      <div className='min-w-0 flex-1'>
-        <div className='flex items-center justify-between gap-3'>
-          <p className='font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)">
             {panelTitle}
           </p>
           {panelSubtitle ? (
-            <p className='font-mono text-[9px] tracking-[0.16em] text-(--text-subtle)'>
+            <p className="font-mono text-[9px] tracking-[0.16em] text-(--text-subtle)">
               {panelSubtitle}
             </p>
           ) : null}
@@ -201,8 +207,13 @@ export function MissionLogPanel({
           {isLogsTab ? (
             <>
               {entries.map((entry, index) => (
-                <p key={`${entry.id}-${index}`} className='font-mono text-[11px] leading-6'>
-                  <span className='text-(--text-subtle)'>[{entry.timestamp}] </span>
+                <p
+                  key={`${entry.id}-${index}`}
+                  className="font-mono text-[11px] leading-6"
+                >
+                  <span className="text-(--text-subtle)">
+                    [{entry.timestamp}]{' '}
+                  </span>
                   <span className={getLogHighlightClass(entry.highlight)}>
                     {entry.message}
                   </span>
@@ -214,35 +225,31 @@ export function MissionLogPanel({
           )}
         </div>
         {showComposer && isChatTab && onSendMessage ? (
-          <div className='mt-3 border-t border-(--border-main) pt-3'>
-            <div className='flex items-center gap-2'>
-              <div className='w-[35%] min-w-0'>
-                <input
-                  type='text'
-                  value={draftMessage}
-                  onChange={(event) => setDraftMessage(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  placeholder={t('gameBattle.chatInputPlaceholder')}
-                  disabled={isChatDisabled}
-                  maxLength={280}
-                  className='min-w-0 w-full rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
-                />
-              </div>
-              <div className='flex w-[65%] justify-end'>
-                <button
-                  type='button'
-                  onClick={handleSubmit}
-                  disabled={isChatDisabled || draftMessage.trim().length === 0}
-                  className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('gameBattle.chatSend')}
-                </button>
-              </div>
+          <div className="mt-3 border-t border-(--border-main) pt-3">
+            <div className="flex w-full min-w-0 items-stretch gap-2">
+              <input
+                type="text"
+                value={draftMessage}
+                onChange={(event) => setDraftMessage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder={t('gameBattle.chatInputPlaceholder')}
+                disabled={isChatDisabled}
+                maxLength={280}
+                className="ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isChatDisabled || draftMessage.trim().length === 0}
+                className="shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('gameBattle.chatSend')}
+              </button>
             </div>
           </div>
         ) : null}

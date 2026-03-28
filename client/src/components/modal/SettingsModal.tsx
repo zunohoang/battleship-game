@@ -1,157 +1,171 @@
-import { useState } from 'react'
-import { Music, MousePointer2, Volume2, VolumeX, Zap, type LucideIcon } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/Button'
-import { Modal } from '@/components/ui/Modal'
-import { useSettings } from '@/hooks/useSettings'
+import { useState } from 'react';
 import {
-  LANGUAGE_OPTIONS,
-  THEME_OPTIONS,
-} from '@/constants/settingsDefaults'
-import type { AppVolumeSettings } from '@/types/settings'
+  Music,
+  MousePointer2,
+  Volume2,
+  VolumeX,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useSettings } from '@/hooks/useSettings';
+import { LANGUAGE_OPTIONS, THEME_OPTIONS } from '@/constants/settingsDefaults';
+import type { AppVolumeSettings } from '@/types/settings';
 
 type SettingsModalProps = {
-  isOpen: boolean
-  onClose: () => void
-}
+  isOpen: boolean;
+  onClose: () => void;
+};
 
 type VolumeField = {
-  key: keyof AppVolumeSettings
-  label: string
-  icon: LucideIcon
-}
+  key: keyof AppVolumeSettings;
+  label: string;
+  icon: LucideIcon;
+};
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { t } = useTranslation('common')
-  const { settings, setVolume, setLanguage, setTheme } = useSettings()
-  const [savedVolumes, setSavedVolumes] = useState<Partial<AppVolumeSettings>>({})
+  const { t } = useTranslation('common');
+  const { settings, setVolume, setLanguage, setTheme } = useSettings();
+  const [savedVolumes, setSavedVolumes] = useState<Partial<AppVolumeSettings>>(
+    {},
+  );
 
   const volumeFields: VolumeField[] = [
     { key: 'master', label: t('settings.masterVolume'), icon: Volume2 },
-    { key: 'backgroundMusic', label: t('settings.backgroundMusic'), icon: Music },
+    {
+      key: 'backgroundMusic',
+      label: t('settings.backgroundMusic'),
+      icon: Music,
+    },
     { key: 'sfx', label: t('settings.sfx'), icon: Zap },
     { key: 'ui', label: t('settings.uiVolume'), icon: MousePointer2 },
-  ]
+  ];
 
   const handleToggleMute = (channel: keyof AppVolumeSettings) => {
-    const currentValue = settings.volume[channel]
+    const currentValue = settings.volume[channel];
 
     if (currentValue === 0) {
-      setVolume(channel, savedVolumes[channel] ?? 50)
-      return
+      setVolume(channel, savedVolumes[channel] ?? 50);
+      return;
     }
 
     setSavedVolumes((prev) => ({
       ...prev,
       [channel]: currentValue,
-    }))
-    setVolume(channel, 0)
-  }
+    }));
+    setVolume(channel, 0);
+  };
 
   const toggleClassName =
-    'cursor-pointer ui-button-shell h-10 rounded-sm border text-xs font-bold tracking-[0.14em] uppercase transition-colors'
+    'cursor-pointer ui-button-shell h-10 rounded-sm border text-xs font-bold tracking-[0.14em] uppercase transition-colors';
 
   return (
     <Modal isOpen={isOpen} title={t('settings.title')} onClose={onClose}>
-      <div className='grid gap-4'>
+      <div className="grid gap-4">
         {volumeFields.map((field) => {
-          const volumeValue = settings.volume[field.key]
-          const ChannelIcon = field.icon
-          const isMuted = volumeValue === 0
+          const volumeValue = settings.volume[field.key];
+          const ChannelIcon = field.icon;
+          const isMuted = volumeValue === 0;
 
           return (
-            <label key={field.key} className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-              <div className='flex items-center justify-between gap-3'>
-                <span className='flex items-center gap-2'>
-                  <ChannelIcon size={14} className='text-(--accent-secondary)' />
+            <label
+              key={field.key}
+              className="grid gap-2 text-sm font-semibold text-(--text-muted)"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <ChannelIcon
+                    size={14}
+                    className="text-(--accent-secondary)"
+                  />
                   {field.label}
                 </span>
-                <span className='flex items-center gap-2 text-xs font-bold text-(--accent-secondary)'>
+                <span className="flex items-center gap-2 text-xs font-bold text-(--accent-secondary)">
                   {volumeValue}%
                   <button
-                    type='button'
+                    type="button"
                     onMouseDown={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
+                      event.preventDefault();
+                      event.stopPropagation();
                     }}
                     onClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      handleToggleMute(field.key)
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleToggleMute(field.key);
                     }}
                     aria-label={
                       isMuted
                         ? t('settings.unmuteVolume', { channel: field.label })
                         : t('settings.muteVolume', { channel: field.label })
                     }
-                    className='ui-subpanel cursor-pointer rounded-sm p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)'
+                    className="ui-subpanel cursor-pointer rounded-sm p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)"
                   >
                     {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   </button>
                 </span>
               </div>
               <input
-                type='range'
+                type="range"
                 min={0}
                 max={100}
                 value={volumeValue}
-                onChange={(event) => setVolume(field.key, Number(event.target.value))}
-                className='h-2 w-full cursor-pointer appearance-none rounded-[3px] bg-[#123647] accent-[#5eeaff]'
+                onChange={(event) =>
+                  setVolume(field.key, Number(event.target.value))
+                }
+                className="h-2 w-full cursor-pointer appearance-none rounded-[3px] bg-[#123647] accent-[#5eeaff]"
               />
             </label>
-          )
+          );
         })}
 
-        <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+        <div className="grid gap-2 text-sm font-semibold text-(--text-muted)">
           <span>{t('settings.language')}</span>
-          <div className='grid grid-cols-2 gap-2'>
+          <div className="grid grid-cols-2 gap-2">
             {LANGUAGE_OPTIONS.map((language) => {
-              const isActive = settings.language === language
+              const isActive = settings.language === language;
               return (
                 <button
                   key={language}
-                  type='button'
+                  type="button"
                   onClick={() => setLanguage(language)}
                   className={`${toggleClassName} ${
-                    isActive
-                      ? 'ui-button-primary'
-                      : 'ui-button-default'
+                    isActive ? 'ui-button-primary' : 'ui-button-default'
                   }`}
                 >
                   {t(`settings.${language}`)}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
 
-        <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
+        <div className="grid gap-2 text-sm font-semibold text-(--text-muted)">
           <span>{t('settings.theme')}</span>
-          <div className='grid grid-cols-2 gap-2'>
+          <div className="grid grid-cols-2 gap-2">
             {THEME_OPTIONS.map((theme) => {
-              const isActive = settings.theme === theme
+              const isActive = settings.theme === theme;
               return (
                 <button
                   key={theme}
-                  type='button'
+                  type="button"
                   onClick={() => setTheme(theme)}
                   className={`${toggleClassName} ${
-                    isActive
-                      ? 'ui-button-primary'
-                      : 'ui-button-default'
+                    isActive ? 'ui-button-primary' : 'ui-button-default'
                   }`}
                 >
                   {t(`settings.${theme}`)}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
 
-        <Button variant='primary' onClick={onClose}>
+        <Button variant="primary" onClick={onClose}>
           {t('settings.close')}
         </Button>
       </div>
     </Modal>
-  )
+  );
 }

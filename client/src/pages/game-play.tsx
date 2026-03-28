@@ -57,6 +57,7 @@ export interface GamePlayHeaderSideContent {
   name: string;
   signature: string;
   align?: 'left' | 'right';
+  elo?: number | null;
 }
 
 export interface GamePlayLoadingFallback {
@@ -432,18 +433,18 @@ function GamePlayScreen({
         />
 
         {/* Bottom panel */}
-        <div className="border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
+        <div className="border-t border-(--border-main) flex w-full min-w-0 flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 md:flex-nowrap md:min-w-0 md:flex-1">
             {/* Chat input */}
             {missionLog.onSendChatMessage ? (
-              <div className="flex min-w-0 items-center gap-2 md:ml-2 md:flex-1">
+              <div className="flex min-w-0 flex-1 items-stretch gap-2 md:ml-2">
                 <button
                   type="button"
                   onClick={handleSendChat}
                   disabled={
                     missionLog.chatDisabled || chatDraft.trim().length === 0
                   }
-                  className="cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t('gameBattle.chatSend')}
                 </button>
@@ -460,7 +461,7 @@ function GamePlayScreen({
                   placeholder={t('gameBattle.chatInputPlaceholder')}
                   disabled={missionLog.chatDisabled}
                   maxLength={280}
-                  className="w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             ) : null}
@@ -611,6 +612,7 @@ export function GamePlayPage() {
     phase: onlinePhase,
     result: onlineResult,
     loadingFallback,
+    leaveRoom: leaveOnlineRoom,
   } = useOnlineGamePlaySession({
     roomId: onlineState?.roomId ?? '',
     matchId: onlineState?.matchId ?? '',
@@ -697,6 +699,15 @@ export function GamePlayPage() {
       return;
     }
 
+    if (room.status === 'closed') {
+      leaveOnlineRoom();
+      navigate('/game/rooms', {
+        replace: true,
+        state: { roomDismissed: 'host_closed' },
+      });
+      return;
+    }
+
     if (room.status === 'setup') {
       navigate('/game/setup', {
         replace: true,
@@ -715,7 +726,7 @@ export function GamePlayPage() {
         state: { roomId: onlineState.roomId },
       });
     }
-  }, [isOnlineMode, match?.id, navigate, onlineState, room]);
+  }, [isOnlineMode, leaveOnlineRoom, match?.id, navigate, onlineState, room]);
 
   if (isOnlineMode) {
     if (!onlineState) {
