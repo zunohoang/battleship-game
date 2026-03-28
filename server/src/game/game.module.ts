@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
 import { GameGateway } from './game.gateway';
+import { GameHistoryController } from './game-history.controller';
 import { GameService } from './game.service';
 import { MatchEntity } from './infrastructure/persistence/relational/entities/match.entity';
 import { MoveEntity } from './infrastructure/persistence/relational/entities/move.entity';
@@ -14,6 +15,7 @@ import { RoomEntity } from './infrastructure/persistence/relational/entities/roo
     ChatModule,
     TypeOrmModule.forFeature([RoomEntity, MatchEntity, MoveEntity]),
   ],
+  controllers: [GameHistoryController],
   providers: [GameGateway, GameService],
   exports: [GameService],
 })

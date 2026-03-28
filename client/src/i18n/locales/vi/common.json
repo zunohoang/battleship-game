@@ -60,6 +60,20 @@
             "signature": "Chữ ký",
             "rank": "Cấp bậc",
             "elo": "Elo"
+        },
+        "gameHistory": {
+            "label": "Trận online",
+            "open": "Xem lịch sử đấu",
+            "modalTitle": "Lịch sử trận đấu online",
+            "loading": "Đang tải lịch sử…",
+            "empty": "Chưa có trận online đã kết thúc. Hãy thắng trận đầu trên biển.",
+            "loadError": "Không tải được lịch sử. Thử lại sau.",
+            "back": "Quay lại danh sách",
+            "win": "Thắng",
+            "loss": "Thua",
+            "vs": "vs.",
+            "opponentFallback": "Đối thủ",
+            "viewDetails": "Xem thống kê chiến đấu"
         }
     },
     "welcome": {

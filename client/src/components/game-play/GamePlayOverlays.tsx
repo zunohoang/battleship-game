@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import {
   BarChart3,
@@ -15,6 +15,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import type { GameResult, Shot } from '@/types/game';
 import { calculateShotStats } from '@/utils/gamePlayUtils';
+
+export type BattleStatsNumbers = {
+  shotsFired: number;
+  hits: number;
+  misses: number;
+  accuracy: number;
+};
 
 interface GameOverOverlayProps {
   result: GameResult;
@@ -162,6 +169,104 @@ function StatRow({
   );
 }
 
+function statsFromNumbers(stats: BattleStatsNumbers) {
+  return {
+    total: stats.shotsFired,
+    hits: stats.hits,
+    misses: stats.misses,
+    accuracy: stats.accuracy,
+  };
+}
+
+export function BattleStatsBreakdown({
+  primaryFleetTitle,
+  secondaryFleetTitle,
+  primary,
+  secondary,
+  headerRight,
+}: {
+  primaryFleetTitle: string;
+  secondaryFleetTitle: string;
+  primary: BattleStatsNumbers;
+  secondary: BattleStatsNumbers;
+  headerRight?: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const playerStats = statsFromNumbers(primary);
+  const enemyStats = statsFromNumbers(secondary);
+
+  return (
+    <div className='ui-gameplay-overlay-panel relative z-10 flex flex-col gap-3 overflow-y-auto rounded-md p-4'>
+      <div className='flex items-center justify-between gap-2'>
+        <p className='font-mono text-[11px] font-black uppercase tracking-[0.24em] text-(--accent-secondary)'>
+          {t('gameBattle.stats.title')}
+        </p>
+        {headerRight}
+      </div>
+      <div>
+        <p className='mb-1 font-mono text-[9px] uppercase tracking-[0.2em] text-(--text-subtle)'>
+          {primaryFleetTitle}
+        </p>
+        <StatRow
+          label={t('gameBattle.stats.shots')}
+          value={playerStats.total}
+          icon={Crosshair}
+          tone='friendly'
+        />
+        <StatRow
+          label={t('gameBattle.stats.hits')}
+          value={playerStats.hits}
+          icon={Target}
+          tone='friendly'
+        />
+        <StatRow
+          label={t('gameBattle.stats.misses')}
+          value={playerStats.misses}
+          icon={CircleOff}
+          tone='friendly'
+        />
+        <StatRow
+          label={t('gameBattle.stats.accuracy')}
+          value={`${playerStats.accuracy}%`}
+          icon={Gauge}
+          tone='friendly'
+        />
+      </div>
+      <div>
+        <p
+          className={`mb-1 font-mono text-[9px] uppercase tracking-[0.2em] ${getStatToneClasses('hostile').section}`}
+        >
+          {secondaryFleetTitle}
+        </p>
+        <StatRow
+          label={t('gameBattle.stats.shots')}
+          value={enemyStats.total}
+          icon={Crosshair}
+          tone='hostile'
+        />
+        <StatRow
+          label={t('gameBattle.stats.hits')}
+          value={enemyStats.hits}
+          icon={Target}
+          tone='hostile'
+        />
+        <StatRow
+          label={t('gameBattle.stats.misses')}
+          value={enemyStats.misses}
+          icon={CircleOff}
+          tone='hostile'
+        />
+        <StatRow
+          label={t('gameBattle.stats.accuracy')}
+          value={`${enemyStats.accuracy}%`}
+          icon={Gauge}
+          tone='hostile'
+        />
+      </div>
+    </div>
+  );
+}
+
 export function StatsOverlay({
   playerShots,
   botShots,
@@ -175,6 +280,18 @@ export function StatsOverlay({
   const { t } = useTranslation();
   const playerStats = calculateShotStats(playerShots);
   const enemyStats = calculateShotStats(botShots);
+  const primaryNumbers: BattleStatsNumbers = {
+    shotsFired: playerStats.total,
+    hits: playerStats.hits,
+    misses: playerStats.misses,
+    accuracy: playerStats.accuracy,
+  };
+  const secondaryNumbers: BattleStatsNumbers = {
+    shotsFired: enemyStats.total,
+    hits: enemyStats.hits,
+    misses: enemyStats.misses,
+    accuracy: enemyStats.accuracy,
+  };
 
   if (allowMinimize && minimized) {
     const minimizedTitle = t('gameBattle.stats.title');
@@ -196,6 +313,21 @@ export function StatsOverlay({
     );
   }
 
+  const headerButton = (
+    <button
+      type='button'
+      onClick={allowMinimize ? (onMinimize ?? onClose) : onClose}
+      className='cursor-pointer flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border border-[rgba(31,136,176,0.36)] text-(--text-muted) transition-colors hover:border-[rgba(255,100,80,0.5)] hover:text-[rgba(255,100,80,0.9)]'
+      title={allowMinimize ? t('gameBattle.minimize') : undefined}
+    >
+      {allowMinimize ? (
+        <Minus size={13} strokeWidth={2.2} />
+      ) : (
+        <CircleX size={13} strokeWidth={2.2} />
+      )}
+    </button>
+  );
+
   return (
     <motion.div
       className='absolute inset-0 z-40 flex flex-col'
@@ -205,78 +337,18 @@ export function StatsOverlay({
       transition={{ duration: 0.22 }}
     >
       <div className='ui-gameplay-overlay-scrim absolute inset-0' />
-      <div className='ui-gameplay-overlay-panel relative z-10 flex h-full flex-col gap-3 overflow-y-auto rounded-md p-4'>
-        <div className='flex items-center justify-between'>
-          <p className='font-mono text-[11px] font-black uppercase tracking-[0.24em] text-(--accent-secondary)'>
-            {t('gameBattle.stats.title')}
-          </p>
-          <button
-            type='button'
-            onClick={allowMinimize ? (onMinimize ?? onClose) : onClose}
-            className='cursor-pointer flex h-6 w-6 items-center justify-center rounded-sm border border-[rgba(31,136,176,0.36)] text-(--text-muted) transition-colors hover:border-[rgba(255,100,80,0.5)] hover:text-[rgba(255,100,80,0.9)]'
-            title={allowMinimize ? t('gameBattle.minimize') : undefined}
-          >
-            {allowMinimize ? <Minus size={13} strokeWidth={2.2} /> : <CircleX size={13} strokeWidth={2.2} />}
-          </button>
-        </div>
-        <div>
-          <p className='mb-1 font-mono text-[9px] uppercase tracking-[0.2em] text-(--text-subtle)'>
-            {isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.stats.youLabel')}
-          </p>
-          <StatRow
-            label={t('gameBattle.stats.shots')}
-            value={playerStats.total}
-            icon={Crosshair}
-            tone='friendly'
-          />
-          <StatRow
-            label={t('gameBattle.stats.hits')}
-            value={playerStats.hits}
-            icon={Target}
-            tone='friendly'
-          />
-          <StatRow
-            label={t('gameBattle.stats.misses')}
-            value={playerStats.misses}
-            icon={CircleOff}
-            tone='friendly'
-          />
-          <StatRow
-            label={t('gameBattle.stats.accuracy')}
-            value={`${playerStats.accuracy}%`}
-            icon={Gauge}
-            tone='friendly'
-          />
-        </div>
-        <div>
-          <p className={`mb-1 font-mono text-[9px] uppercase tracking-[0.2em] ${getStatToneClasses('hostile').section}`}>
-            {isBotVBot ? t('gameBattle.botBFleet') : t('gameBattle.stats.enemyLabel')}
-          </p>
-          <StatRow
-            label={t('gameBattle.stats.shots')}
-            value={enemyStats.total}
-            icon={Crosshair}
-            tone='hostile'
-          />
-          <StatRow
-            label={t('gameBattle.stats.hits')}
-            value={enemyStats.hits}
-            icon={Target}
-            tone='hostile'
-          />
-          <StatRow
-            label={t('gameBattle.stats.misses')}
-            value={enemyStats.misses}
-            icon={CircleOff}
-            tone='hostile'
-          />
-          <StatRow
-            label={t('gameBattle.stats.accuracy')}
-            value={`${enemyStats.accuracy}%`}
-            icon={Gauge}
-            tone='hostile'
-          />
-        </div>
+      <div className='relative z-10 flex h-full flex-col'>
+        <BattleStatsBreakdown
+          primaryFleetTitle={
+            isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.stats.youLabel')
+          }
+          secondaryFleetTitle={
+            isBotVBot ? t('gameBattle.botBFleet') : t('gameBattle.stats.enemyLabel')
+          }
+          primary={primaryNumbers}
+          secondary={secondaryNumbers}
+          headerRight={headerButton}
+        />
       </div>
     </motion.div>
   );

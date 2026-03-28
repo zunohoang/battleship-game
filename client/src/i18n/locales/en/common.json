@@ -60,6 +60,20 @@
             "signature": "Signature",
             "rank": "Rank",
             "elo": "Elo"
+        },
+        "gameHistory": {
+            "label": "Online matches",
+            "open": "View game history",
+            "modalTitle": "Online game history",
+            "loading": "Loading history…",
+            "empty": "No finished online matches yet. Win your first battle at sea.",
+            "loadError": "Could not load match history. Try again later.",
+            "back": "Back to list",
+            "win": "Victory",
+            "loss": "Defeat",
+            "vs": "vs.",
+            "opponentFallback": "Opponent",
+            "viewDetails": "Tap for battle statistics"
         }
     },
     "welcome": {
