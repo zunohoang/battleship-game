@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MissionLogPanel } from '@/components/game-play/MissionLogPanel';
@@ -6,7 +7,10 @@ import {
   GamePlayIdentityCard,
   GamePlayShell,
 } from '@/components/game-play/GamePlayShell';
-import { ProfileSetupModal, type ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
+import {
+  ProfileSetupModal,
+  type ProfileSetupPayload,
+} from '@/components/modal/ProfileSetupModal';
 import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import { Button } from '@/components/ui/Button';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
@@ -17,7 +21,7 @@ import {
   getApiErrorCode,
   isGloballyHandledApiError,
 } from '@/services/httpError';
-import type { OnlineSetupFlow } from '@/types/game';
+import type { OnlineSetupFlow, RoomStatus } from '@/types/game';
 
 type WaitingLocationState = {
   roomId?: string;
@@ -56,7 +60,7 @@ export function WaitingRoomPage() {
       ? room.guestId
       : currentUserId === room.guestId
         ? room.ownerId
-        : room.guestId ?? room.ownerId
+        : (room.guestId ?? room.ownerId)
     : null;
   const hasPhase1Configured = !!room?.currentMatchId;
   const canConfigurePhase1 =
@@ -70,6 +74,17 @@ export function WaitingRoomPage() {
   const [isProfileSetupOpen, setProfileSetupOpen] = useState(false);
   const [isOpponentProfileOpen, setOpponentProfileOpen] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
+  const [roomCodeCopied, setRoomCodeCopied] = useState(false);
+
+  useEffect(() => {
+    if (room?.status === 'closed') {
+      leaveRoom();
+      navigate('/game/rooms', {
+        replace: true,
+        state: { roomDismissed: 'host_closed' },
+      });
+    }
+  }, [leaveRoom, navigate, room?.status]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -123,10 +138,16 @@ export function WaitingRoomPage() {
       return null;
     }
 
-    const totalCells = match.ships.reduce((sum, ship) => sum + ship.size * ship.count, 0);
+    const totalCells = match.ships.reduce(
+      (sum, ship) => sum + ship.size * ship.count,
+      0,
+    );
     const boardCells = match.boardConfig.rows * match.boardConfig.cols;
     const fleetCellLimit = Math.floor(boardCells * 0.5);
-    const totalShipInstances = match.ships.reduce((sum, ship) => sum + ship.count, 0);
+    const totalShipInstances = match.ships.reduce(
+      (sum, ship) => sum + ship.count,
+      0,
+    );
 
     return {
       rows: match.boardConfig.rows,
@@ -142,27 +163,51 @@ export function WaitingRoomPage() {
   }, [match]);
 
   const waitingRoomFeed = useMemo(() => [], []);
-  const { getProfileById, refreshProfiles } = usePlayerProfiles([currentUserId, opponentUserId]);
+  const { getProfileById, refreshProfiles } = usePlayerProfiles([
+    currentUserId,
+    opponentUserId,
+  ]);
   const currentPlayerProfile = getProfileById(currentUserId);
   const opponentProfile = getProfileById(opponentUserId);
+
+  const currentElo = useMemo(() => {
+    const n = currentPlayerProfile?.elo ?? user?.elo;
+    if (typeof n === 'number' && Number.isFinite(n)) {
+      return n;
+    }
+    // Matches server default when JWT/context has not refreshed ELO yet.
+    return currentUserId ? 800 : null;
+  }, [currentPlayerProfile?.elo, currentUserId, user?.elo]);
+
+  const opponentElo = useMemo(() => {
+    if (!opponentUserId) {
+      return null;
+    }
+    const n = opponentProfile?.elo;
+    return typeof n === 'number' && Number.isFinite(n) ? n : null;
+  }, [opponentUserId, opponentProfile?.elo]);
+
   const currentIdentity = useMemo(
     () => ({
       avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar ?? null,
-      label: 'COMMANDER',
+      label: t('waitingRoom.commander'),
       name:
         currentPlayerProfile?.username?.trim() ||
         user?.username?.trim() ||
-        'Commander',
+        t('waitingRoom.defaultCommanderName'),
       signature:
         currentPlayerProfile?.signature?.trim() ||
         user?.signature?.trim() ||
         '- - -',
       align: 'left' as const,
+      elo: currentElo,
     }),
     [
+      currentElo,
       currentPlayerProfile?.avatar,
       currentPlayerProfile?.signature,
       currentPlayerProfile?.username,
+      t,
       user?.avatar,
       user?.signature,
       user?.username,
@@ -171,20 +216,47 @@ export function WaitingRoomPage() {
   const opponentIdentity = useMemo(
     () => ({
       avatarSrc: opponentProfile?.avatar ?? null,
-      label: opponentUserId ? 'OPPONENT' : 'AWAITING',
+      label: opponentUserId
+        ? t('waitingRoom.opponent')
+        : t('waitingRoom.awaiting'),
       name:
         opponentProfile?.username?.trim() ||
-        (opponentUserId ? shortId(opponentUserId) : 'Awaiting Player'),
+        (opponentUserId ? shortId(opponentUserId) : t('waitingRoom.awaitingPlayer')),
       signature: opponentProfile?.signature?.trim() || '- - -',
       align: 'right' as const,
+      elo: opponentElo,
     }),
     [
+      opponentElo,
       opponentProfile?.avatar,
       opponentProfile?.signature,
       opponentProfile?.username,
       opponentUserId,
+      t,
     ],
   );
+
+  const roomStatusLabel = useMemo(() => {
+    const key = (room?.status ?? 'waiting') as RoomStatus;
+    return t(`gameRooms.roomStatus.${key}`);
+  }, [room?.status, t]);
+
+  const copyRoomCode = useCallback(async () => {
+    const code = room?.roomCode?.trim();
+    if (!code) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(code);
+      setRoomCodeCopied(true);
+      window.setTimeout(() => {
+        setRoomCodeCopied(false);
+      }, 2000);
+    } catch {
+      setRoomCodeCopied(false);
+    }
+  }, [room?.roomCode]);
   const profileSetupModalKey = [
     'waiting-room-profile-setup',
     isProfileSetupOpen ? 'open' : 'closed',
@@ -196,13 +268,13 @@ export function WaitingRoomPage() {
     () =>
       opponentUserId
         ? {
-          id: opponentUserId,
-          username:
-            opponentProfile?.username?.trim() || shortId(opponentUserId),
-          avatar: opponentProfile?.avatar ?? null,
-          signature: opponentProfile?.signature?.trim() || '- - -',
-          label: opponentIdentity.label,
-        }
+            id: opponentUserId,
+            username:
+              opponentProfile?.username?.trim() || shortId(opponentUserId),
+            avatar: opponentProfile?.avatar ?? null,
+            signature: opponentProfile?.signature?.trim() || '- - -',
+            label: opponentIdentity.label,
+          }
         : null,
     [
       opponentIdentity.label,
@@ -259,8 +331,9 @@ export function WaitingRoomPage() {
     reconnect({ roomId, matchId });
 
     const refreshedProfiles = await refreshProfiles();
-    const refreshedCurrentProfile =
-      currentUserId ? refreshedProfiles[currentUserId] ?? null : null;
+    const refreshedCurrentProfile = currentUserId
+      ? (refreshedProfiles[currentUserId] ?? null)
+      : null;
 
     if (refreshedCurrentProfile && user) {
       setUser({
@@ -285,7 +358,13 @@ export function WaitingRoomPage() {
 
       return t('gameBattle.chatOpponentLabel');
     },
-    [currentIdentity.name, currentUserId, opponentIdentity.name, opponentUserId, t],
+    [
+      currentIdentity.name,
+      currentUserId,
+      opponentIdentity.name,
+      opponentUserId,
+      t,
+    ],
   );
 
   const isChatDisabled = connectionState !== 'connected' || !room;
@@ -302,22 +381,44 @@ export function WaitingRoomPage() {
 
   return (
     <>
-      <GamePlayShell sectionClassName='ui-hud-shell mx-auto flex min-h-full w-full max-w-5xl flex-col rounded-md p-2 sm:p-4'>
-        <div className='flex min-h-0 flex-1 flex-col gap-3'>
-          <div className='grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_minmax(0,1fr)] lg:items-center'>
+      <GamePlayShell sectionClassName="ui-hud-shell mx-auto flex min-h-full w-full max-w-5xl flex-col rounded-md p-2 sm:p-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(200px,280px)_minmax(0,1fr)] lg:items-start">
             <GamePlayIdentityCard
               content={currentIdentity}
               onClick={() => setProfileSetupOpen(true)}
-              buttonAriaLabel='Edit your profile'
+              buttonAriaLabel={t('waitingRoom.editProfileAria')}
             />
-            <div className='ui-subpanel rounded-md px-4 py-2 text-center'>
-              <p className='ui-title-eyebrow'>Status</p>
-              <p className='font-mono text-lg font-black uppercase tracking-[0.16em] text-(--accent-secondary)'>
-                {room?.status ?? 'waiting'}
+            <div className="ui-subpanel min-w-0 rounded-md px-3 py-2 text-center sm:px-4">
+              <p className="ui-title-eyebrow">{t('waitingRoom.statusLabel')}</p>
+              <p className="font-mono text-lg font-black uppercase tracking-[0.16em] text-(--accent-secondary)">
+                {roomStatusLabel}
               </p>
-              <p className='mt-2 font-mono text-xs uppercase tracking-[0.18em] text-(--text-subtle)'>
-                Room {room?.roomCode ?? '------'}
-              </p>
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-(--text-subtle)">
+                  {t('waitingRoom.roomPrefix', {
+                    code: room?.roomCode ?? '------',
+                  })}
+                </p>
+                <button
+                  type="button"
+                  onClick={copyRoomCode}
+                  disabled={!room?.roomCode}
+                  title={
+                    roomCodeCopied
+                      ? t('waitingRoom.copied')
+                      : t('waitingRoom.copyRoomCodeAria')
+                  }
+                  aria-label={t('waitingRoom.copyRoomCodeAria')}
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-[rgba(63,203,232,0.35)] bg-[rgba(7,28,38,0.45)] text-(--accent-secondary) transition-colors hover:bg-[rgba(7,28,38,0.65)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {roomCodeCopied ? (
+                    <Check size={14} strokeWidth={2.5} />
+                  ) : (
+                    <Copy size={14} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
             </div>
             <GamePlayIdentityCard
               content={opponentIdentity}
@@ -326,83 +427,96 @@ export function WaitingRoomPage() {
                   ? () => setOpponentProfileOpen(true)
                   : undefined
               }
-              buttonAriaLabel='View opponent profile'
+              buttonAriaLabel={t('waitingRoom.viewOpponentAria')}
             />
           </div>
 
-          <div className='ui-subpanel mt-2 rounded-sm px-4 py-4'>
+          <div className="ui-subpanel mt-2 rounded-sm px-4 py-4">
             {phase1Summary ? (
-              <div className='grid gap-4'>
-                <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
-                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
-                    <p className='ui-data-label'>Board Size</p>
-                    <p className='mt-2 font-mono text-lg font-black text-(--accent-secondary)'>
-                      {phase1Summary.rows}x{phase1Summary.cols}={phase1Summary.boardCells}
+              <div className="grid gap-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <div className="ui-subpanel-strong rounded-sm px-4 py-3">
+                    <p className="ui-data-label">{t('waitingRoom.boardSize')}</p>
+                    <p className="mt-2 font-mono text-lg font-black text-(--accent-secondary)">
+                      {phase1Summary.rows}x{phase1Summary.cols}=
+                      {phase1Summary.boardCells}
                     </p>
                   </div>
 
-                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
-                    <p className='ui-data-label'>{t('gameSetup.step1.turnTimer')}</p>
-                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                  <div className="ui-subpanel-strong rounded-sm px-4 py-3">
+                    <p className="ui-data-label">
+                      {t('gameSetup.step1.turnTimer')}
+                    </p>
+                    <p className="mt-2 font-mono text-lg font-black text-(--text-main)">
                       {t('gameSetup.step1.turnTimerValue', {
                         seconds: phase1Summary.turnTimerSeconds,
                       })}
                     </p>
                   </div>
 
-                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
-                    <p className='ui-data-label'>{t('gameSetup.step1.fleetTitle')}</p>
-                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                  <div className="ui-subpanel-strong rounded-sm px-4 py-3">
+                    <p className="ui-data-label">
+                      {t('gameSetup.step1.fleetTitle')}
+                    </p>
+                    <p className="mt-2 font-mono text-lg font-black text-(--text-main)">
                       {phase1Summary.shipTypes}
                     </p>
                   </div>
 
-                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
-                    <p className='ui-data-label'>Ships Deployed</p>
-                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                  <div className="ui-subpanel-strong rounded-sm px-4 py-3">
+                    <p className="ui-data-label">
+                      {t('waitingRoom.shipsDeployed')}
+                    </p>
+                    <p className="mt-2 font-mono text-lg font-black text-(--text-main)">
                       {phase1Summary.totalShipInstances}
                     </p>
                   </div>
 
-                  <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
-                    <p className='ui-data-label'>Board Load</p>
-                    <p className='mt-2 font-mono text-lg font-black text-(--text-main)'>
+                  <div className="ui-subpanel-strong rounded-sm px-4 py-3">
+                    <p className="ui-data-label">{t('waitingRoom.boardLoad')}</p>
+                    <p className="mt-2 font-mono text-lg font-black text-(--text-main)">
                       {phase1Summary.totalCells}/{phase1Summary.fleetCellLimit}
                     </p>
                   </div>
                 </div>
 
-                <div className='overflow-x-auto pb-1'>
-                  <div className='min-w-[720px] grid gap-2'>
-                    <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] gap-3 px-4 py-1'>
-                      <p className='ui-data-label'>{t('gameSetup.step1.shipName')}</p>
-                      <p className='ui-data-label'>{t('gameSetup.step1.size')}</p>
-                      <p className='ui-data-label'>{t('gameSetup.step1.count')}</p>
-                      <p className='ui-data-label'>Load</p>
-                      <p className='ui-data-label'>Tổng</p>
+                <div className="overflow-x-auto pb-1">
+                  <div className="min-w-[720px] grid gap-2">
+                    <div className="grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] gap-3 px-4 py-1">
+                      <p className="ui-data-label">
+                        {t('gameSetup.step1.shipName')}
+                      </p>
+                      <p className="ui-data-label">
+                        {t('gameSetup.step1.size')}
+                      </p>
+                      <p className="ui-data-label">
+                        {t('gameSetup.step1.count')}
+                      </p>
+                      <p className="ui-data-label">{t('waitingRoom.load')}</p>
+                      <p className="ui-data-label">{t('waitingRoom.total')}</p>
                     </div>
 
-                    <div className='themed-scrollbar max-h-[18rem] overflow-y-auto pr-1'>
-                      <div className='grid gap-2'>
+                    <div className="themed-scrollbar max-h-[18rem] overflow-y-auto pr-1">
+                      <div className="grid gap-2">
                         {phase1Summary.ships.map((ship) => (
                           <div
                             key={ship.id}
-                            className='ui-state-idle rounded-sm px-4 py-3'
+                            className="ui-state-idle rounded-sm px-4 py-3"
                           >
-                            <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] items-center gap-3'>
-                              <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
+                            <div className="grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] items-center gap-3">
+                              <p className="truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)">
                                 {ship.name}
                               </p>
-                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                              <p className="font-mono text-sm font-bold text-(--text-main)">
                                 {ship.size}
                               </p>
-                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                              <p className="font-mono text-sm font-bold text-(--text-main)">
                                 {ship.count}
                               </p>
-                              <p className='font-mono text-sm font-bold text-(--accent-secondary)'>
+                              <p className="font-mono text-sm font-bold text-(--accent-secondary)">
                                 {ship.size} x {ship.count}
                               </p>
-                              <p className='font-mono text-sm font-bold text-(--text-main)'>
+                              <p className="font-mono text-sm font-bold text-(--text-main)">
                                 {ship.size * ship.count}
                               </p>
                             </div>
@@ -414,86 +528,86 @@ export function WaitingRoomPage() {
                 </div>
               </div>
             ) : (
-              <p className='mt-2 text-sm text-(--text-muted)'>
-                The host still needs to configure phase 1 before this room can accept an opponent.
+              <p className="mt-2 text-sm text-(--text-muted)">
+                {t('waitingRoom.phase1HostNeeded')}
               </p>
             )}
           </div>
 
           {lastError ? (
-            <p className='mt-2 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]'>
+            <p className="mt-2 rounded-sm border border-[rgba(220,60,60,0.5)] bg-[rgba(160,30,30,0.2)] px-3 py-2 text-xs text-[rgba(255,170,170,0.95)]">
               {lastError}
             </p>
           ) : null}
 
-          <div className='ui-panel overflow-hidden rounded-md'>
+          <div className="ui-panel overflow-hidden rounded-md">
             <MissionLogPanel
-              className='px-3 pt-3 pb-2 sm:px-4'
-              title='WAITING ROOM FEED'
+              className="px-3 pt-3 pb-2 sm:px-4"
+              title={t('waitingRoom.feedTitle')}
               entries={waitingRoomFeed}
               chatMessages={chatMessages}
               currentUserId={currentUserId}
-              mode='chat-only'
+              mode="chat-only"
               isChatDisabled={isChatDisabled}
               showComposer={false}
-              logHeightClassName='h-11 sm:h-32'
+              logHeightClassName="h-11 sm:h-32"
               resolveChatAuthorLabel={resolveChatAuthorLabel}
             />
-            <div className='border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
-              <div className='flex flex-wrap items-center gap-2'>
-                <div className='flex min-w-0 items-center gap-2 md:mr-2 md:flex-1'>
-                  <button
-                    type='button'
-                    onClick={handleSendChat}
-                    disabled={isChatDisabled || chatDraft.trim().length === 0}
-                    className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
-                  >
-                    {t('gameBattle.chatSend')}
-                  </button>
-                  <input
-                    type='text'
-                    value={chatDraft}
-                    onChange={(event) => setChatDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        handleSendChat();
-                      }
-                    }}
-                    placeholder={t('gameBattle.chatInputPlaceholder')}
-                    disabled={isChatDisabled}
-                    maxLength={280}
-                    className='w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
-                  />
-                </div>
+            <div className="border-t border-(--border-main) flex w-full min-w-0 flex-col gap-3 px-3 py-2 sm:px-4">
+              <div className="flex w-full min-w-0 items-stretch gap-2">
+                <button
+                  type="button"
+                  onClick={handleSendChat}
+                  disabled={isChatDisabled || chatDraft.trim().length === 0}
+                  className="shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t('gameBattle.chatSend')}
+                </button>
+                <input
+                  type="text"
+                  value={chatDraft}
+                  onChange={(event) => setChatDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleSendChat();
+                    }
+                  }}
+                  placeholder={t('gameBattle.chatInputPlaceholder')}
+                  disabled={isChatDisabled}
+                  maxLength={280}
+                  className="ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <Button
-                  className='h-8 px-3 text-[10px] md:w-auto'
+                  className="!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal"
                   onClick={() => navigate('/home')}
                 >
-                  Back Home
+                  {t('waitingRoom.backHome')}
                 </Button>
                 <Button
-                  variant='danger'
-                  className='h-8 px-3 text-[10px] md:w-auto'
+                  variant="danger"
+                  className="!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal"
                   onClick={() => {
                     leaveRoom();
                     navigate('/game/rooms');
                   }}
                 >
-                  Leave Room
+                  {t('waitingRoom.leaveRoom')}
                 </Button>
                 <Button
-                  className='h-8 px-3 text-[10px] md:w-auto'
+                  className="!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal"
                   onClick={() => {
                     void handleRefreshState();
                   }}
                 >
-                  Refresh State
+                  {t('waitingRoom.refreshState')}
                 </Button>
                 {isOwner ? (
                   <Button
-                    variant='primary'
-                    className='h-8 px-3 text-[10px] md:w-auto'
+                    variant="primary"
+                    className="!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal"
                     disabled={!canConfigurePhase1}
                     onClick={() => {
                       const onlineSetupFlow: OnlineSetupFlow = 'phase1';
@@ -507,12 +621,14 @@ export function WaitingRoomPage() {
                       });
                     }}
                   >
-                    {canConfigurePhase1 ? 'Setup Phase 1' : 'Phase 1 Locked'}
+                    {canConfigurePhase1
+                      ? t('waitingRoom.setupPhase1')
+                      : t('waitingRoom.phase1Locked')}
                   </Button>
                 ) : null}
                 <Button
-                  variant='primary'
-                  className='h-8 px-3 text-[10px] md:w-auto'
+                  variant="primary"
+                  className="!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal"
                   disabled={!canStartSetup}
                   onClick={() => {
                     if (!room?.roomId) return;
@@ -520,14 +636,14 @@ export function WaitingRoomPage() {
                   }}
                 >
                   {canStartSetup
-                    ? 'Start Setup'
+                    ? t('waitingRoom.startSetup')
                     : !isOwner
-                      ? 'Waiting For Owner'
+                      ? t('waitingRoom.waitingForOwner')
                       : !hasPhase1Configured
-                        ? 'Finish Phase 1 First'
+                        ? t('waitingRoom.finishPhase1First')
                         : !room?.guestId
-                          ? 'Waiting For Opponent'
-                          : 'Setup Locked'}
+                          ? t('waitingRoom.waitingForOpponent')
+                          : t('waitingRoom.setupLocked')}
                 </Button>
               </div>
             </div>
@@ -559,7 +675,7 @@ export function WaitingRoomPage() {
       <ProfileShowcaseModal
         isOpen={isOpponentProfileOpen}
         onClose={() => setOpponentProfileOpen(false)}
-        title='Opponent Profile'
+        title={t('waitingRoom.opponentProfile')}
         profile={opponentShowcaseProfile}
       />
     </>

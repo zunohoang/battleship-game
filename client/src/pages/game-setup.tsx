@@ -113,9 +113,28 @@ export function GameSetupPage() {
     resetConfig,
   } = useGameSetup();
 
-  const { room, match, reconnect, markReady, configureRoomSetup, lastError } =
-    useOnlineRoom(roomId, mode === 'online');
+  const {
+    room,
+    match,
+    reconnect,
+    markReady,
+    configureRoomSetup,
+    lastError,
+    leaveRoom,
+  } = useOnlineRoom(roomId, mode === 'online');
   const isRoomOwner = currentUserId !== null && currentUserId === room?.ownerId;
+
+  useEffect(() => {
+    if (mode !== 'online' || room?.status !== 'closed') {
+      return;
+    }
+
+    leaveRoom();
+    navigate('/game/rooms', {
+      replace: true,
+      state: { roomDismissed: 'host_closed' },
+    });
+  }, [leaveRoom, mode, navigate, room?.status]);
 
   const hasInitializedOnlineConfig = useRef(false);
 

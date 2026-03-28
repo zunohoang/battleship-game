@@ -5,9 +5,9 @@ import {
   useContext,
   useState,
   type ReactNode,
-} from 'react'
-import { DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults'
-import { CONFIG_LIMITS } from '@/constants/gameDefaults'
+} from 'react';
+import { DEFAULT_GAME_CONFIG } from '@/constants/gameDefaults';
+import { CONFIG_LIMITS } from '@/constants/gameDefaults';
 import type {
   BoardConfig,
   GameConfig,
@@ -15,42 +15,45 @@ import type {
   GameSetupState,
   PlacedShip,
   ShipDefinition,
-} from '@/types/game'
+} from '@/types/game';
 
 // -------------------------------------------------------
 // Context value shape
 // -------------------------------------------------------
 interface GameSetupContextValue {
-  state: GameSetupState
+  state: GameSetupState;
 
   // Mode
-  setMode: (mode: GameMode) => void
+  setMode: (mode: GameMode) => void;
 
   // Board config
-  setBoardConfig: (boardConfig: BoardConfig) => void
-  setTurnTimerSeconds: (turnTimerSeconds: number) => void
+  setBoardConfig: (boardConfig: BoardConfig) => void;
+  setTurnTimerSeconds: (turnTimerSeconds: number) => void;
 
   // Ship definitions (the fleet template)
-  setShipDefinitions: (ships: ShipDefinition[]) => void
-  addShipDefinition: (ship: ShipDefinition) => void
-  updateShipDefinition: (id: string, patch: Partial<Omit<ShipDefinition, 'id'>>) => void
-  removeShipDefinition: (id: string) => void
+  setShipDefinitions: (ships: ShipDefinition[]) => void;
+  addShipDefinition: (ship: ShipDefinition) => void;
+  updateShipDefinition: (
+    id: string,
+    patch: Partial<Omit<ShipDefinition, 'id'>>,
+  ) => void;
+  removeShipDefinition: (id: string) => void;
 
   // Placements (ships placed on the board)
-  setPlacements: (placements: PlacedShip[]) => void
-  addPlacement: (ship: PlacedShip) => void
-  removePlacement: (definitionId: string, instanceIndex: number) => void
-  clearPlacements: () => void
+  setPlacements: (placements: PlacedShip[]) => void;
+  addPlacement: (ship: PlacedShip) => void;
+  removePlacement: (definitionId: string, instanceIndex: number) => void;
+  clearPlacements: () => void;
 
   // Config shorthand
-  setConfig: (config: GameConfig) => void
-  resetConfig: () => void
+  setConfig: (config: GameConfig) => void;
+  resetConfig: () => void;
 
   // Ready state
-  setReady: (ready: boolean) => void
+  setReady: (ready: boolean) => void;
 
   // Reset everything
-  resetAll: () => void
+  resetAll: () => void;
 }
 
 // -------------------------------------------------------
@@ -62,67 +65,67 @@ function makeInitialState(mode: GameMode = 'bot'): GameSetupState {
     config: DEFAULT_GAME_CONFIG,
     placements: [],
     isReady: false,
-  }
+  };
 }
 
 // -------------------------------------------------------
 // Context + Provider
 // -------------------------------------------------------
-const GameSetupContext = createContext<GameSetupContextValue | null>(null)
+const GameSetupContext = createContext<GameSetupContextValue | null>(null);
 
 export function GameSetupProvider({
   children,
   initialMode = 'bot',
 }: {
-  children: ReactNode
-  initialMode?: GameMode
+  children: ReactNode;
+  initialMode?: GameMode;
 }) {
   const [state, setState] = useState<GameSetupState>(() =>
     makeInitialState(initialMode),
-  )
+  );
 
   const setMode = useCallback((mode: GameMode) => {
-    setState((s) => ({ ...s, mode }))
-  }, [])
+    setState((s) => ({ ...s, mode }));
+  }, []);
 
   const setBoardConfig = useCallback((boardConfig: BoardConfig) => {
-    const { minRows, maxRows, minCols, maxCols } = CONFIG_LIMITS.board
+    const { minRows, maxRows, minCols, maxCols } = CONFIG_LIMITS.board;
     const clamped: BoardConfig = {
       rows: Math.min(maxRows, Math.max(minRows, boardConfig.rows)),
       cols: Math.min(maxCols, Math.max(minCols, boardConfig.cols)),
-    }
+    };
     setState((s) => ({
       ...s,
       config: { ...s.config, boardConfig: clamped },
-      placements: [],  // reset placements when board changes
-    }))
-  }, [])
+      placements: [], // reset placements when board changes
+    }));
+  }, []);
 
   const setTurnTimerSeconds = useCallback((turnTimerSeconds: number) => {
     setState((s) => ({
       ...s,
       config: { ...s.config, turnTimerSeconds },
-    }))
-  }, [])
+    }));
+  }, []);
 
   const setShipDefinitions = useCallback((ships: ShipDefinition[]) => {
     setState((s) => ({
       ...s,
       config: { ...s.config, ships },
       placements: [],
-    }))
-  }, [])
+    }));
+  }, []);
 
   const addShipDefinition = useCallback((ship: ShipDefinition) => {
     setState((s) => {
-      if (s.config.ships.length >= CONFIG_LIMITS.ship.maxShipTypes) return s
-      if (s.config.ships.some((d) => d.id === ship.id)) return s
+      if (s.config.ships.length >= CONFIG_LIMITS.ship.maxShipTypes) return s;
+      if (s.config.ships.some((d) => d.id === ship.id)) return s;
       return {
         ...s,
         config: { ...s.config, ships: [...s.config.ships, ship] },
-      }
-    })
-  }, [])
+      };
+    });
+  }, []);
 
   const updateShipDefinition = useCallback(
     (id: string, patch: Partial<Omit<ShipDefinition, 'id'>>) => {
@@ -135,10 +138,10 @@ export function GameSetupProvider({
           ),
         },
         placements: s.placements.filter((p) => p.definitionId !== id),
-      }))
+      }));
     },
     [],
-  )
+  );
 
   const removeShipDefinition = useCallback((id: string) => {
     setState((s) => ({
@@ -148,19 +151,19 @@ export function GameSetupProvider({
         ships: s.config.ships.filter((d) => d.id !== id),
       },
       placements: s.placements.filter((p) => p.definitionId !== id),
-    }))
-  }, [])
+    }));
+  }, []);
 
   const setPlacements = useCallback((placements: PlacedShip[]) => {
-    setState((s) => ({ ...s, placements }))
-  }, [])
+    setState((s) => ({ ...s, placements }));
+  }, []);
 
   const addPlacement = useCallback((ship: PlacedShip) => {
     setState((s) => ({
       ...s,
       placements: [...s.placements, ship],
-    }))
-  }, [])
+    }));
+  }, []);
 
   const removePlacement = useCallback(
     (definitionId: string, instanceIndex: number) => {
@@ -168,20 +171,23 @@ export function GameSetupProvider({
         ...s,
         placements: s.placements.filter(
           (p) =>
-            !(p.definitionId === definitionId && p.instanceIndex === instanceIndex),
+            !(
+              p.definitionId === definitionId &&
+              p.instanceIndex === instanceIndex
+            ),
         ),
-      }))
+      }));
     },
     [],
-  )
+  );
 
   const clearPlacements = useCallback(() => {
-    setState((s) => ({ ...s, placements: [], isReady: false }))
-  }, [])
+    setState((s) => ({ ...s, placements: [], isReady: false }));
+  }, []);
 
   const setConfig = useCallback((config: GameConfig) => {
-    setState((s) => ({ ...s, config, placements: [], isReady: false }))
-  }, [])
+    setState((s) => ({ ...s, config, placements: [], isReady: false }));
+  }, []);
 
   const resetConfig = useCallback(() => {
     setState((s) => ({
@@ -189,16 +195,16 @@ export function GameSetupProvider({
       config: DEFAULT_GAME_CONFIG,
       placements: [],
       isReady: false,
-    }))
-  }, [])
+    }));
+  }, []);
 
   const setReady = useCallback((ready: boolean) => {
-    setState((s) => ({ ...s, isReady: ready }))
-  }, [])
+    setState((s) => ({ ...s, isReady: ready }));
+  }, []);
 
   const resetAll = useCallback(() => {
-    setState((s) => makeInitialState(s.mode))
-  }, [])
+    setState((s) => makeInitialState(s.mode));
+  }, []);
 
   return (
     <GameSetupContext.Provider
@@ -223,14 +229,15 @@ export function GameSetupProvider({
     >
       {children}
     </GameSetupContext.Provider>
-  )
+  );
 }
 
 // -------------------------------------------------------
 // Hook
 // -------------------------------------------------------
 export function useGameSetup(): GameSetupContextValue {
-  const ctx = useContext(GameSetupContext)
-  if (!ctx) throw new Error('useGameSetup must be used within GameSetupProvider')
-  return ctx
+  const ctx = useContext(GameSetupContext);
+  if (!ctx)
+    throw new Error('useGameSetup must be used within GameSetupProvider');
+  return ctx;
 }

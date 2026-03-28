@@ -62,6 +62,7 @@ interface UseOnlineGamePlaySessionResult {
   result: GameResult | null;
   refresh: () => void;
   loadingFallback: GamePlayLoadingFallback | null;
+  leaveRoom: () => void;
 }
 
 export function useOnlineGamePlaySession({
@@ -86,6 +87,7 @@ export function useOnlineGamePlaySession({
     reconnect,
     submitMove,
     sendChatMessage,
+    leaveRoom,
   } = useOnlineRoom(roomId, enabled);
 
   const refresh = useCallback(() => {
@@ -474,6 +476,7 @@ export function useOnlineGamePlaySession({
     result,
     refresh,
     loadingFallback,
+    leaveRoom,
   };
 }
 

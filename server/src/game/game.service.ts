@@ -842,7 +842,9 @@ export class GameService {
     } else if (room.guestId === userId) {
       room.guestId = null;
       room.guestReady = false;
-      room.status = 'waiting';
+      if (room.status !== 'closed') {
+        room.status = 'waiting';
+      }
     } else {
       throw new BadRequestException({
         error: 'ROOM_MEMBER_ONLY',
