@@ -446,7 +446,7 @@ export function ForumFeedPage() {
         message={t('forum.feed.deletePostConfirm')}
         cancelLabel={t('forum.post.editCancel')}
         confirmLabel={t('forum.feed.deletePost')}
-        confirmVariant='danger'
+        confirmVariant="danger"
         onConfirm={async () => {
           if (!postPendingDelete) {
             return;
