@@ -14,6 +14,7 @@
             "botVsBot": "Bot vs bot",
             "settings": "Cài đặt",
             "community": "Cộng đồng",
+            "leaderboard": "Bảng xếp hạng",
             "login": "Đăng nhập",
             "register": "Đăng kí"
         },
@@ -76,6 +77,60 @@
             "viewDetails": "Xem thống kê chiến đấu"
         }
     },
+    "leaderboard": {
+        "backHome": "Về boong chỉ huy",
+        "eyebrow": "Xếp hạng hạm đội",
+        "title": "Bảng xếp hạng chỉ huy",
+        "subtitle": "Xếp theo ELO từ trận PvP online. Điểm càng cao càng mạnh.",
+        "loading": "Đang tải bảng…",
+        "error": "Không tải được bảng xếp hạng.",
+        "empty": "Chưa có chỉ huy nào.",
+        "colRank": "Hạng",
+        "colCommander": "Chỉ huy",
+        "colTier": "Cấp bậc",
+        "colElo": "ELO"
+    },
+    "rank": {
+        "referenceTitle": "Cấp bậc & khoảng ELO",
+        "eloRulesTitle": "Điểm ELO thay đổi thế nào?",
+        "eloRulesIntro": "Sau mỗi trận PvP online, hệ thống cập nhật ELO cho cả hai người. Điểm không cộng/trừ cố định: phụ thuộc bạn thắng hay thua và đối thủ mạnh hay yếu so với bạn.",
+        "eloRulePlain1": "Bạn mạnh hơn đối thủ rất nhiều mà vẫn thắng → chỉ được cộng ít điểm (vì hệ thống coi đó là kết quả dễ đoán).",
+        "eloRulePlain2": "Bạn mạnh hơn rất nhiều mà lại thua → sẽ bị trừ nhiều điểm (\"sảy chân\" nặng).",
+        "eloRulePlain3": "Bạn thắng người mạnh hơn hoặc ngang tài → thường được cộng nhiều điểm hơn, coi như phần thưởng cho trận thắng khó.",
+        "eloRulesKTitle": "Hệ số K — độ \"nhạy\" điểm sau mỗi trận",
+        "eloRulesKIntro": "Cùng một trận, nhưng người mới và người rank cao không đổi điểm với cùng một tốc độ:",
+        "eloRuleKLow": "Dưới 1000 ELO: K = 40 — điểm lên/xuống nhanh, phù hợp giai đoạn tân thủ.",
+        "eloRuleKMid": "Từ 1000 đến 1599 ELO: K = 25 — biến động vừa phải, ổn định.",
+        "eloRuleKHigh": "Từ 1600 ELO trở lên: K = 15 — điểm thay đổi chậm, leo rank khó hơn, cần thắng đều.",
+        "eloRulesFormulaNote": "Kỹ thuật (cho người muốn biết sâu): hệ thống dùng công thức Elo chuẩn — ước lượng xác suất thắng từ chênh lệch ELO (thang 400), rồi điểm mới = điểm cũ + K × (kết quả thực tế thắng 1 / thua 0 trừ xác suất đó).",
+        "tiers": {
+            "apprenticeSailor": {
+                "name": "Thủy Thủ Tập Sự",
+                "eloBand": "0 – 999 ELO",
+                "blurb": "Mức khởi điểm cho mọi tài khoản mới."
+            },
+            "combatNavigator": {
+                "name": "Hoa Tiêu Thiện Chiến",
+                "eloBand": "1000 – 1299 ELO",
+                "blurb": "Đã nắm được luật cơ bản."
+            },
+            "eliteCaptain": {
+                "name": "Thuyền Trưởng Tinh Anh",
+                "eloBand": "1300 – 1599 ELO",
+                "blurb": "Biết áp dụng các pattern bắn đạn chéo (parity)."
+            },
+            "fleetAdmiral": {
+                "name": "Đô Đốc Hạm Đội",
+                "eloBand": "1600 – 1999 ELO",
+                "blurb": "Bậc thầy xếp tàu dị và đọc vị đối thủ."
+            },
+            "oceanConqueror": {
+                "name": "Bá Chủ Đại Dương",
+                "eloBand": "2000+ ELO",
+                "blurb": "Top server, tính toán xác suất ô trống hoàn hảo."
+            }
+        }
+    },
     "welcome": {
         "subtitle": "Lao vào những trận hải chiến ác liệt",
         "title": "Chào mừng chỉ huy",
@@ -115,8 +170,14 @@
             "changeAvatar": "Đổi ảnh đại diện",
             "logout": "Đăng xuất",
             "submitProfile": "Lưu hồ sơ",
+            "openChangePassword": "Đổi mật khẩu",
+            "changePasswordTitle": "Đổi mật khẩu",
+            "changePasswordCurrent": "Mật khẩu cũ",
+            "changePasswordNew": "Mật khẩu mới",
+            "changePasswordConfirm": "Nhập lại mật khẩu mới",
+            "changePasswordSubmit": "Cập nhật mật khẩu",
             "placeholder": {
-                "password": "Đổi mật khẩu",
+                "password": "Đặt mật khẩu",
                 "signature": "Viết gì đó về bản thân…"
             }
         },
@@ -574,6 +635,9 @@
         "PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất 8 ký tự.",
         "PASSWORD_TOO_LONG": "Mật khẩu tối đa 72 ký tự.",
         "PASSWORD_MISMATCH": "Mật khẩu xác nhận không khớp.",
+        "CURRENT_PASSWORD_REQUIRED": "Vui lòng nhập mật khẩu hiện tại.",
+        "INVALID_CURRENT_PASSWORD": "Mật khẩu hiện tại không đúng.",
+        "NEW_PASSWORD_SAME_AS_OLD": "Mật khẩu mới phải khác mật khẩu hiện tại.",
         "SIGNATURE_TOO_LONG": "Chữ ký tối đa 200 ký tự.",
         "SIGNATURE_INVALID_FORMAT": "Chữ ký không được chứa thẻ HTML.",
         "FORUM_POST_NOT_FOUND": "Không tìm thấy bài viết.",

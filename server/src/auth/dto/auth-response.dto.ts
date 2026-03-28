@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string;
   avatar: string | null;
   signature: string | null;
+  elo: number;
 }
 
 export interface AuthResponse {

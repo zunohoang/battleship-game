@@ -10,6 +10,7 @@ export class RelationalUserMapper {
         passwordHash: entity.passwordHash,
         avatar: entity.avatar,
         signature: entity.signature,
+        elo: entity.elo ?? undefined,
       },
       entity.id,
     );
@@ -28,6 +29,7 @@ export class RelationalUserMapper {
     entity.passwordHash = domainUser.passwordHash;
     entity.avatar = domainUser.avatar;
     entity.signature = domainUser.signature;
+    entity.elo = domainUser.elo;
     entity.refreshTokenHash = domainUser.refreshTokenHash;
     entity.refreshTokenAbsoluteExpiry = domainUser.refreshTokenAbsoluteExpiry;
 

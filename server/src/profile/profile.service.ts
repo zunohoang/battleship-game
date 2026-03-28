@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -6,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '../auth/domain/entities/user';
+import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { IUserRepository } from '../auth/infrastructure/persistence/user.repository';
 import { USER_REPOSITORY } from '../auth/infrastructure/persistence/user.repository';
@@ -60,15 +62,52 @@ export class ProfileService {
       user.updateSignature(dto.signature);
     }
 
-    if (dto.password) {
-      const newHash = await this.passwordHasher.hash(dto.password);
-      user.updatePasswordHash(newHash);
-      user.clearRefreshToken();
-    }
-
     if (avatarUrl) {
       user.updateAvatar(avatarUrl);
     }
+
+    const savedUser = await this.userRepository.save(user);
+    const token = await this.buildToken(savedUser);
+
+    return {
+      accessToken: token,
+      user: savedUser.toPlainObject(),
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<AuthResponse> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException({
+        error: 'USER_NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    const currentOk = await this.passwordHasher.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+    if (!currentOk) {
+      throw new UnauthorizedException({
+        error: 'INVALID_CURRENT_PASSWORD',
+        message: 'Current password is incorrect',
+      });
+    }
+
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException({
+        error: 'NEW_PASSWORD_SAME_AS_OLD',
+        message: 'New password must be different from the current password',
+      });
+    }
+
+    const newHash = await this.passwordHasher.hash(dto.newPassword);
+    user.updatePasswordHash(newHash);
+    user.clearRefreshToken();
 
     const savedUser = await this.userRepository.save(user);
     const token = await this.buildToken(savedUser);
@@ -93,6 +132,7 @@ export class ProfileService {
       username: user.username,
       avatar: user.avatar,
       signature: user.signature,
+      elo: user.elo,
     };
   }
 

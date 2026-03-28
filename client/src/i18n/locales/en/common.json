@@ -14,6 +14,7 @@
             "botVsBot": "Bot vs bot",
             "settings": "Settings",
             "community": "Community",
+            "leaderboard": "Leaderboard",
             "login": "Login",
             "register": "Register"
         },
@@ -76,6 +77,60 @@
             "viewDetails": "Tap for battle statistics"
         }
     },
+    "leaderboard": {
+        "backHome": "Back to command deck",
+        "eyebrow": "Fleet standings",
+        "title": "Commander leaderboard",
+        "subtitle": "Ranked by competitive ELO from online PvP. Higher is stronger.",
+        "loading": "Loading standings…",
+        "error": "Could not load the leaderboard.",
+        "empty": "No commanders yet.",
+        "colRank": "Rank",
+        "colCommander": "Commander",
+        "colTier": "Rank tier",
+        "colElo": "ELO"
+    },
+    "rank": {
+        "referenceTitle": "Rank tiers & ELO bands",
+        "eloRulesTitle": "How does your ELO change?",
+        "eloRulesIntro": "After every online PvP match, both players’ ELO is updated. Points are not fixed (+/- the same every time): they depend on win or loss and on how strong your opponent was compared to you.",
+        "eloRulePlain1": "If you are much stronger than your opponent and you win, you gain only a small amount (the system treats that outcome as likely).",
+        "eloRulePlain2": "If you are much stronger but you lose, you lose a lot of rating (a big upset against you).",
+        "eloRulePlain3": "If you beat someone stronger or evenly matched, you usually gain more — a reward for a harder win.",
+        "eloRulesKTitle": "K-factor — how big each swing is",
+        "eloRulesKIntro": "New players and top players do not move at the same speed from one match:",
+        "eloRuleKLow": "Below 1000 ELO: K = 40 — ratings move faster (friendly for beginners).",
+        "eloRuleKMid": "From 1000 through 1599 ELO: K = 25 — moderate, steady changes.",
+        "eloRuleKHigh": "1600 ELO and above: K = 15 — slower changes; climbing needs consistent wins.",
+        "eloRulesFormulaNote": "Technical detail: we use the standard Elo model — an expected win chance from the rating gap (400-point scale), then new rating = old rating + K × (actual result 1 win / 0 loss minus that expectation).",
+        "tiers": {
+            "apprenticeSailor": {
+                "name": "Apprentice Sailor",
+                "eloBand": "0 – 999 ELO",
+                "blurb": "Starting tier for every new account."
+            },
+            "combatNavigator": {
+                "name": "Combat Navigator",
+                "eloBand": "1000 – 1299 ELO",
+                "blurb": "Solid grasp of the core rules."
+            },
+            "eliteCaptain": {
+                "name": "Elite Captain",
+                "eloBand": "1300 – 1599 ELO",
+                "blurb": "Uses diagonal and parity hunting patterns."
+            },
+            "fleetAdmiral": {
+                "name": "Fleet Admiral",
+                "eloBand": "1600 – 1999 ELO",
+                "blurb": "Creative setups and sharp reads on the opponent."
+            },
+            "oceanConqueror": {
+                "name": "Ocean Conqueror",
+                "eloBand": "2000+ ELO",
+                "blurb": "Server apex — probability and spacing under pressure."
+            }
+        }
+    },
     "welcome": {
         "subtitle": "Enter the fierce Naval warfares",
         "title": "Welcome Commander",
@@ -115,6 +170,12 @@
             "changeAvatar": "Change avatar",
             "logout": "Logout",
             "submitProfile": "Save profile",
+            "openChangePassword": "Change password",
+            "changePasswordTitle": "Change password",
+            "changePasswordCurrent": "Current password",
+            "changePasswordNew": "New password",
+            "changePasswordConfirm": "Confirm new password",
+            "changePasswordSubmit": "Update password",
             "placeholder": {
                 "password": "Set a password",
                 "signature": "Write something about yourself…"
@@ -574,6 +635,9 @@
         "PASSWORD_TOO_SHORT": "Password must be at least 8 characters.",
         "PASSWORD_TOO_LONG": "Password must be at most 72 characters.",
         "PASSWORD_MISMATCH": "Passwords do not match.",
+        "CURRENT_PASSWORD_REQUIRED": "Please enter your current password.",
+        "INVALID_CURRENT_PASSWORD": "Current password is incorrect.",
+        "NEW_PASSWORD_SAME_AS_OLD": "New password must be different from your current password.",
         "SIGNATURE_TOO_LONG": "Signature must be at most 200 characters.",
         "SIGNATURE_INVALID_FORMAT": "Signature must not contain HTML tags.",
         "FORUM_POST_NOT_FOUND": "Post was not found.",

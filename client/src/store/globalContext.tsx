@@ -1,9 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { clearAccessToken, getAccessTokenUserId } from '@/services/authToken'
+import { getUserProfile } from '@/services/authService'
 import { setForceLogoutCallback } from '@/services/interceptors'
 
 const AUTH_USER_STORAGE_KEY = 'auth.user'
@@ -13,6 +22,8 @@ export interface GlobalUser {
   username: string
   avatar: string | null
   signature: string | null
+  /** Competitive rating; optional for legacy persisted sessions. */
+  elo?: number
   isAnonymous: boolean
 }
 
@@ -27,7 +38,7 @@ export const ANONYMOUS_USER: GlobalUser = {
 export interface GlobalContextValue {
   user: GlobalUser | null
   isLoggedIn: boolean
-  setUser: (user: GlobalUser | null) => void
+  setUser: Dispatch<SetStateAction<GlobalUser | null>>
   logout: () => void
 }
 
@@ -39,13 +50,14 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { id, username, avatar, signature, isAnonymous } = candidate
+  const { id, username, avatar, signature, elo, isAnonymous } = candidate
 
   return (
     (typeof id === 'string' || id === null) &&
     typeof username === 'string' &&
     (typeof avatar === 'string' || avatar === null) &&
     (typeof signature === 'string' || signature === null) &&
+    (typeof elo === 'number' || typeof elo === 'undefined') &&
     typeof isAnonymous === 'boolean'
   )
 }
@@ -71,11 +83,13 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
     return null
   }
 
+  const eloRaw = candidate.elo
   return {
     id: typeof id === 'string' ? id : getAccessTokenUserId(),
     username,
     avatar,
     signature,
+    elo: typeof eloRaw === 'number' ? eloRaw : undefined,
     isAnonymous: false,
   }
 }
@@ -115,6 +129,28 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveStoredUser(user)
   }, [user])
+
+  useEffect(() => {
+    if (!user?.id || user.isAnonymous || typeof user.elo === 'number') {
+      return
+    }
+
+    let cancelled = false
+    void getUserProfile(user.id).then((profile) => {
+      if (cancelled) {
+        return
+      }
+      setUserState((prev) =>
+        prev && !prev.isAnonymous && prev.id === user.id
+          ? { ...prev, elo: profile.elo }
+          : prev,
+      )
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, user?.isAnonymous, user?.elo])
 
   const logout = useCallback(() => {
     clearAccessToken()

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
+import { getUserProfile } from '@/services/authService';
 import type {
   GameConfig,
   GamePhase,
@@ -71,9 +72,10 @@ export function useOnlineGamePlaySession({
   enabled = true,
 }: UseOnlineGamePlaySessionParams): UseOnlineGamePlaySessionResult {
   const { t } = useTranslation();
-  const { user } = useGlobalContext();
+  const { user, setUser } = useGlobalContext();
   const currentUserId = user?.id ?? null;
   const [turnNowMs, setTurnNowMs] = useState<number | null>(null);
+  const eloSyncedForMatchRef = useRef<string | null>(null);
 
   const {
     room,
@@ -106,6 +108,40 @@ export function useOnlineGamePlaySession({
       window.clearInterval(intervalId);
     };
   }, [enabled, refresh]);
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      !currentUserId ||
+      !user ||
+      user.isAnonymous ||
+      match?.status !== 'finished' ||
+      !match?.id
+    ) {
+      return;
+    }
+
+    if (eloSyncedForMatchRef.current === match.id) {
+      return;
+    }
+
+    eloSyncedForMatchRef.current = match.id;
+
+    void getUserProfile(currentUserId).then((profile) => {
+      setUser((prev) =>
+        prev && !prev.isAnonymous && prev.id === currentUserId
+          ? { ...prev, elo: profile.elo }
+          : prev,
+      );
+    });
+  }, [
+    currentUserId,
+    enabled,
+    match?.id,
+    match?.status,
+    setUser,
+    user,
+  ]);
 
   useEffect(() => {
     if (!enabled || !match || match.status !== 'in_progress') {

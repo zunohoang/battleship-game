@@ -70,6 +70,9 @@ export class MatchEntity {
   @Column({ type: 'jsonb', default: {} })
   rematchVotes: Record<string, boolean>;
 
+  @Column({ type: 'boolean', default: false })
+  eloSettled!: boolean;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 

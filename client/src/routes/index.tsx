@@ -9,6 +9,7 @@ import { GameSpectatePage } from '@/pages/game-spectate';
 import { WaitingRoomPage } from '@/pages/waiting-room';
 import { ForumPostLegacyRedirect } from '@/components/forum/ForumPostLegacyRedirect';
 import { ForumFeedPage } from '@/pages/forum-feed';
+import { LeaderboardPage } from '@/pages/leaderboard';
 import { GameSetupProvider } from '@/store/gameSetupContext';
 import i18n from '@/i18n';
 
@@ -24,6 +25,10 @@ export const appRouter = createBrowserRouter([
   {
     path: '/forum',
     element: <ForumFeedPage />,
+  },
+  {
+    path: '/leaderboard',
+    element: <LeaderboardPage />,
   },
   {
     path: '/forum/posts/:postId',

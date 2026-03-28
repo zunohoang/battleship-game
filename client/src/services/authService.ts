@@ -20,6 +20,7 @@ export interface RegisterResponse {
     email: string
     avatar: string | null
     signature: string | null
+    elo: number
   }
 }
 
@@ -31,14 +32,19 @@ export interface LoginResponse {
     email: string
     avatar: string | null
     signature: string | null
+    elo: number
   }
 }
 
 export interface UpdateProfileRequest {
   username: string
   signature: string
-  password?: string
   avatarFile?: File | null
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
 }
 
 export interface UpdateProfileResponse {
@@ -49,6 +55,7 @@ export interface UpdateProfileResponse {
     email: string
     avatar: string | null
     signature: string | null
+    elo: number
   }
 }
 
@@ -57,6 +64,7 @@ export interface UserProfileResponse {
   username: string
   avatar: string | null
   signature: string | null
+  elo: number
 }
 
 export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
@@ -84,10 +92,6 @@ export async function updateProfile(
   formData.append('username', payload.username)
   formData.append('signature', payload.signature)
 
-  if (payload.password) {
-    formData.append('password', payload.password)
-  }
-
   if (payload.avatarFile) {
     formData.append('avatar', payload.avatarFile)
   }
@@ -97,6 +101,16 @@ export async function updateProfile(
     formData,
   )
 
+  return response.data
+}
+
+export async function changePassword(
+  payload: ChangePasswordRequest,
+): Promise<UpdateProfileResponse> {
+  const response = await apiClient.patch<UpdateProfileResponse>(
+    '/users/me/password',
+    payload,
+  )
   return response.data
 }
 

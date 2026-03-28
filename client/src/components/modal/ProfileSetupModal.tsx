@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
+import { ChangePasswordModal } from '@/components/modal/ChangePasswordModal'
 import { Modal } from '@/components/ui/Modal'
+import type { UpdateProfileResponse } from '@/services/authService'
 import { validateProfileInput } from '@/utils/authValidation'
 
 export type ProfileSetupPayload = {
   avatarFile: File | null
   username: string
   signature: string
-  password: string
 }
 
 type ProfileSetupModalProps = {
@@ -16,6 +17,7 @@ type ProfileSetupModalProps = {
   onClose: () => void
   onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>
   onLogout: () => Promise<void>
+  onUserUpdated?: (user: UpdateProfileResponse['user']) => void
   username: string
   signature?: string | null
   avatar?: string | null
@@ -26,6 +28,7 @@ export function ProfileSetupModal({
   onClose,
   onSubmit,
   onLogout,
+  onUserUpdated,
   username: initialUsername,
   signature: initialSignature,
   avatar: initialAvatar,
@@ -37,17 +40,16 @@ export function ProfileSetupModal({
   const [avatarSrc, setAvatarSrc] = useState(initialAvatar?.trim() || null)
   const [username, setUsername] = useState(initialUsername)
   const [signature, setSignature] = useState(initialSignature ?? '')
-  const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false)
+
   const [showPreview, setShowPreview] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
 
   const isChanged =
     username !== initialUsername ||
     signature !== (initialSignature ?? '') ||
-    avatarFile !== null ||
-    password !== ''
+    avatarFile !== null
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -88,7 +90,7 @@ export function ProfileSetupModal({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const validation = validateProfileInput(username, signature, password)
+    const validation = validateProfileInput(username, signature)
 
     if (validation.errorCode) {
       setErrorMessage(t(`errors.${validation.errorCode}`))
@@ -99,7 +101,6 @@ export function ProfileSetupModal({
       avatarFile,
       username: validation.username,
       signature: validation.signature,
-      password: validation.password,
     }
 
     const submitError = await onSubmit(payload)
@@ -196,23 +197,22 @@ export function ProfileSetupModal({
             />
           </label>
 
-          {/* Password */}
-          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            {t('welcome.modals.password')}
-            <input
-              type='password'
-              autoComplete='new-password'
-              placeholder={t('welcome.modals.placeholder.password')}
-              value={password}
-              onChange={(e) => {
+          <div className='grid gap-2'>
+            <span className='text-sm font-semibold text-(--text-muted)'>
+              {t('welcome.modals.password')}
+            </span>
+            <Button
+              type='button'
+              variant='default'
+              className='h-11 justify-center'
+              onClick={() => {
                 setErrorMessage(null)
-                setPassword(e.target.value)
+                setChangePasswordOpen(true)
               }}
-              minLength={8}
-              maxLength={72}
-              className={inputClassName}
-            />
-          </label>
+            >
+              {t('welcome.modals.openChangePassword')}
+            </Button>
+          </div>
 
           {errorMessage && (
             <p className='rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]'>
@@ -238,6 +238,14 @@ export function ProfileSetupModal({
 
         </form>
       </Modal>
+
+      <ChangePasswordModal
+        isOpen={changePasswordOpen}
+        onClose={() => setChangePasswordOpen(false)}
+        onSuccess={(user) => {
+          onUserUpdated?.(user)
+        }}
+      />
 
       {/* Lightbox */}
       {showPreview && (
