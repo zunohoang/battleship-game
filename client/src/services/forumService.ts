@@ -4,7 +4,9 @@ import type { ForumComment, ForumPost, ForumPostsResponse } from '@/types/forum'
 export async function listPosts(params: {
   page?: number;
   limit?: number;
-  sort?: 'newest' | 'top';
+  sort?: 'newest' | 'top' | 'comments';
+  /** Server: title/content ILIKE match */
+  q?: string;
 }): Promise<ForumPostsResponse> {
   const response = await apiClient.get<ForumPostsResponse>('/forum/posts', {
     params,
@@ -23,6 +25,21 @@ export async function createPost(payload: {
 }): Promise<ForumPost> {
   const response = await apiClient.post<ForumPost>('/forum/posts', payload);
   return response.data;
+}
+
+export async function updatePost(
+  postId: string,
+  payload: { title: string; content: string },
+): Promise<ForumPost> {
+  const response = await apiClient.patch<ForumPost>(
+    `/forum/posts/${postId}`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function archivePost(postId: string): Promise<void> {
+  await apiClient.delete(`/forum/posts/${postId}`);
 }
 
 export async function listComments(postId: string): Promise<ForumComment[]> {

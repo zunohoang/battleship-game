@@ -72,17 +72,32 @@ export class ForumService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const sort = query.sort ?? 'newest';
+    const search = query.q?.trim();
     const skip = (page - 1) * limit;
 
-    const [posts, total] = await this.postRepo.findAndCount({
-      where: { status: 'published' },
-      order:
-        sort === 'top'
-          ? { voteScore: 'DESC', createdAt: 'DESC' }
-          : { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const qb = this.postRepo
+      .createQueryBuilder('post')
+      .where('post.status = :status', { status: 'published' });
+
+    if (search) {
+      qb.andWhere('(post.title ILIKE :search OR post.content ILIKE :search)', {
+        search: `%${search}%`,
+      });
+    }
+
+    if (sort === 'top') {
+      qb.orderBy('post.voteScore', 'DESC').addOrderBy('post.createdAt', 'DESC');
+    } else if (sort === 'comments') {
+      qb
+        .orderBy('post.commentCount', 'DESC')
+        .addOrderBy('post.createdAt', 'DESC');
+    } else {
+      qb.orderBy('post.createdAt', 'DESC');
+    }
+
+    qb.skip(skip).take(limit);
+
+    const [posts, total] = await qb.getManyAndCount();
 
     return {
       page,

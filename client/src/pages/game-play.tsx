@@ -195,10 +195,11 @@ function GamePlayScreen({
 }) {
   const { t } = useTranslation();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [statsDisplayState, setStatsDisplayState] = useState<StatsDisplayState>('hidden');
+  const [statsDisplayState, setStatsDisplayState] =
+    useState<StatsDisplayState>('hidden');
   const [chatDraft, setChatDraft] = useState('');
-  const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(
-    () => Boolean(model?.actions.encryptedChannelMaskable),
+  const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(() =>
+    Boolean(model?.actions.encryptedChannelMaskable),
   );
 
   const phase = model?.state.phase ?? 'playing';
@@ -431,21 +432,23 @@ function GamePlayScreen({
         />
 
         {/* Bottom panel */}
-        <div className='border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
-          <div className='flex flex-wrap items-center gap-2 md:flex-nowrap'>
+        <div className="border-t border-(--border-main) flex flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-2 md:flex-nowrap">
             {/* Chat input */}
             {missionLog.onSendChatMessage ? (
-              <div className='flex min-w-0 items-center gap-2 md:ml-2 md:flex-1'>
+              <div className="flex min-w-0 items-center gap-2 md:ml-2 md:flex-1">
                 <button
-                  type='button'
+                  type="button"
                   onClick={handleSendChat}
-                  disabled={missionLog.chatDisabled || chatDraft.trim().length === 0}
-                  className='cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
+                  disabled={
+                    missionLog.chatDisabled || chatDraft.trim().length === 0
+                  }
+                  className="cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {t('gameBattle.chatSend')}
                 </button>
                 <input
-                  type='text'
+                  type="text"
                   value={chatDraft}
                   onChange={(event) => setChatDraft(event.target.value)}
                   onKeyDown={(event) => {
@@ -457,7 +460,7 @@ function GamePlayScreen({
                   placeholder={t('gameBattle.chatInputPlaceholder')}
                   disabled={missionLog.chatDisabled}
                   maxLength={280}
-                  className='w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60'
+                  className="w-64 flex-1 rounded-sm border border-(--border-main) bg-[rgba(4,12,20,0.8)] px-3 py-2 font-mono text-[11px] text-(--text-main) outline-none transition-colors placeholder:text-(--text-muted) focus:border-[rgba(117,235,255,0.72)] disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             ) : null}
@@ -631,11 +634,17 @@ export function GamePlayPage() {
   const resolveOnlineChatAuthorLabel = useCallback(
     (senderId: string) => {
       if (senderId === currentUserId) {
-        return currentPlayerProfile?.username?.trim() || user?.username?.trim() || t('gameBattle.chatYouLabel');
+        return (
+          currentPlayerProfile?.username?.trim() ||
+          user?.username?.trim() ||
+          t('gameBattle.chatYouLabel')
+        );
       }
 
       if (senderId === onlineOpponentId) {
-        return opponentProfile?.username?.trim() || t('gameBattle.chatOpponentLabel');
+        return (
+          opponentProfile?.username?.trim() || t('gameBattle.chatOpponentLabel')
+        );
       }
 
       return t('gameBattle.chatOpponentLabel');

@@ -31,7 +31,8 @@ const validationMessages: Record<string, string> = {
   FORUM_COMMENT_REQUIRED: 'Comment content is required',
   FORUM_COMMENT_TOO_LONG: 'Comment content must be at most 1200 characters',
   FORUM_VOTE_INVALID: 'Vote value must be either -1 or 1',
-  FORUM_SORT_INVALID: 'Sort must be newest or top',
+  FORUM_SORT_INVALID: 'Sort must be newest, top, or comments',
+  FORUM_SEARCH_TOO_LONG: 'Search query is too long',
   PAGINATION_INVALID: 'Pagination parameters are invalid',
 };
 

@@ -488,9 +488,18 @@
         "feed": {
             "eyebrow": "Community Forum",
             "title": "Fleet Community",
-            "sortNewest": "Newest",
-            "sortTop": "Top",
+            "backLabel": "Back",
+            "searchEyebrow": "Search",
+            "searchInputPlaceholder": "Search posts by title or content…",
+            "filtersTitle": "Sort posts",
+            "sortNewest": "Recent",
+            "sortTop": "Top votes",
+            "sortComments": "Most comments",
             "createPost": "Create post",
+            "createPostCollapsedHint": "Write something for the fleet…",
+            "openFullscreen": "Open fullscreen composer",
+            "collapseComposer": "Minimize",
+            "closeFullscreen": "Close",
             "titlePlaceholder": "Post title",
             "contentPlaceholder": "Share your thoughts with the fleet...",
             "loginStateReady": "You are connected. Publish when ready.",
@@ -498,6 +507,7 @@
             "creating": "Publishing...",
             "publish": "Publish",
             "loading": "Loading forum data...",
+            "loadingMore": "Loading more posts…",
             "empty": "No posts yet. Be the first to open a thread.",
             "comments": "comments",
             "upvote": "Upvote",
@@ -505,14 +515,27 @@
             "score": "Score",
             "page": "Page",
             "prev": "Previous",
-            "next": "Next"
+            "next": "Next",
+            "searchSubmit": "Search",
+            "editPost": "Edit",
+            "deletePost": "Delete",
+            "deletePostDialogTitle": "Delete this post?",
+            "deletePostConfirm": "This post will be removed from the forum. You cannot undo this action.",
+            "postOptionsAria": "Post options"
         },
         "post": {
+            "modalTitle": "Post",
             "back": "Back to forum",
             "addComment": "Add comment",
+            "commentCollapsedHint": "Tap to add a comment…",
+            "commentsHeading": "Discussion",
             "commentPlaceholder": "Write your comment...",
             "submitting": "Sending...",
-            "submitComment": "Send comment"
+            "submitComment": "Send comment",
+            "editTitle": "Edit post",
+            "editSave": "Save changes",
+            "editSaving": "Saving…",
+            "editCancel": "Cancel"
         }
     },
     "errors": {
@@ -550,6 +573,7 @@
         "FORUM_COMMENT_TOO_LONG": "Comment content must be at most 1200 characters.",
         "FORUM_VOTE_INVALID": "Vote must be either upvote or downvote.",
         "FORUM_SORT_INVALID": "Invalid sort option.",
+        "FORUM_SEARCH_TOO_LONG": "Search text is too long.",
         "PAGINATION_INVALID": "Invalid pagination parameters.",
         "USER_NOT_FOUND": "User not found.",
         "UNKNOWN_ERROR": "Something went wrong. Please try again."

@@ -1,4 +1,6 @@
-export const FORUM_ALLOWED_SORTS = ['newest', 'top'] as const;
+export const FORUM_ALLOWED_SORTS = ['newest', 'top', 'comments'] as const;
+
+export const FORUM_SEARCH_QUERY_MAX_LENGTH = 200;
 
 export const FORUM_POST_TITLE_MAX_LENGTH = 150;
 export const FORUM_POST_CONTENT_MAX_LENGTH = 5000;

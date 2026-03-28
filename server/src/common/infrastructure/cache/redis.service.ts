@@ -4,7 +4,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Redis from 'ioredis/built/Redis';
+import Redis from 'ioredis';
 import { AppLoggerService } from '../logger/app-logger.service';
 
 @Injectable()

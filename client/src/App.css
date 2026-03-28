@@ -588,6 +588,26 @@
         display: none;
     }
 
+    /* Forum create-post fullscreen: solid panel (gradients via Tailwind theme vars can look invisible) */
+    .forum-composer-fullscreen-backdrop {
+        background: var(--modal-overlay);
+    }
+
+    .forum-composer-fullscreen-panel {
+        background-color: var(--bg-card-strong);
+        background-image: var(--panel-strong-bg);
+        border: 1px solid var(--border-strong);
+        box-shadow:
+            var(--hud-shadow-strong),
+            0 22px 48px color-mix(in srgb, var(--text-main) 12%, transparent);
+    }
+
+    html.dark .forum-composer-fullscreen-panel {
+        box-shadow:
+            var(--hud-shadow-strong),
+            0 24px 56px rgba(0, 0, 0, 0.55);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
