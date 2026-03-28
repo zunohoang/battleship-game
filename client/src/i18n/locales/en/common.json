@@ -516,7 +516,12 @@
             "page": "Page",
             "prev": "Previous",
             "next": "Next",
-            "searchSubmit": "Search"
+            "searchSubmit": "Search",
+            "editPost": "Edit",
+            "deletePost": "Delete",
+            "deletePostDialogTitle": "Delete this post?",
+            "deletePostConfirm": "This post will be removed from the forum. You cannot undo this action.",
+            "postOptionsAria": "Post options"
         },
         "post": {
             "modalTitle": "Post",
@@ -526,7 +531,11 @@
             "commentsHeading": "Discussion",
             "commentPlaceholder": "Write your comment...",
             "submitting": "Sending...",
-            "submitComment": "Send comment"
+            "submitComment": "Send comment",
+            "editTitle": "Edit post",
+            "editSave": "Save changes",
+            "editSaving": "Saving…",
+            "editCancel": "Cancel"
         }
     },
     "errors": {

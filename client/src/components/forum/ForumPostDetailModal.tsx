@@ -5,13 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ForumRedditComment } from '@/components/forum/ForumComment';
+import { ForumPostActionsMenu } from '@/components/forum/ForumPostActionsMenu';
 import { ForumVotePill } from '@/components/forum/ForumVotePill';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import {
+  archivePost,
   createComment,
   getPost,
   listComments,
+  updatePost,
   voteComment,
   votePost,
 } from '@/services/forumService';
@@ -27,6 +31,9 @@ type ForumPostDetailModalProps = {
   onClose: () => void;
   onPostVoteUpdated?: (postId: string, voteScore: number) => void;
   onPostCommentCountDelta?: (postId: string, delta: number) => void;
+  viewerUserId: string | null;
+  onPostUpdated?: (post: ForumPost) => void;
+  onPostDeleted?: (postId: string) => void;
 };
 
 export function ForumPostDetailModal({
@@ -34,6 +41,9 @@ export function ForumPostDetailModal({
   onClose,
   onPostVoteUpdated,
   onPostCommentCountDelta,
+  viewerUserId,
+  onPostUpdated,
+  onPostDeleted,
 }: ForumPostDetailModalProps) {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
@@ -45,6 +55,11 @@ export function ForumPostDetailModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [isPostEditing, setIsPostEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [savingPost, setSavingPost] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const labels = useMemo(
     () => ({
@@ -82,10 +97,68 @@ export function ForumPostDetailModal({
       setComments([]);
       setCommentContent('');
       setErrorCode(null);
+      setIsPostEditing(false);
       return;
     }
+    setIsPostEditing(false);
     void loadDetail();
   }, [loadDetail, postId]);
+
+  const beginEditPost = useCallback(() => {
+    if (!post) {
+      return;
+    }
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setIsPostEditing(true);
+    setErrorCode(null);
+  }, [post]);
+
+  const cancelEditPost = useCallback(() => {
+    setIsPostEditing(false);
+  }, []);
+
+  const saveEditPost = useCallback(async () => {
+    if (!postId || !post) {
+      return;
+    }
+    setSavingPost(true);
+    setErrorCode(null);
+    try {
+      const updated = await updatePost(postId, {
+        title: editTitle.trim(),
+        content: editContent,
+      });
+      setPost(updated);
+      onPostUpdated?.(updated);
+      setIsPostEditing(false);
+    } catch (error) {
+      setErrorCode(getApiErrorCode(error));
+    } finally {
+      setSavingPost(false);
+    }
+  }, [editContent, editTitle, onPostUpdated, post, postId]);
+
+  const executeDeletePost = useCallback(async () => {
+    if (!postId) {
+      return;
+    }
+    setErrorCode(null);
+    try {
+      await archivePost(postId);
+      setDeleteConfirmOpen(false);
+      onPostDeleted?.(postId);
+      onClose();
+    } catch (error) {
+      setErrorCode(getApiErrorCode(error));
+    }
+  }, [onClose, onPostDeleted, postId]);
+
+  useEffect(() => {
+    if (!postId) {
+      setDeleteConfirmOpen(false);
+    }
+  }, [postId]);
 
   useEffect(() => {
     if (!postId) {
@@ -188,6 +261,7 @@ export function ForumPostDetailModal({
     : undefined;
 
   return createPortal(
+    <>
     <div
       className='forum-composer-fullscreen-backdrop fixed inset-0 z-[210] flex items-stretch justify-center p-0 sm:p-4 sm:pt-5'
       role='dialog'
@@ -202,18 +276,29 @@ export function ForumPostDetailModal({
         <div className='flex shrink-0 items-center justify-between gap-3 border-b border-(--border-main) bg-(--bg-card-soft) px-4 py-3 sm:px-5'>
           <h2
             id='forum-post-modal-title'
-            className='min-w-0 truncate font-mono text-xs font-bold tracking-[0.16em] text-(--text-muted) uppercase'
+            className='min-w-0 flex-1 truncate font-mono text-xs font-bold tracking-[0.16em] text-(--text-muted) uppercase'
           >
             {t('forum.post.modalTitle')}
           </h2>
-          <Button
-            type='button'
-            variant='default'
-            className='!flex !h-10 !min-h-10 !w-10 !min-w-10 shrink-0 items-center justify-center p-0'
-            onClick={onClose}
-          >
-            <X className='h-5 w-5' aria-hidden />
-          </Button>
+          <div className='flex shrink-0 items-center gap-1'>
+            {!isLoading && post && viewerUserId === post.author.id ? (
+              <ForumPostActionsMenu
+                editLabel={t('forum.feed.editPost')}
+                deleteLabel={t('forum.feed.deletePost')}
+                optionsAriaLabel={t('forum.feed.postOptionsAria')}
+                onEdit={beginEditPost}
+                onDelete={() => setDeleteConfirmOpen(true)}
+              />
+            ) : null}
+            <Button
+              type='button'
+              variant='default'
+              className='!flex !h-10 !min-h-10 !w-10 !min-w-10 shrink-0 items-center justify-center p-0'
+              onClick={onClose}
+            >
+              <X className='h-5 w-5' aria-hidden />
+            </Button>
+          </div>
         </div>
 
         <div className='themed-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto'>
@@ -228,32 +313,79 @@ export function ForumPostDetailModal({
               <p className='text-[11px] font-semibold tracking-wide text-(--text-muted) uppercase'>
                 {post.author.username} · {new Date(post.createdAt).toLocaleString()}
               </p>
-              <h3 className='mt-2 text-xl font-black uppercase tracking-[0.06em] text-(--text-main) sm:text-2xl'>
-                {post.title}
-              </h3>
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt=''
-                  className='mt-3 max-h-[min(50vh,420px)] w-full rounded-md border border-(--border-main) object-contain'
-                />
-              ) : null}
-              <p className='mt-3 whitespace-pre-wrap text-sm leading-relaxed text-(--text-main)'>
-                {postBodyText ?? ''}
-              </p>
-              <ForumVotePill
-                voteScore={post.voteScore}
-                upvoteLabel={labels.upvote}
-                downvoteLabel={labels.downvote}
-                scoreLabel={labels.score}
-                onVote={onVotePost}
-                commentCount={post.commentCount}
-                commentsShortLabel={labels.comments}
-                onOpenPost={() => {
-                  const el = document.getElementById('forum-post-comments-heading');
-                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-              />
+              {isPostEditing ? (
+                <div className='mt-3 grid gap-3'>
+                  <input
+                    className='ui-input h-11 w-full rounded-sm px-3'
+                    value={editTitle}
+                    onChange={(event) => setEditTitle(event.target.value)}
+                    disabled={savingPost}
+                    required
+                    placeholder={t('forum.feed.titlePlaceholder')}
+                  />
+                  <textarea
+                    className='ui-input themed-scrollbar min-h-40 w-full rounded-sm px-3 py-2 sm:min-h-48'
+                    value={editContent}
+                    onChange={(event) => setEditContent(event.target.value)}
+                    disabled={savingPost}
+                    required
+                    placeholder={t('forum.feed.contentPlaceholder')}
+                  />
+                  <div className='flex flex-wrap gap-2'>
+                    <Button
+                      type='button'
+                      variant='default'
+                      className='h-10 w-auto px-5'
+                      disabled={savingPost}
+                      onClick={cancelEditPost}
+                    >
+                      {t('forum.post.editCancel')}
+                    </Button>
+                    <Button
+                      type='button'
+                      variant='primary'
+                      className='h-10 w-auto min-w-[8rem] px-5'
+                      disabled={savingPost}
+                      onClick={() => void saveEditPost()}
+                    >
+                      {savingPost
+                        ? t('forum.post.editSaving')
+                        : t('forum.post.editSave')}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h3 className='mt-2 text-xl font-black uppercase tracking-[0.06em] text-(--text-main) sm:text-2xl'>
+                    {post.title}
+                  </h3>
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt=''
+                      className='mt-3 max-h-[min(50vh,420px)] w-full rounded-md border border-(--border-main) object-contain'
+                    />
+                  ) : null}
+                  <p className='mt-3 whitespace-pre-wrap text-sm leading-relaxed text-(--text-main)'>
+                    {postBodyText ?? ''}
+                  </p>
+                  <ForumVotePill
+                    voteScore={post.voteScore}
+                    upvoteLabel={labels.upvote}
+                    downvoteLabel={labels.downvote}
+                    scoreLabel={labels.score}
+                    onVote={onVotePost}
+                    commentCount={post.commentCount}
+                    commentsShortLabel={labels.comments}
+                    onOpenPost={() => {
+                      const el = document.getElementById(
+                        'forum-post-comments-heading',
+                      );
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                  />
+                </>
+              )}
             </div>
           ) : null}
 
@@ -316,7 +448,19 @@ export function ForumPostDetailModal({
           </div>
         </div>
       </div>
-    </div>,
+    </div>
+
+    <ConfirmDialog
+      isOpen={deleteConfirmOpen}
+      onClose={() => setDeleteConfirmOpen(false)}
+      title={t('forum.feed.deletePostDialogTitle')}
+      message={t('forum.feed.deletePostConfirm')}
+      cancelLabel={t('forum.post.editCancel')}
+      confirmLabel={t('forum.feed.deletePost')}
+      confirmVariant='danger'
+      onConfirm={executeDeletePost}
+    />
+    </>,
     document.body,
   );
 }

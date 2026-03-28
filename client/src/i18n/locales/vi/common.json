@@ -516,7 +516,12 @@
             "page": "Trang",
             "prev": "Trước",
             "next": "Sau",
-            "searchSubmit": "Tìm"
+            "searchSubmit": "Tìm",
+            "editPost": "Sửa",
+            "deletePost": "Xóa",
+            "deletePostDialogTitle": "Xóa bài viết này?",
+            "deletePostConfirm": "Bài sẽ bị gỡ khỏi diễn đàn. Thao tác này không thể hoàn tác.",
+            "postOptionsAria": "Tùy chọn bài viết"
         },
         "post": {
             "modalTitle": "Bài viết",
@@ -526,7 +531,11 @@
             "commentsHeading": "Thảo luận",
             "commentPlaceholder": "Nhập bình luận của bạn...",
             "submitting": "Đang gửi...",
-            "submitComment": "Gửi bình luận"
+            "submitComment": "Gửi bình luận",
+            "editTitle": "Sửa bài viết",
+            "editSave": "Lưu thay đổi",
+            "editSaving": "Đang lưu…",
+            "editCancel": "Hủy"
         }
     },
     "errors": {

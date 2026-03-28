@@ -4,15 +4,22 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   ForumFeedSidebar,
   type ForumSortMode,
 } from '@/components/forum/ForumFeedSidebar';
 import { ForumCreatePostComposer } from '@/components/forum/ForumCreatePostComposer';
+import { ForumEditPostModal } from '@/components/forum/ForumEditPostModal';
 import { ForumPostDetailModal } from '@/components/forum/ForumPostDetailModal';
 import { ForumPostCard } from '@/components/forum/ForumPostCard';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
-import { createPost, listPosts, votePost } from '@/services/forumService';
+import {
+  archivePost,
+  createPost,
+  listPosts,
+  votePost,
+} from '@/services/forumService';
 import { getApiErrorCode } from '@/services/httpError';
 import type { ForumPost } from '@/types/forum';
 
@@ -23,7 +30,7 @@ export function ForumFeedPage() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isLoggedIn } = useGlobalContext();
+  const { isLoggedIn, user } = useGlobalContext();
 
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [limit] = useState(FORUM_FEED_PAGE_SIZE);
@@ -42,6 +49,10 @@ export function ForumFeedPage() {
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [composerFullscreen, setComposerFullscreen] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
+  const [postToEdit, setPostToEdit] = useState<ForumPost | null>(null);
+  const [postPendingDelete, setPostPendingDelete] = useState<ForumPost | null>(
+    null,
+  );
 
   const postsRef = useRef<ForumPost[]>([]);
   const totalRef = useRef(0);
@@ -93,9 +104,25 @@ export function ForumFeedPage() {
       downvote: t('forum.feed.downvote'),
       score: t('forum.feed.score'),
       comments: t('forum.feed.comments'),
+      editPost: t('forum.feed.editPost'),
+      deletePost: t('forum.feed.deletePost'),
+      postOptionsAria: t('forum.feed.postOptionsAria'),
     }),
     [t],
   );
+
+  const viewerUserId = user?.id ?? null;
+
+  const onPostUpdatedInFeed = useCallback((updated: ForumPost) => {
+    setPosts((previous) =>
+      previous.map((item) => (item.id === updated.id ? updated : item)),
+    );
+  }, []);
+
+  const onPostDeletedFromFeed = useCallback((deletedId: string) => {
+    setPosts((previous) => previous.filter((item) => item.id !== deletedId));
+    setModalPostId((current) => (current === deletedId ? null : current));
+  }, []);
 
   const loadInitial = useCallback(async () => {
     loadMoreLockRef.current = false;
@@ -373,6 +400,11 @@ export function ForumFeedPage() {
                     title={post.title}
                     content={post.content}
                     authorUsername={post.author.username}
+                    authorAvatarUrl={post.author.avatar}
+                    authorId={post.author.id}
+                    viewerUserId={viewerUserId}
+                    onEditPost={() => setPostToEdit(post)}
+                    onDeletePost={() => setPostPendingDelete(post)}
                     createdAtLabel={new Date(post.createdAt).toLocaleString()}
                     commentCount={post.commentCount}
                     voteScore={post.voteScore}
@@ -401,11 +433,44 @@ export function ForumFeedPage() {
         </div>
       </section>
 
+      <ForumEditPostModal
+        post={postToEdit}
+        onClose={() => setPostToEdit(null)}
+        onSaved={onPostUpdatedInFeed}
+      />
+
+      <ConfirmDialog
+        isOpen={postPendingDelete !== null}
+        onClose={() => setPostPendingDelete(null)}
+        title={t('forum.feed.deletePostDialogTitle')}
+        message={t('forum.feed.deletePostConfirm')}
+        cancelLabel={t('forum.post.editCancel')}
+        confirmLabel={t('forum.feed.deletePost')}
+        confirmVariant='danger'
+        onConfirm={async () => {
+          if (!postPendingDelete) {
+            return;
+          }
+          const target = postPendingDelete;
+          setErrorCode(null);
+          try {
+            await archivePost(target.id);
+            onPostDeletedFromFeed(target.id);
+            setPostPendingDelete(null);
+          } catch (error) {
+            setErrorCode(getApiErrorCode(error));
+          }
+        }}
+      />
+
       <ForumPostDetailModal
         postId={modalPostId}
         onClose={() => setModalPostId(null)}
         onPostVoteUpdated={onPostVoteFromModal}
         onPostCommentCountDelta={onPostCommentDeltaFromModal}
+        viewerUserId={viewerUserId}
+        onPostUpdated={onPostUpdatedInFeed}
+        onPostDeleted={onPostDeletedFromFeed}
       />
     </main>
   );

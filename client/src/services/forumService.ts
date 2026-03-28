@@ -27,6 +27,21 @@ export async function createPost(payload: {
   return response.data;
 }
 
+export async function updatePost(
+  postId: string,
+  payload: { title: string; content: string },
+): Promise<ForumPost> {
+  const response = await apiClient.patch<ForumPost>(
+    `/forum/posts/${postId}`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function archivePost(postId: string): Promise<void> {
+  await apiClient.delete(`/forum/posts/${postId}`);
+}
+
 export async function listComments(postId: string): Promise<ForumComment[]> {
   const response = await apiClient.get<ForumComment[]>(
     `/forum/posts/${postId}/comments`,
