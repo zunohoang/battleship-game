@@ -21,9 +21,13 @@ import {
 } from '../auth/infrastructure/security/token.repository';
 import { AuthResponse } from '../auth/dto/auth-response.dto';
 import type { ProfileSummaryDto } from './dto/profile-summary.dto';
+import { existsSync, unlinkSync } from 'node:fs';
+import { basename, join } from 'node:path';
 
 @Injectable()
 export class ProfileService {
+  private readonly uploadDir = join(process.cwd(), 'uploads');
+
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
@@ -63,6 +67,7 @@ export class ProfileService {
     }
 
     if (avatarUrl) {
+      this.deleteLocalAvatarIfExists(user.avatar);
       user.updateAvatar(avatarUrl);
     }
 
@@ -141,5 +146,29 @@ export class ProfileService {
       sub: user.id,
       email: user.email,
     });
+  }
+
+  private deleteLocalAvatarIfExists(avatarUrl: string | null | undefined): void {
+    if (!avatarUrl) {
+      return;
+    }
+
+    const match = avatarUrl.match(/\/uploads\/([^/?#]+)/i);
+    if (!match) {
+      return;
+    }
+
+    const safeFilename = basename(match[1]);
+    const targetPath = join(this.uploadDir, safeFilename);
+
+    if (!existsSync(targetPath)) {
+      return;
+    }
+
+    try {
+      unlinkSync(targetPath);
+    } catch {
+      // Ignore file system deletion issues; profile update should still proceed.
+    }
   }
 }
