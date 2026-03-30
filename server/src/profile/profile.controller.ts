@@ -29,7 +29,6 @@ export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
   @Get(':id/profile')
-  @UseGuards(JwtAuthGuard)
   async getProfile(@Param('id') id: string): Promise<ProfileSummaryDto> {
     return this.profileService.getProfileById(id);
   }
