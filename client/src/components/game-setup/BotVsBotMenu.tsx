@@ -33,16 +33,16 @@ function BotConfigCard({
   const config = settings[botKey];
 
   return (
-    <div className="ui-subpanel rounded-sm px-4 py-3">
-      <p className="ui-panel-title">{title}</p>
+    <div className='ui-subpanel rounded-sm px-4 py-3'>
+      <p className='ui-panel-title'>{title}</p>
 
-      <div className="mt-3">
-        <p className="ui-data-label mb-2">Difficulty</p>
-        <div className="grid grid-cols-3 gap-1">
+      <div className='mt-3'>
+        <p className='ui-data-label mb-2'>Difficulty</p>
+        <div className='grid grid-cols-3 gap-1'>
           {DIFFICULTIES.map((difficulty) => (
             <button
               key={`${botKey}-${difficulty}`}
-              type="button"
+              type='button'
               onClick={() =>
                 onChange({
                   ...settings,
@@ -64,13 +64,13 @@ function BotConfigCard({
         </div>
       </div>
 
-      <div className="mt-3">
-        <p className="ui-data-label mb-2">Placement mode</p>
-        <div className="grid grid-cols-2 gap-1">
+      <div className='mt-3'>
+        <p className='ui-data-label mb-2'>Placement mode</p>
+        <div className='grid grid-cols-2 gap-1'>
           {PLACEMENT_MODES.map((placementMode) => (
             <button
               key={`${botKey}-${placementMode}`}
-              type="button"
+              type='button'
               onClick={() =>
                 onChange({
                   ...settings,
@@ -92,13 +92,13 @@ function BotConfigCard({
         </div>
       </div>
 
-      <div className="mt-3">
-        <p className="ui-data-label mb-2">Ship placement</p>
-        <div className="grid grid-cols-2 gap-1">
+      <div className='mt-3'>
+        <p className='ui-data-label mb-2'>Ship placement</p>
+        <div className='grid grid-cols-2 gap-1'>
           {PLACEMENT_STRATEGIES.map((placementStrategy) => (
             <button
               key={`${botKey}-${placementStrategy}`}
-              type="button"
+              type='button'
               onClick={() =>
                 onChange({
                   ...settings,
@@ -134,11 +134,11 @@ export function BotVsBotMenu({
     (settings.botB.placementMode ?? 'auto') === 'manual';
 
   return (
-    <div className="ui-panel ui-panel-strong rounded-md p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className='ui-panel ui-panel-strong rounded-md p-4'>
+      <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
         <div>
-          <p className="ui-panel-title">Bot vs Bot Configuration</p>
-          <p className="mt-1 text-sm text-(--text-muted)">
+          <p className='ui-panel-title'>Bot vs Bot Configuration</p>
+          <p className='mt-1 text-sm text-(--text-muted)'>
             Choose difficulty and ship placement strategy for each bot.
           </p>
         </div>
@@ -157,35 +157,35 @@ export function BotVsBotMenu({
               },
             })
           }
-          className="h-8 px-3 text-[10px]"
+          className='h-8 px-3 text-[10px]'
         >
           Reset to random
         </Button>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className='grid gap-3 md:grid-cols-2'>
         <BotConfigCard
-          title="BOT A"
+          title='BOT A'
           settings={settings}
-          botKey="botA"
+          botKey='botA'
           onChange={onChange}
         />
         <BotConfigCard
-          title="BOT B"
+          title='BOT B'
           settings={settings}
-          botKey="botB"
+          botKey='botB'
           onChange={onChange}
         />
       </div>
 
       {hasManualBot ? (
-        <div className="ui-subpanel mt-3 rounded-sm px-4 py-3">
-          <p className="ui-data-label mb-2">Manual configuration target</p>
-          <div className="grid grid-cols-2 gap-1 sm:max-w-64">
+        <div className='ui-subpanel mt-3 rounded-sm px-4 py-3'>
+          <p className='ui-data-label mb-2'>Manual configuration target</p>
+          <div className='grid grid-cols-2 gap-1 sm:max-w-64'>
             {(['botA', 'botB'] as const).map((botKey) => (
               <button
                 key={`manual-target-${botKey}`}
-                type="button"
+                type='button'
                 onClick={() => onEditTargetBotChange(botKey)}
                 className={`ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                   editTargetBot === botKey

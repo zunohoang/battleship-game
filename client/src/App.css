@@ -221,7 +221,6 @@
         content: "";
         position: absolute;
         inset: 0;
-        background-image: linear-gradient(180deg, rgba(164, 244, 255, 0.06) 0%, transparent 14%, transparent 86%, rgba(164, 244, 255, 0.05) 100%), repeating-linear-gradient(180deg, rgba(125, 228, 245, 0.08) 0 1px, transparent 1px 4px);
         opacity: 0.65;
         pointer-events: none;
     }

@@ -3,17 +3,23 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GAME_BRAND_NAME } from '@/constants/branding';
+import { images } from '@/assets';
 import { ForgotPasswordModal } from '@/components/modal/ForgotPasswordModal';
 import { LoginModal } from '@/components/modal/LoginModal';
+import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import type { ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
 import { ProfileSetupModal } from '@/components/modal/ProfileSetupModal';
 import { RegisterModal } from '@/components/modal/RegisterModal';
 import { OnlineGameHistoryModal } from '@/components/modal/OnlineGameHistoryModal';
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { Button } from '@/components/ui/Button';
-import { SectionStatus } from '@/components/ui/SectionStatus';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
+import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import * as authService from '@/services/authService';
+import {
+  fetchLeaderboard,
+  type LeaderboardEntry,
+} from '@/services/leaderboardService';
 import {
   getApiErrorCode,
   isGloballyHandledApiError,
@@ -22,7 +28,35 @@ import {
   validateLoginInput,
   validateRegisterInput,
 } from '@/utils/authValidation';
-import { getRankTierId } from '@/utils/rankTier';
+import { getRankTierId, type RankTierId } from '@/utils/rankTier';
+import type { RoomStatus } from '@/types/game';
+import {
+  BotIcon,
+  GlobeIcon,
+  SettingsIcon,
+  SwordsIcon,
+  TrophyIcon,
+  UsersIcon,
+} from 'lucide-react';
+
+const rankTierLevelMap: Record<RankTierId, number> = {
+  apprenticeSailor: 1,
+  combatNavigator: 2,
+  eliteCaptain: 3,
+  fleetAdmiral: 4,
+  oceanConqueror: 5,
+};
+
+const badgeImageList = Object.values(images.badgeImages);
+
+function getBadgeImageForTier(tierId: RankTierId): string | null {
+  if (badgeImageList.length === 0) {
+    return null;
+  }
+
+  const badgeIndex = Math.min(rankTierLevelMap[tierId], badgeImageList.length) - 1;
+  return badgeImageList[badgeIndex] ?? badgeImageList[badgeImageList.length - 1] ?? null;
+}
 
 type AuthModalMode =
   | 'login'
@@ -35,27 +69,6 @@ type HomeNavigationState = {
   openProfileSetup?: boolean;
 };
 
-const pageTransition = { duration: 0.52, ease: [0.16, 1, 0.3, 1] } as const;
-
-const staggerParent = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.08,
-    },
-  },
-};
-
-const revealItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: pageTransition,
-  },
-};
-
 export function HomePage() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
@@ -65,6 +78,19 @@ export function HomePage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [gameHistoryOpen, setGameHistoryOpen] = useState(false);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardRankState, setLeaderboardRankState] = useState<
+    'idle' | 'loading' | 'ready' | 'error'
+  >('idle');
+  const [leaderboardProfileOpen, setLeaderboardProfileOpen] = useState(false);
+  const [selectedLeaderboardProfile, setSelectedLeaderboardProfile] = useState<{
+    id?: string | null;
+    username: string;
+    signature?: string | null;
+    avatar?: string | null;
+    label?: string;
+    elo: number;
+  } | null>(null);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode | null>(
     null,
   );
@@ -72,6 +98,12 @@ export function HomePage() {
   const navigationState = useMemo(
     () => (location.state as HomeNavigationState | null) ?? null,
     [location.state],
+  );
+  const isAnonymous = user?.isAnonymous ?? true;
+  const onlineEnabled = !isAnonymous;
+  const { room: activeRoom, match: activeMatch, reconnect } = useOnlineRoom(
+    undefined,
+    onlineEnabled,
   );
   const openModal = (mode: AuthModalMode) => {
     setAuthModalMode(mode);
@@ -91,6 +123,46 @@ export function HomePage() {
       state: null,
     });
   }, [location.pathname, location.search, navigate, navigationState]);
+
+  useEffect(() => {
+    if (!onlineEnabled) {
+      return;
+    }
+
+    reconnect({});
+    const timer = window.setInterval(() => {
+      reconnect({});
+    }, 5000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [onlineEnabled, reconnect]);
+
+  useEffect(() => {
+    let isActive = true;
+    setLeaderboardRankState('loading');
+
+    void fetchLeaderboard(3)
+      .then((entries) => {
+        if (!isActive) {
+          return;
+        }
+
+        setLeaderboardEntries(entries);
+        setLeaderboardRankState('ready');
+      })
+      .catch(() => {
+        if (isActive) {
+          setLeaderboardEntries([]);
+          setLeaderboardRankState('error');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -217,11 +289,56 @@ export function HomePage() {
     event.preventDefault();
   };
 
-  const isAnonymous = user?.isAnonymous ?? true;
-  const displayUsername =
-    user?.username?.trim() || t('home.playerStatus.anonymous');
-  const displaySignature =
-    !isAnonymous && user?.signature ? user.signature : '- - -';
+  const handleOpenLeaderboardProfile = (entry: LeaderboardEntry) => {
+    const loadingLabel = t('home.profileLoading');
+
+    setSelectedLeaderboardProfile({
+      id: entry.userId,
+      username: entry.username,
+      avatar: entry.avatar,
+      signature: loadingLabel,
+      label: t('home.profileModalLabel'),
+      elo: entry.elo,
+    });
+    setLeaderboardProfileOpen(true);
+
+    void authService
+      .getUserProfile(entry.userId)
+      .then((profile) => {
+        setSelectedLeaderboardProfile((current) => {
+          if (!current || current.id !== entry.userId) {
+            return current;
+          }
+
+          return {
+            id: profile.id,
+            username: profile.username,
+            avatar: profile.avatar,
+            signature: profile.signature,
+            label: t('home.profileModalLabel'),
+            elo: profile.elo,
+          };
+        });
+      })
+      .catch(() => {
+        setSelectedLeaderboardProfile((current) => {
+          if (!current || current.id !== entry.userId) {
+            return current;
+          }
+
+          return {
+            ...current,
+            signature: t('home.profileUnavailable'),
+          };
+        });
+      });
+  };
+
+  const currentElo = !isAnonymous && typeof user?.elo === 'number' ? user.elo : 0;
+  const currentRankTierId = getRankTierId(currentElo);
+  const currentBadgeImage = getBadgeImageForTier(currentRankTierId);
+  const topRankEntries = leaderboardEntries;
+
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
     'profileSetup',
@@ -235,32 +352,38 @@ export function HomePage() {
     {
       id: 'playOnline',
       label: t('home.menu.playOnline'),
+      icon: GlobeIcon,
       disabled: isAnonymous,
     },
     {
       id: 'playBot',
       label: t('home.menu.playBot'),
+      icon: BotIcon,
       disabled: false,
     },
 
     {
       id: 'botVsBot',
       label: t('home.menu.botVsBot'),
+      icon: SwordsIcon,
       disabled: false,
     },
     {
       id: 'settings',
       label: t('home.menu.settings'),
+      icon: SettingsIcon,
       disabled: false,
     },
     {
       id: 'community',
       label: t('home.menu.community'),
+      icon: UsersIcon,
       disabled: false,
     },
     {
       id: 'leaderboard',
       label: t('home.menu.leaderboard'),
+      icon: TrophyIcon,
       disabled: false,
     },
   ];
@@ -303,88 +426,139 @@ export function HomePage() {
     }
   };
 
+  const roomStatusLabelMap = useMemo(
+    (): Record<RoomStatus, string> => ({
+      waiting: t('gameRooms.roomStatus.waiting'),
+      setup: t('gameRooms.roomStatus.setup'),
+      in_game: t('gameRooms.roomStatus.in_game'),
+      finished: t('gameRooms.roomStatus.finished'),
+      closed: t('gameRooms.roomStatus.closed'),
+    }),
+    [t],
+  );
+
+  const activeRoomStatusText = activeRoom
+    ? roomStatusLabelMap[activeRoom.status]
+    : t('home.stats.statusStandby');
+  const activeRoomGridText =
+    activeMatch?.boardConfig
+      ? `${activeMatch.boardConfig.rows} x ${activeMatch.boardConfig.cols}`
+      : '- - -';
+
   const tacticalStats = [
     {
-      label: t('home.stats.rank'),
-      value: isAnonymous
-        ? t('home.stats.rankCadet')
-        : user && typeof user.elo === 'number'
-          ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
-          : t('home.stats.rankCadet'),
+      label: t('home.stats.openRoom'),
+      value: activeRoom?.roomCode?.trim() || '- - -',
+      isInteractive: !!activeRoom?.roomId,
     },
     {
       label: t('home.stats.status'),
-      value: isAnonymous
-        ? t('home.stats.statusStandby')
-        : t('home.stats.statusReady'),
+      value: activeRoomStatusText,
+      isInteractive: false,
     },
-    { label: t('home.stats.grid'), value: t('home.stats.gridDefault') },
+    {
+      label: t('home.stats.grid'),
+      value: activeRoomGridText,
+      isInteractive: false,
+    },
   ];
 
   return (
     <motion.main
-      className="relative min-h-screen overflow-hidden px-4 py-5 text-(--text-main) sm:px-8"
+      className='relative min-h-screen overflow-hidden px-4 py-5 text-(--text-main) sm:px-8'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
     >
-      <div className="ui-page-bg -z-20" />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]" />
+      <div className='ui-page-bg -z-20' />
+      <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
 
-      <section className="ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-7xl flex-col rounded-md p-4 sm:p-6">
-        <SectionStatus
-          leftText={t('home.status.sectors')}
-          rightText={t('home.status.coordinates')}
-        />
-
+      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-7xl flex-col rounded-md p-4 sm:p-6'>
         <motion.div
-          className="relative z-10 mt-4 grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,420px)]"
-          variants={staggerParent}
-          initial="hidden"
-          animate="visible"
+          className='relative z-10 mt-4 grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,420px)]'
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.08,
+              },
+            },
+          }}
+          initial='hidden'
+          animate='visible'
         >
           <motion.section
-            variants={revealItem}
-            className="flex flex-col justify-between gap-6"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.08,
+                  delayChildren: 0.08,
+                },
+              },
+            }}
+            className='flex flex-col justify-between gap-6'
           >
-            <div className="ui-panel ui-panel-glow rounded-md px-5 py-5 sm:px-7">
-              <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-xl font-bold text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+            <div className='ui-panel ui-panel-glow rounded-md px-5 py-5 sm:px-7'>
+              <div className='relative z-10 flex flex-wrap items-start justify-between gap-4'>
+                <div className='flex min-w-0 items-center gap-4'>
+                  <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-xl font-bold text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.18)]'>
                     B
                   </div>
-                  <div className="min-w-0">
-                    <p className="ui-title-eyebrow">{t('home.title')}</p>
-                    <h1 className="mt-2 text-3xl font-black uppercase tracking-[0.08em] text-(--text-main) sm:text-[45px]">
+                  <div className='min-w-0'>
+                    <p className='ui-title-eyebrow'>{t('home.title')}</p>
+                    <h1 className='mt-2 text-3xl font-black uppercase tracking-[0.08em] text-(--text-main) sm:text-[45px]'>
                       {GAME_BRAND_NAME}
                     </h1>
-                    <p className="mt-2 text-sm font-medium tracking-[0.24em] text-(--text-muted) uppercase">
+                    <p className='mt-2 text-sm font-medium tracking-[0.24em] text-(--text-muted) uppercase'>
                       {t('home.gameSubtitle')}
                     </p>
                   </div>
                 </div>
 
-                <div className="self-stretch h-px w-full bg-(--border-main) opacity-50"></div>
+                <div className='self-stretch h-px w-full bg-(--border-main) opacity-50'></div>
 
-                <div className="flex items-start gap-4">
-                  <div className="grid min-w-32 shrink-0 justify-items-end gap-2 text-right sm:min-w-35">
+                <div className='flex items-start gap-4'>
+                  <div className='grid min-w-32 shrink-0 justify-items-end gap-2 text-right sm:min-w-35'>
                     {tacticalStats.map((stat) => (
-                      <div key={stat.label} className="grid gap-0.5">
-                        <span className="ui-data-label whitespace-nowrap">
+                      <div key={stat.label} className='grid gap-0.5'>
+                        <span className='ui-data-label whitespace-nowrap'>
                           {stat.label}
                         </span>
-                        <span className="ui-data-value text-sm whitespace-nowrap">
-                          {stat.value}
-                        </span>
+                        {stat.isInteractive ? (
+                          <button
+                            type='button'
+                            onClick={() => {
+                              if (!activeRoom?.roomId) {
+                                return;
+                              }
+
+                              navigate('/game/waiting', {
+                                state: {
+                                  roomId: activeRoom.roomId,
+                                  matchId: activeMatch?.id,
+                                },
+                              });
+                            }}
+                            className='ui-data-value cursor-pointer text-right text-sm whitespace-nowrap underline underline-offset-4 transition-colors hover:text-white'
+                          >
+                            {stat.value}
+                          </button>
+                        ) : (
+                          <span className='ui-data-value text-sm whitespace-nowrap'>
+                            {stat.value}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
-                  <div className="w-px self-stretch bg-(--border-main) opacity-50" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <p className="text-xs leading-5 text-(--text-muted)">
+                  <div className='w-px self-stretch bg-(--border-main) opacity-50' />
+                  <div className='min-w-0 flex-1 space-y-2'>
+                    <p className='text-xs leading-5 text-(--text-muted)'>
                       {t('home.lore1')}
                     </p>
-                    <p className="text-xs leading-5 text-(--text-muted)">
+                    <p className='text-xs leading-5 text-(--text-muted)'>
                       {t('home.lore2')}
                     </p>
                   </div>
@@ -393,72 +567,80 @@ export function HomePage() {
             </div>
 
             <motion.div
-              variants={revealItem}
-              className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.08,
+                    delayChildren: 0.08,
+                  },
+                },
+              }}
+              className='grid gap-6 lg:grid-cols-[minmax(0,1fr)280px]'
             >
-              <div className="ui-panel rounded-md px-5 py-6 sm:px-7">
-                <div className="relative z-10">
-                  <p className="ui-title-eyebrow">{t('home.commanderLink')}</p>
-                  <p className="mt-4 text-sm font-semibold tracking-[0.22em] text-(--text-muted) uppercase">
+              <div className='ui-panel rounded-md px-5 py-6 sm:px-7'>
+                <div className='relative z-10'>
+                  <p className='ui-title-eyebrow'>{t('home.commanderLink')}</p>
+                  <p className='mt-4 text-sm font-semibold tracking-[0.22em] text-(--text-muted) uppercase'>
                     {t('home.playerStatus.label')}
                   </p>
 
-                  <div className="mt-3 grid gap-2">
-                    <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2">
-                      <span className="ui-data-label text-right">
+                  <div className='mt-3 grid gap-2'>
+                    <div className='grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2'>
+                      <span className='ui-data-label text-right'>
                         {t('home.profile.username')}
                       </span>
                       {isAnonymous ? (
-                        <span className="font-mono text-sm font-semibold text-(--accent-secondary)">
-                          {displayUsername}
+                        <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                          {user?.username?.trim() || t('home.playerStatus.anonymous')}
                         </span>
                       ) : (
                         <button
-                          type="button"
+                          type='button'
                           onClick={() => openModal('profileSetup')}
-                          className="cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white"
+                          className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
                         >
-                          {displayUsername}
+                          {user?.username?.trim() || t('home.playerStatus.anonymous')}
                         </button>
                       )}
-                      <span className="ui-data-label text-right">
+                      <span className='ui-data-label text-right'>
                         {t('home.profile.signature')}
                       </span>
-                      <span className="font-mono text-sm text-(--text-main)">
-                        {displaySignature}
+                      <span className='font-mono text-sm text-(--text-main)'>
+                        {!isAnonymous && user?.signature ? user.signature : '- - -'}
                       </span>
-                      <span className="ui-data-label text-right">
+                      <span className='ui-data-label text-right'>
                         {t('home.profile.rank')}
                       </span>
-                      <span className="font-mono text-sm leading-snug text-(--text-main)">
+                      <span className='font-mono text-sm leading-snug text-(--text-main)'>
                         {!isAnonymous && user && typeof user.elo === 'number'
                           ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
                           : '- - -'}
                       </span>
-                      <span className="ui-data-label text-right">
+                      <span className='ui-data-label text-right'>
                         {t('home.profile.elo')}
                       </span>
-                      <span className="font-mono text-sm text-(--text-main)">
+                      <span className='font-mono text-sm text-(--text-main)'>
                         {!isAnonymous && user && typeof user.elo === 'number'
                           ? user.elo
                           : '- - -'}
                       </span>
                       {!isAnonymous && user ? (
                         <>
-                          <span className="ui-data-label text-right">
+                          <span className='ui-data-label text-right'>
                             {t('home.gameHistory.label')}
                           </span>
                           <button
-                            type="button"
+                            type='button'
                             onClick={() => setGameHistoryOpen(true)}
-                            className="cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white"
+                            className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
                           >
                             {t('home.gameHistory.open')}
                           </button>
                         </>
                       ) : null}
                     </div>
-                    <p className="mt-2 text-xs font-semibold text-(--text-subtle)">
+                    <p className='mt-2 text-xs font-semibold text-(--text-subtle)'>
                       {isAnonymous
                         ? t('home.accessRules.anonymous')
                         : t('home.accessRules.registered')}
@@ -467,31 +649,83 @@ export function HomePage() {
                 </div>
               </div>
 
-              <div className="ui-panel rounded-md px-5 py-6">
-                <div className="relative z-10 grid gap-4">
+              <div className='ui-panel rounded-md px-5 py-6'>
+                <div className='relative z-10 grid gap-4'>
                   <div>
-                    <p className="ui-title-eyebrow">{t('home.systemFeed')}</p>
+                    <p className='ui-title-eyebrow'>{t('home.systemFeed')}</p>
                   </div>
-                  <div className="grid gap-3">
-                    <div className="ui-subpanel rounded-sm px-3 py-3">
-                      <div className="flex flex-row gap-2 items-center">
-                        <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                        <p className="ui-data-label">{t('home.signalLabel')}</p>
+                  <div className='grid gap-3'>
+                    <div className='ui-subpanel space-y-1 rounded-sm px-3 py-3'>
+                      <div className='flex flex-row gap-2 items-center'>
+                        <span className='w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse' />
+                        <p className='ui-data-label'>{t('home.rankLabel')}</p>
                       </div>
-                      <p className="mt-1 font-mono text-sm text-(--accent-secondary)">
-                        {t('home.signalStatus')}
-                      </p>
+                      <div className='mt-2 grid gap-1.5'>
+                        {leaderboardRankState === 'loading' ? (
+                          <p className='font-mono text-sm text-(--text-muted)'>
+                            {t('leaderboard.loading')}
+                          </p>
+                        ) : null}
+                        {leaderboardRankState === 'error' ? (
+                          <p className='font-mono text-sm text-[#ffb4b4]'>
+                            {t('home.rankUnavailable')}
+                          </p>
+                        ) : null}
+                        {leaderboardRankState === 'ready' && topRankEntries.length === 0 ? (
+                          <p className='font-mono text-sm text-(--text-muted)'>
+                            {t('leaderboard.empty')}
+                          </p>
+                        ) : null}
+                        {topRankEntries.map((entry) => (
+                          <div
+                            key={entry.userId}
+                            className='flex items-center gap-2 font-mono text-sm text-(--text-main)'
+                          >
+                            <span className='font-semibold text-(--accent-secondary)'>
+                              #{entry.rank}
+                            </span>
+                            <span className='text-(--text-subtle)'>-</span>
+                            <button
+                              type='button'
+                              onClick={() => handleOpenLeaderboardProfile(entry)}
+                              className='cursor-pointer truncate text-left font-semibold text-(--text-main) underline underline-offset-4 transition-colors hover:text-(--accent-secondary)'
+                            >
+                              {entry.username}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="ui-subpanel rounded-sm px-3 py-3">
-                      <div className="flex flex-row gap-2 items-center">
-                        <span className="w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse" />
-                        <p className="ui-data-label">
-                          {t('home.operationLabel')}
-                        </p>
+                    <div className='ui-subpanel rounded-sm space-y-1 px-3 py-3'>
+                      <div className='flex flex-row gap-2 items-center'>
+                        <span className='w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse' />
+                        <p className='ui-data-label'>{t('home.achievementLabel')}</p>
                       </div>
-                      <p className="mt-1 font-mono text-sm text-(--text-main)">
-                        {t('home.operationStatus')}
-                      </p>
+                      <div className='flex items-center gap-3'>
+                        <div className='flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-(--border-main) bg-(--accent-soft)'>
+                          {currentBadgeImage ? (
+                            <img
+                              src={currentBadgeImage}
+                              alt={t(`rank.tiers.${currentRankTierId}.name`)}
+                              className='h-full w-full object-cover'
+                            />
+                          ) : (
+                            <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                              {rankTierLevelMap[currentRankTierId]}
+                            </span>
+                          )}
+                        </div>
+                        <div className='min-w-0'>
+                          <p className='mt-1 font-mono text-sm text-(--accent-secondary)'>
+                            {t('home.personalAchievementLabel')}
+                          </p>
+                          <p className='mt-1 text-xs text-(--text-muted)'>
+                            {t('home.achievementStatus', {
+                              level: rankTierLevelMap[currentRankTierId],
+                            })}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -500,28 +734,37 @@ export function HomePage() {
           </motion.section>
 
           <motion.aside
-            variants={revealItem}
-            className="ui-panel ui-panel-strong rounded-md p-4 sm:p-5"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.08,
+                  delayChildren: 0.08,
+                },
+              },
+            }}
+            className='ui-panel ui-panel-strong rounded-md p-4 sm:p-5'
           >
-            <div className="relative z-10 flex h-full flex-col gap-5">
-              <div className="ui-subpanel rounded-sm px-4 py-4">
-                <p className="ui-title-eyebrow">{t('home.missionQueue')}</p>
-                <h2 className="mt-3 text-2xl font-black uppercase tracking-[0.08em] text-(--text-main)">
+            <div className='relative z-10 flex h-full flex-col gap-5'>
+              <div className='ui-subpanel rounded-sm px-4 py-4'>
+                <p className='ui-title-eyebrow'>{t('home.missionQueue')}</p>
+                <h2 className='mt-3 text-2xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
                   {t('home.commandDeck')}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-(--text-muted)">
+                <p className='mt-2 text-sm leading-6 text-(--text-muted)'>
                   {t('home.commandDeckDesc')}
                 </p>
               </div>
 
-              <div className="grid gap-3">
+              <div className='grid gap-3'>
                 {menuItems.map((item, index) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{
-                      ...pageTransition,
+                      duration: 0.52,
+                      ease: [0.16, 1, 0.3, 1],
                       delay: 0.14 + index * 0.05,
                     }}
                   >
@@ -529,9 +772,10 @@ export function HomePage() {
                       disabled={item.disabled}
                       onClick={() => handleGameMode(item.id)}
                       variant={item.id === 'playOnline' ? 'primary' : 'default'}
-                      className="h-14 justify-start px-5 text-left"
+                      className='h-14 justify-start gap-3 px-5 flex items-center'
                     >
-                      {item.label}
+                      <item.icon className='h-5 w-5 shrink-0' aria-hidden='true' />
+                      <span>{item.label}</span>
                     </Button>
                   </motion.div>
                 ))}
@@ -539,23 +783,23 @@ export function HomePage() {
 
               {user && !isAnonymous ? (
                 <Button
-                  variant="danger"
+                  variant='danger'
                   onClick={() => {
                     void handleLogout();
                   }}
-                  className="h-12"
+                  className='h-12'
                 >
                   {t('welcome.modals.logout')}
                 </Button>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className='grid gap-3 sm:grid-cols-2'>
                   <Button
-                    variant="primary"
+                    variant='primary'
                     onClick={() => {
                       setLoginError(null);
                       openModal('login');
                     }}
-                    className="h-12"
+                    className='h-12'
                   >
                     {t('home.menu.login')}
                   </Button>
@@ -564,7 +808,7 @@ export function HomePage() {
                       setRegisterError(null);
                       openModal('register');
                     }}
-                    className="h-12"
+                    className='h-12'
                   >
                     {t('home.menu.register')}
                   </Button>
@@ -574,17 +818,19 @@ export function HomePage() {
           </motion.aside>
         </motion.div>
         <motion.p
-          variants={revealItem}
-          className="ui-data-label px-1 mt-8 mb-2"
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.08,
+              },
+            },
+          }}
+          className='ui-data-label px-1 mt-8 mb-2'
         >
           © {currentYear} {t('home.copyright')}
         </motion.p>
-
-        <SectionStatus
-          className="mt-auto"
-          leftText={t('home.status.system')}
-          rightText={t('home.status.radar')}
-        />
       </section>
 
       <LoginModal
@@ -639,6 +885,13 @@ export function HomePage() {
       <OnlineGameHistoryModal
         isOpen={gameHistoryOpen}
         onClose={() => setGameHistoryOpen(false)}
+      />
+
+      <ProfileShowcaseModal
+        isOpen={leaderboardProfileOpen}
+        onClose={() => setLeaderboardProfileOpen(false)}
+        title={t('home.profileModalTitle')}
+        profile={selectedLeaderboardProfile}
       />
     </motion.main>
   );

@@ -177,8 +177,8 @@ function ActionButton({
   isLightTheme: boolean;
 }) {
   const buttonClassName = isLightTheme
-    ? 'inline-flex cursor-pointer items-center gap-4 rounded-full border border-[#37b8d3] bg-[linear-gradient(180deg,rgba(240,251,255,0.98),rgba(215,240,247,0.96))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#123748] uppercase shadow-[0_0_24px_rgba(79,172,198,0.16)]'
-    : 'inline-flex cursor-pointer items-center gap-4 rounded-full border border-[#77efff]/82 bg-[linear-gradient(180deg,rgba(76,224,255,0.24),rgba(17,124,162,0.24))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#f2fdff] uppercase shadow-[0_0_32px_rgba(30,194,228,0.2)]';
+    ? 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#37b8d3] bg-[linear-gradient(180deg,rgba(240,251,255,0.98),rgba(215,240,247,0.96))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#123748] uppercase shadow-[0_0_24px_rgba(79,172,198,0.16)]'
+    : 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#77efff]/82 bg-[linear-gradient(180deg,rgba(76,224,255,0.24),rgba(17,124,162,0.24))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#f2fdff] uppercase shadow-[0_0_32px_rgba(30,194,228,0.2)]';
 
   return (
     <motion.button
@@ -948,10 +948,6 @@ export function LandingPage() {
     });
   };
 
-  const goHome = () => {
-    navigate('/home');
-  };
-
   const carouselLabels = {
     ...landing.carousel,
     ...landing.aria,
@@ -1162,7 +1158,7 @@ export function LandingPage() {
                       <div className='mt-8 flex flex-col items-start gap-4'>
                         <ActionButton
                           label={slide.ctaLabel}
-                          onClick={goHome}
+                          onClick={() => navigate('/home')}
                           isLightTheme={isLightTheme}
                         />
                         {slide.ctaHint ? (

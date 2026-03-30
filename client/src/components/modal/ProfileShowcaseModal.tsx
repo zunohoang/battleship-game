@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/Modal';
+import { getRankTierId } from '@/utils/rankTier';
 
 type ProfileShowcaseData = {
   id?: string | null;
@@ -8,6 +9,7 @@ type ProfileShowcaseData = {
   signature?: string | null;
   avatar?: string | null;
   label?: string;
+  elo: number;
 };
 
 type ProfileShowcaseModalProps = {
@@ -29,6 +31,15 @@ export function ProfileShowcaseModal({
     () => profile?.username.trim().slice(0, 1).toUpperCase() || '?',
     [profile?.username],
   );
+  const rankAndEloLabel = useMemo(() => {
+    if (!profile) {
+      return '';
+    }
+
+    const tierId = getRankTierId(profile.elo);
+    const rankName = t(`rank.tiers.${tierId}.name`);
+    return `${rankName} — ${profile.elo}`;
+  }, [profile, t]);
 
   return (
     <Modal
@@ -57,6 +68,9 @@ export function ProfileShowcaseModal({
                 <p className='ui-data-label'>{profile.label ?? 'Commander Profile'}</p>
                 <p className='mt-2 wrap-anywhere font-mono text-2xl font-black tracking-[0.08em] text-(--text-main)'>
                   {profile.username}
+                </p>
+                <p className='mt-2 font-mono text-sm text-(--accent-secondary)'>
+                  {rankAndEloLabel}
                 </p>
               </div>
             </div>

@@ -58,7 +58,7 @@ function StepPill({ number, label, phaseLabel, status }: StepPillProps) {
       }`}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
     >
-      <div className="flex items-center gap-3">
+      <div className='flex items-center gap-3'>
         <span
           className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-black ${
             active
@@ -71,8 +71,8 @@ function StepPill({ number, label, phaseLabel, status }: StepPillProps) {
           {done ? '✓' : number}
         </span>
         <div>
-          <p className="ui-data-label">{phaseLabel}</p>
-          <p className="mt-1 text-sm font-bold uppercase tracking-[0.08em]">
+          <p className='ui-data-label'>{phaseLabel}</p>
+          <p className='mt-1 text-sm font-bold uppercase tracking-[0.08em]'>
             {label}
           </p>
         </div>
@@ -526,34 +526,34 @@ export function GameSetupPage() {
     mode !== 'online' || !match?.setupDeadlineAt || onlineSetupNowMs === null
       ? null
       : Math.max(
-          0,
-          Math.ceil(
-            (new Date(match.setupDeadlineAt).getTime() - onlineSetupNowMs) /
+        0,
+        Math.ceil(
+          (new Date(match.setupDeadlineAt).getTime() - onlineSetupNowMs) /
               1000,
-          ),
-        );
+        ),
+      );
   const setupTimerDisplay =
     step !== 2
       ? t('gameSetup.step1.setupTimerValue', {
-          seconds: DEFAULT_SETUP_TIMER_SECONDS,
-        })
+        seconds: DEFAULT_SETUP_TIMER_SECONDS,
+      })
       : mode === 'online'
         ? onlineSetupSecondsLeft === null
           ? t('gameSetup.step1.setupTimerValue', {
-              seconds: DEFAULT_SETUP_TIMER_SECONDS,
-            })
+            seconds: DEFAULT_SETUP_TIMER_SECONDS,
+          })
           : t('gameSetup.step1.setupTimerCountdown', {
-              remaining: onlineSetupSecondsLeft,
-              total: DEFAULT_SETUP_TIMER_SECONDS,
-            })
+            remaining: onlineSetupSecondsLeft,
+            total: DEFAULT_SETUP_TIMER_SECONDS,
+          })
         : localSetupSecondsLeft === null
           ? t('gameSetup.step1.setupTimerValue', {
-              seconds: DEFAULT_SETUP_TIMER_SECONDS,
-            })
+            seconds: DEFAULT_SETUP_TIMER_SECONDS,
+          })
           : t('gameSetup.step1.setupTimerCountdown', {
-              remaining: localSetupSecondsLeft,
-              total: DEFAULT_SETUP_TIMER_SECONDS,
-            });
+            remaining: localSetupSecondsLeft,
+            total: DEFAULT_SETUP_TIMER_SECONDS,
+          });
   const canAdjustTurnTimer =
     step === 1 &&
     (mode !== 'online' ||
@@ -576,27 +576,27 @@ export function GameSetupPage() {
 
   return (
     <motion.main
-      className="relative min-h-dvh overflow-x-hidden overflow-y-auto px-3 py-3 text-(--text-main) sm:h-screen sm:overflow-hidden sm:px-6 sm:py-4"
+      className='relative min-h-dvh overflow-x-hidden overflow-y-auto px-3 py-3 text-(--text-main) sm:h-screen sm:overflow-hidden sm:px-6 sm:py-4'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="ui-page-bg -z-20" />
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]" />
+      <div className='ui-page-bg -z-20' />
+      <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]' />
 
-      <section className="ui-hud-shell mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-7xl flex-col rounded-md p-3 sm:h-full sm:min-h-0 sm:p-4">
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+      <section className='ui-hud-shell mx-auto flex min-h-[calc(100dvh-1.5rem)] w-full max-w-7xl flex-col rounded-md p-3 sm:h-full sm:min-h-0 sm:p-4'>
+        <div className='grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center'>
           {/* Info card */}
-          <div className="ui-panel ui-panel-glow flex items-center rounded-md px-5 py-3">
-            <div className="relative z-10 flex min-w-0 flex-1 flex-wrap items-center gap-4">
-              <div className="text-(--accent-secondary) flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)] font-mono text-lg font-black">
+          <div className='ui-panel ui-panel-glow flex items-center rounded-md px-5 py-3'>
+            <div className='relative z-10 flex min-w-0 flex-1 flex-wrap items-center gap-4'>
+              <div className='text-(--accent-secondary) flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)] font-mono text-lg font-black'>
                 C
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-base font-black uppercase tracking-widest text-(--accent-secondary) sm:text-lg">
+              <div className='min-w-0 flex-1'>
+                <p className='truncate font-mono text-base font-black uppercase tracking-widest text-(--accent-secondary) sm:text-lg'>
                   {t('gameSetup.header.commanderName')}
                 </p>
-                <h1 className="truncate font-mono text-xs font-semibold uppercase tracking-[0.2em] text-(--text-muted) sm:text-xs">
+                <h1 className='truncate font-mono text-xs font-semibold uppercase tracking-[0.2em] text-(--text-muted) sm:text-xs'>
                   {step === 1
                     ? t('gameSetup.header.title_fleet')
                     : t('gameSetup.header.title_placement')}
@@ -606,74 +606,75 @@ export function GameSetupPage() {
           </div>
 
           <motion.div
-            key="mode-badge"
+            key='mode-badge'
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="ui-panel rounded-md px-4 py-3"
+            className='ui-panel rounded-md px-4 py-3'
           >
-            <p className="ui-data-label mb-2">
+            <p className='ui-data-label mb-2'>
               {t('gameSetup.header.gameModeLabel')}
             </p>
-            <p className="font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)">
+            <p className='font-mono text-sm font-bold uppercase tracking-widest text-(--accent-secondary)'>
               {t(`gameSetup.header.modes.${mode}`)}
             </p>
           </motion.div>
 
-          <div className="grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center xl:justify-end">
+          <div className='grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center xl:justify-end'>
             {step === 2 ? (
-              <div className="ui-panel rounded-md px-4 py-3">
-                <p className="ui-data-label">
+              <div className='ui-panel rounded-md px-4 py-3'>
+                <p className='ui-data-label'>
                   {t('gameSetup.step1.setupTimer')}
                 </p>
-                <p className="mt-1 font-mono text-sm font-bold uppercase tracking-[0.14em] text-(--accent-secondary)">
+                <p className='mt-1 font-mono text-sm font-bold uppercase tracking-[0.14em] text-(--accent-secondary)'>
                   {setupTimerDisplay}
                 </p>
               </div>
             ) : null}
-            <StepPill
-              number={1}
-              label={t('gameSetup.header.step1Label')}
-              phaseLabel={t('gameSetup.header.phase')}
-              status={step > 1 ? 'done' : 'active'}
-            />
-            {!isOnlinePhase1Flow ? (
-              <>
-                <div className="hidden h-px w-8 bg-[rgba(63,203,232,0.48)] lg:block" />
-                <StepPill
-                  number={2}
-                  label={t('gameSetup.header.step2Label')}
-                  phaseLabel={t('gameSetup.header.phase')}
-                  status={step === 2 ? 'active' : 'upcoming'}
-                />
-              </>
+            {step === 1 ? (
+              <StepPill
+                number={1}
+                label={t('gameSetup.header.step1Label')}
+                phaseLabel={t('gameSetup.header.phase')}
+                status='active'
+              />
             ) : null}
-            <Button
-              onClick={() => {
-                if (isOnlinePhase1Flow && roomId) {
-                  navigate('/game/waiting', {
-                    state: {
-                      roomId,
-                      matchId: match?.id ?? matchId,
-                    },
-                  });
-                  return;
-                }
+            {step === 2 ? (
+              <StepPill
+                number={2}
+                label={t('gameSetup.header.step2Label')}
+                phaseLabel={t('gameSetup.header.phase')}
+                status='active'
+              />
+            ) : null}
+            {isOnlinePlacementFlow ? null : (
+              <Button
+                onClick={() => {
+                  if (isOnlinePhase1Flow && roomId) {
+                    navigate('/game/waiting', {
+                      state: {
+                        roomId,
+                        matchId: match?.id ?? matchId,
+                      },
+                    });
+                    return;
+                  }
 
-                if (step === 2) {
-                  handleBackToConfig();
-                  return;
-                }
+                  if (step === 2) {
+                    handleBackToConfig();
+                    return;
+                  }
 
-                navigate(mode === 'botvbot' ? '/game/bot-setup' : '/home');
-              }}
-              className="h-10 w-full px-4 sm:w-auto"
-            >
-              {t('gameSetup.header.back')}
-            </Button>
+                  navigate(mode === 'botvbot' ? '/game/bot-setup' : '/home');
+                }}
+                className='h-10 w-full px-4 sm:w-auto'
+              >
+                {t('gameSetup.header.back')}
+              </Button>
+            )}
             {step === 2 ? (
               <Button
-                variant="primary"
+                variant='primary'
                 disabled={
                   mode === 'online'
                     ? !allShipsPlaced || !roomId || room?.status !== 'setup'
@@ -698,7 +699,7 @@ export function GameSetupPage() {
 
                   launchLocalGame();
                 }}
-                className="h-10 w-full px-4 sm:w-auto sm:min-w-52"
+                className='h-10 w-full px-4 sm:w-auto sm:min-w-52'
               >
                 {mode === 'online' ? 'Ready' : t('gameSetup.header.startGame')}
               </Button>
@@ -706,16 +707,16 @@ export function GameSetupPage() {
           </div>
         </div>
 
-        <div className="mt-3 flex-1 overflow-visible sm:min-h-0 sm:overflow-hidden">
-          <AnimatePresence mode="wait">
+        <div className='mt-3 flex-1 overflow-visible sm:min-h-0 sm:overflow-hidden'>
+          <AnimatePresence mode='wait'>
             {step === 1 ? (
               <motion.div
-                key="fleet"
+                key='fleet'
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="overflow-visible sm:h-full sm:min-h-0 sm:overflow-hidden"
+                className='overflow-visible sm:h-full sm:min-h-0 sm:overflow-hidden'
               >
                 <Phase1SetupStage
                   boardConfig={boardConfig}
@@ -736,12 +737,12 @@ export function GameSetupPage() {
               </motion.div>
             ) : (
               <motion.div
-                key="placement"
+                key='placement'
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.14 }}
-                className="grid gap-3 overflow-visible sm:h-full sm:min-h-0 sm:overflow-hidden"
+                className='grid gap-3 overflow-visible sm:h-full sm:min-h-0 sm:overflow-hidden'
               >
                 {mode === 'botvbot' ? (
                   <BotVsBotMenu
@@ -752,8 +753,8 @@ export function GameSetupPage() {
                   />
                 ) : null}
                 {mode !== 'botvbot' || hasAnyManualBot ? (
-                  <section className="ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4">
-                    <div className="flex-1 sm:min-h-0">
+                  <section className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'>
+                    <div className='flex-1 sm:min-h-0'>
                       <ShipPlacementStage
                         boardConfig={boardConfig}
                         ships={ships}
@@ -767,10 +768,10 @@ export function GameSetupPage() {
                         onPlacementsChange={
                           mode === 'botvbot'
                             ? (placements) =>
-                                setBotVBotManualPlacements((current) => ({
-                                  ...current,
-                                  [botVBotEditTarget]: placements,
-                                }))
+                              setBotVBotManualPlacements((current) => ({
+                                ...current,
+                                [botVBotEditTarget]: placements,
+                              }))
                             : setPlacements
                         }
                         aiDifficulty={mode === 'bot' ? aiDifficulty : undefined}

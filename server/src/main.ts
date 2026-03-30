@@ -69,6 +69,7 @@ function getFirstConstraintMessage(errors: ValidationIssue[]): string | null {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', true);
   app.setGlobalPrefix('api');
 
   const configService = app.get(ConfigService);

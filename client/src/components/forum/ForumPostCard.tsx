@@ -98,11 +98,11 @@ export function ForumPostCard({
         style={
           lineClampContent !== undefined
             ? {
-                display: '-webkit-box',
-                WebkitLineClamp: lineClampContent,
-                WebkitBoxOrient: 'vertical' as const,
-                overflow: 'hidden',
-              }
+              display: '-webkit-box',
+              WebkitLineClamp: lineClampContent,
+              WebkitBoxOrient: 'vertical' as const,
+              overflow: 'hidden',
+            }
             : undefined
         }
       >
@@ -114,7 +114,7 @@ export function ForumPostCard({
   const imageBlock =
     imageUrl && onOpenPost ? (
       <button
-        type="button"
+        type='button'
         className={`relative mt-2 w-full overflow-hidden rounded-md border border-(--border-main) bg-(--bg-card-soft) text-left transition-opacity hover:opacity-95 ${compact ? 'max-h-40' : 'max-h-48'}`}
         onClick={(event) => {
           event.stopPropagation();
@@ -123,8 +123,8 @@ export function ForumPostCard({
       >
         <img
           src={imageUrl}
-          alt=""
-          className="max-h-40 w-full object-cover sm:max-h-48"
+          alt=''
+          className='max-h-40 w-full object-cover sm:max-h-48'
         />
       </button>
     ) : null;
@@ -133,12 +133,12 @@ export function ForumPostCard({
     <article
       className={`ui-panel forum-post-card shrink-0 overflow-hidden rounded-lg border border-(--panel-stroke) shadow-[var(--hud-shadow)] ${compact ? 'px-3 py-3 sm:px-4 sm:py-4' : 'px-4 py-4 sm:px-5 sm:py-5'}`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3">
+      <div className='flex items-start justify-between gap-2'>
+        <div className='flex min-w-0 flex-1 items-start gap-2.5 sm:gap-3'>
           {authorAvatarUrl ? (
             <img
               src={authorAvatarUrl}
-              alt=""
+              alt=''
               className={`shrink-0 rounded-full border border-(--border-main) bg-(--bg-card-soft) object-cover ${compact ? 'h-8 w-8 sm:h-9 sm:w-9' : 'h-9 w-9 sm:h-10 sm:w-10'}`}
             />
           ) : (
@@ -169,7 +169,7 @@ export function ForumPostCard({
       {onOpenPost ? (
         <>
           <button
-            type="button"
+            type='button'
             className={`w-full cursor-pointer rounded-md text-left transition-colors hover:opacity-95 ${compact ? 'mt-2' : 'mt-3'}`}
             onClick={onOpenPost}
           >

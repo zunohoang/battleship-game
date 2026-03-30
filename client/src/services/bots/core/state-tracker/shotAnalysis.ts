@@ -53,7 +53,7 @@ export function buildHitClusters(
     .map((shot) => ({ x: shot.x, y: shot.y }));
 
   const hitKeySet = new Set(hits.map((h) => toCellKey(h.x, h.y)));
-  const visited = new Set<String>();
+  const visited = new Set<string>();
   const clusters: HitCluster[] = [];
 
   for (const hit of hits) {
@@ -86,7 +86,7 @@ export function buildHitClusters(
 }
 
 function uniqueTargets(cells: readonly BotTarget[]): BotTarget[] {
-  const seen = new Set<String>();
+  const seen = new Set<string>();
   const out: BotTarget[] = [];
 
   for (const cell of cells) {

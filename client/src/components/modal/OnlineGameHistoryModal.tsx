@@ -85,19 +85,19 @@ export function OnlineGameHistoryModal({
       isOpen={isOpen}
       title={modalTitle}
       onClose={handleClose}
-      surfaceClassName="max-w-lg"
+      surfaceClassName='max-w-lg'
     >
       {selected ? (
-        <div className="grid gap-3">
+        <div className='grid gap-3'>
           <Button
-            type="button"
-            variant="default"
-            className="h-9 justify-self-start px-3 text-xs font-semibold uppercase tracking-[0.12em]"
+            type='button'
+            variant='default'
+            className='h-9 justify-self-start px-3 text-xs font-semibold uppercase tracking-[0.12em]'
             onClick={() => setSelected(null)}
           >
             {t('home.gameHistory.back')}
           </Button>
-          <p className="font-mono text-xs text-(--text-muted)">
+          <p className='font-mono text-xs text-(--text-muted)'>
             {formatFinishedAt(selected.finishedAt)} ·{' '}
             <span
               className={
@@ -121,29 +121,29 @@ export function OnlineGameHistoryModal({
           />
         </div>
       ) : (
-        <div className="grid gap-3">
+        <div className='grid gap-3'>
           {loadState === 'loading' && (
-            <p className="text-sm text-(--text-muted)">{t('home.gameHistory.loading')}</p>
+            <p className='text-sm text-(--text-muted)'>{t('home.gameHistory.loading')}</p>
           )}
           {loadState === 'error' && (
-            <p className="text-sm font-semibold text-[#ffb4b4]">
+            <p className='text-sm font-semibold text-[#ffb4b4]'>
               {t('home.gameHistory.loadError')}
             </p>
           )}
           {loadState === 'ready' && items.length === 0 && (
-            <p className="text-sm text-(--text-muted)">{t('home.gameHistory.empty')}</p>
+            <p className='text-sm text-(--text-muted)'>{t('home.gameHistory.empty')}</p>
           )}
           {loadState === 'ready' &&
             items.length > 0 &&
             items.map((item) => (
               <button
                 key={item.matchId}
-                type="button"
+                type='button'
                 onClick={() => setSelected(item)}
-                className="ui-subpanel cursor-pointer rounded-sm border border-transparent px-3 py-3 text-left transition-colors hover:border-[rgba(31,136,176,0.35)] hover:bg-[rgba(34,211,238,0.06)]"
+                className='ui-subpanel cursor-pointer rounded-sm border border-transparent px-3 py-3 text-left transition-colors hover:border-[rgba(31,136,176,0.35)] hover:bg-[rgba(34,211,238,0.06)]'
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-(--text-muted)">
+                <div className='flex flex-wrap items-center justify-between gap-2'>
+                  <span className='font-mono text-xs text-(--text-muted)'>
                     {formatFinishedAt(item.finishedAt)}
                   </span>
                   <span
@@ -158,14 +158,14 @@ export function OnlineGameHistoryModal({
                       : t('home.gameHistory.loss')}
                   </span>
                 </div>
-                <p className="mt-1 font-mono text-sm font-semibold text-(--text-main)">
+                <p className='mt-1 font-mono text-sm font-semibold text-(--text-main)'>
                   {t('home.gameHistory.vs')}{' '}
-                  <span className="text-(--accent-secondary)">
+                  <span className='text-(--accent-secondary)'>
                     {item.opponentUsername?.trim() ||
                       `#${item.opponentId.slice(0, 8)}`}
                   </span>
                 </p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-(--text-subtle)">
+                <p className='mt-1 text-[10px] uppercase tracking-[0.16em] text-(--text-subtle)'>
                   {t('home.gameHistory.viewDetails')}
                 </p>
               </button>

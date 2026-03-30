@@ -9,15 +9,15 @@ type NativeButtonProps = Omit<
 >;
 
 type ButtonProps = NativeButtonProps & {
-    children: ReactNode;
-    variant?: ButtonVariant;
+  children: ReactNode;
+  variant?: ButtonVariant;
 };
 
 const baseClassName =
-    'ui-button-shell cursor-pointer h-12 w-full rounded-[var(--hud-radius)] border text-sm font-bold tracking-[0.14em] uppercase';
+  'ui-button-shell cursor-pointer h-12 w-full rounded-[var(--hud-radius)] border text-sm font-bold tracking-[0.14em] uppercase';
 
 const disabledClassName =
-    'disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-inherit';
+  'disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-inherit';
 
 const variantClassName: Record<ButtonVariant, string> = {
   default: 'ui-button-default',
@@ -33,7 +33,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const buttonClassName =
-        `${baseClassName} ${disabledClassName} ${variantClassName[variant]} ${className}`.trim();
+    `${baseClassName} ${disabledClassName} ${variantClassName[variant]} ${className}`.trim();
 
   return (
     <motion.button
