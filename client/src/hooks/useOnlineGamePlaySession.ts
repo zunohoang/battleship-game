@@ -53,6 +53,7 @@ interface UseOnlineGamePlaySessionParams {
 interface UseOnlineGamePlaySessionResult {
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
+  latencyMs: number | null;
   chat: {
     messages: ChatMessage[];
     sendMessage: (content: string) => void;
@@ -81,6 +82,7 @@ export function useOnlineGamePlaySession({
   const {
     room,
     match,
+    latencyMs,
     connectionState,
     chatMessages,
     lastError,
@@ -467,6 +469,7 @@ export function useOnlineGamePlaySession({
   return {
     room,
     match,
+    latencyMs,
     chat: {
       messages: chatMessages,
       sendMessage: (content: string) => sendChatMessage(content, roomId),

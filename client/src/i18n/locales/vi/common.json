@@ -59,7 +59,7 @@
         "commandDeck": "Boong chỉ huy",
         "commandDeckDesc": "Chọn kịch bản, tinh chỉnh hệ thống hoặc đăng nhập để mở khóa tác chiến trực tuyến.",
         "stats": {
-            "rank": "Cấp bậc",
+            "openRoom": "Phòng đang mở",
             "status": "Trạng thái",
             "grid": "Lưới",
             "rankCadet": "Tân binh",

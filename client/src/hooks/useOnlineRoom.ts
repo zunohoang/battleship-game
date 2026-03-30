@@ -20,6 +20,7 @@ interface UseOnlineRoomState {
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
   rooms: RoomListSummary[];
+  latencyMs: number | null;
   chatMessages: ChatMessage[];
   lastError: string | null;
   activeRoomHint: {
@@ -48,6 +49,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
     room: null,
     match: null,
     rooms: [],
+    latencyMs: null,
     chatMessages: [],
     lastError: null,
     activeRoomHint: null,
@@ -246,11 +248,14 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
   }, []);
 
   const reconnect = useCallback((payload: { roomId?: string; matchId?: string }) => {
+    const startedAt = Date.now();
     gameSocketService.reconnect(payload, (response) => {
+      const latency = Math.max(0, Date.now() - startedAt);
       setState((current) => ({
         ...current,
         room: response.room,
         match: response.match,
+        latencyMs: latency,
         lastError: null,
       }));
     });
@@ -294,6 +299,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       room: state.room,
       match: state.match,
       rooms: state.rooms,
+      latencyMs: state.latencyMs,
       chatMessages: state.chatMessages,
       lastError: state.lastError,
       activeRoomHint: state.activeRoomHint,
@@ -324,6 +330,7 @@ export function useOnlineRoom(initialRoomId?: string, enabled = true) {
       state.chatMessages,
       state.lastError,
       state.activeRoomHint,
+      state.latencyMs,
       state.match,
       state.room,
       state.rooms,

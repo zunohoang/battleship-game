@@ -737,7 +737,7 @@ export function GameRoomsPage() {
         isOpen={selectedRoom !== null}
         title={t('gameRooms.modalTitle')}
         onClose={() => setSelectedRoomPreview(null)}
-        surfaceClassName='max-w-2xl'
+        maxWidthClassName='max-w-2xl'
       >
         {selectedRoom ? (
           <div className='space-y-4'>

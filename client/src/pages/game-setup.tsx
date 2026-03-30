@@ -631,46 +631,47 @@ export function GameSetupPage() {
                 </p>
               </div>
             ) : null}
-            <StepPill
-              number={1}
-              label={t('gameSetup.header.step1Label')}
-              phaseLabel={t('gameSetup.header.phase')}
-              status={step > 1 ? 'done' : 'active'}
-            />
-            {!isOnlinePhase1Flow ? (
-              <>
-                <div className='hidden h-px w-8 bg-[rgba(63,203,232,0.48)] lg:block' />
-                <StepPill
-                  number={2}
-                  label={t('gameSetup.header.step2Label')}
-                  phaseLabel={t('gameSetup.header.phase')}
-                  status={step === 2 ? 'active' : 'upcoming'}
-                />
-              </>
+            {step === 1 ? (
+              <StepPill
+                number={1}
+                label={t('gameSetup.header.step1Label')}
+                phaseLabel={t('gameSetup.header.phase')}
+                status='active'
+              />
             ) : null}
-            <Button
-              onClick={() => {
-                if (isOnlinePhase1Flow && roomId) {
-                  navigate('/game/waiting', {
-                    state: {
-                      roomId,
-                      matchId: match?.id ?? matchId,
-                    },
-                  });
-                  return;
-                }
+            {step === 2 ? (
+              <StepPill
+                number={2}
+                label={t('gameSetup.header.step2Label')}
+                phaseLabel={t('gameSetup.header.phase')}
+                status='active'
+              />
+            ) : null}
+            {isOnlinePlacementFlow ? null : (
+              <Button
+                onClick={() => {
+                  if (isOnlinePhase1Flow && roomId) {
+                    navigate('/game/waiting', {
+                      state: {
+                        roomId,
+                        matchId: match?.id ?? matchId,
+                      },
+                    });
+                    return;
+                  }
 
-                if (step === 2) {
-                  handleBackToConfig();
-                  return;
-                }
+                  if (step === 2) {
+                    handleBackToConfig();
+                    return;
+                  }
 
-                navigate(mode === 'botvbot' ? '/game/bot-setup' : '/home');
-              }}
-              className='h-10 w-full px-4 sm:w-auto'
-            >
-              {t('gameSetup.header.back')}
-            </Button>
+                  navigate(mode === 'botvbot' ? '/game/bot-setup' : '/home');
+                }}
+                className='h-10 w-full px-4 sm:w-auto'
+              >
+                {t('gameSetup.header.back')}
+              </Button>
+            )}
             {step === 2 ? (
               <Button
                 variant='primary'

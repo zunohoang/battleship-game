@@ -6,6 +6,9 @@ type ModalProps = {
   isOpen: boolean;
   title: string;
   onClose: () => void;
+  /** Override the default max-width (max-w-md). Pass a Tailwind max-w class, e.g. 'max-w-2xl'. */
+  maxWidthClassName?: string;
+  /** Additional classes merged onto the surface element (avoid max-w-* here). */
   surfaceClassName?: string;
   children: ReactNode;
 };
@@ -14,6 +17,7 @@ export function Modal({
   isOpen,
   title,
   onClose,
+  maxWidthClassName = 'max-w-md',
   surfaceClassName = '',
   children,
 }: ModalProps) {
@@ -33,7 +37,7 @@ export function Modal({
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         >
           <motion.div
-            className={`ui-modal-surface w-full max-w-md rounded-md p-5 shadow-2xl ${surfaceClassName}`.trim()}
+            className={`ui-modal-surface w-full ${maxWidthClassName} rounded-md p-5 shadow-2xl ${surfaceClassName}`.trim()}
             initial={{ opacity: 0, y: 28, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.985 }}

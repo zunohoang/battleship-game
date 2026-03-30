@@ -74,9 +74,7 @@ function summarizeShots(shots: ShotRecord[]): OnlineMatchShotStats {
   const hits = shots.filter((shot) => shot.isHit).length;
   const shotsFired = shots.length;
   const misses = shotsFired - hits;
-  const accuracy = shotsFired
-    ? Math.round((hits / shotsFired) * 100)
-    : 0;
+  const accuracy = shotsFired ? Math.round((hits / shotsFired) * 100) : 0;
 
   return {
     shotsFired,
@@ -835,6 +833,7 @@ export class GameService {
 
   async leaveRoom(roomId: string, userId: string): Promise<RoomSnapshot> {
     const room = await this.getRoomOrThrow(roomId);
+    const isInGame = room.status === 'in_game';
 
     if (room.ownerId === userId) {
       room.status = 'closed';
@@ -842,7 +841,10 @@ export class GameService {
     } else if (room.guestId === userId) {
       room.guestId = null;
       room.guestReady = false;
-      if (room.status !== 'closed') {
+      if (isInGame) {
+        room.status = 'closed';
+        room.expiresAt = new Date();
+      } else if (room.status !== 'closed') {
         room.status = 'waiting';
       }
     } else {

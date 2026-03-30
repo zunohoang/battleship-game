@@ -14,6 +14,7 @@ import { OnlineGameHistoryModal } from '@/components/modal/OnlineGameHistoryModa
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { Button } from '@/components/ui/Button';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
+import { useOnlineRoom } from '@/hooks/useOnlineRoom';
 import * as authService from '@/services/authService';
 import {
   fetchLeaderboard,
@@ -28,6 +29,7 @@ import {
   validateRegisterInput,
 } from '@/utils/authValidation';
 import { getRankTierId, type RankTierId } from '@/utils/rankTier';
+import type { RoomStatus } from '@/types/game';
 import {
   BotIcon,
   GlobeIcon,
@@ -98,6 +100,11 @@ export function HomePage() {
     [location.state],
   );
   const isAnonymous = user?.isAnonymous ?? true;
+  const onlineEnabled = !isAnonymous;
+  const { room: activeRoom, match: activeMatch, reconnect } = useOnlineRoom(
+    undefined,
+    onlineEnabled,
+  );
   const openModal = (mode: AuthModalMode) => {
     setAuthModalMode(mode);
   };
@@ -116,6 +123,21 @@ export function HomePage() {
       state: null,
     });
   }, [location.pathname, location.search, navigate, navigationState]);
+
+  useEffect(() => {
+    if (!onlineEnabled) {
+      return;
+    }
+
+    reconnect({});
+    const timer = window.setInterval(() => {
+      reconnect({});
+    }, 5000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [onlineEnabled, reconnect]);
 
   useEffect(() => {
     let isActive = true;
@@ -404,22 +426,41 @@ export function HomePage() {
     }
   };
 
+  const roomStatusLabelMap = useMemo(
+    (): Record<RoomStatus, string> => ({
+      waiting: t('gameRooms.roomStatus.waiting'),
+      setup: t('gameRooms.roomStatus.setup'),
+      in_game: t('gameRooms.roomStatus.in_game'),
+      finished: t('gameRooms.roomStatus.finished'),
+      closed: t('gameRooms.roomStatus.closed'),
+    }),
+    [t],
+  );
+
+  const activeRoomStatusText = activeRoom
+    ? roomStatusLabelMap[activeRoom.status]
+    : t('home.stats.statusStandby');
+  const activeRoomGridText =
+    activeMatch?.boardConfig
+      ? `${activeMatch.boardConfig.rows} x ${activeMatch.boardConfig.cols}`
+      : '- - -';
+
   const tacticalStats = [
     {
-      label: t('home.stats.rank'),
-      value: isAnonymous
-        ? t('home.stats.rankCadet')
-        : user && typeof user.elo === 'number'
-          ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
-          : t('home.stats.rankCadet'),
+      label: t('home.stats.openRoom'),
+      value: activeRoom?.roomCode?.trim() || '- - -',
+      isInteractive: !!activeRoom?.roomId,
     },
     {
       label: t('home.stats.status'),
-      value: isAnonymous
-        ? t('home.stats.statusStandby')
-        : t('home.stats.statusReady'),
+      value: activeRoomStatusText,
+      isInteractive: false,
     },
-    { label: t('home.stats.grid'), value: t('home.stats.gridDefault') },
+    {
+      label: t('home.stats.grid'),
+      value: activeRoomGridText,
+      isInteractive: false,
+    },
   ];
 
   return (
@@ -485,9 +526,30 @@ export function HomePage() {
                         <span className='ui-data-label whitespace-nowrap'>
                           {stat.label}
                         </span>
-                        <span className='ui-data-value text-sm whitespace-nowrap'>
-                          {stat.value}
-                        </span>
+                        {stat.isInteractive ? (
+                          <button
+                            type='button'
+                            onClick={() => {
+                              if (!activeRoom?.roomId) {
+                                return;
+                              }
+
+                              navigate('/game/waiting', {
+                                state: {
+                                  roomId: activeRoom.roomId,
+                                  matchId: activeMatch?.id,
+                                },
+                              });
+                            }}
+                            className='ui-data-value cursor-pointer text-right text-sm whitespace-nowrap underline underline-offset-4 transition-colors hover:text-white'
+                          >
+                            {stat.value}
+                          </button>
+                        ) : (
+                          <span className='ui-data-value text-sm whitespace-nowrap'>
+                            {stat.value}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

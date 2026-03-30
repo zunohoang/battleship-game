@@ -59,7 +59,7 @@
         "commandDeck": "Command Deck",
         "commandDeckDesc": "Select a scenario, adjust system settings, or authenticate to unlock online operations.",
         "stats": {
-            "rank": "Rank",
+            "openRoom": "Open Room",
             "status": "Status",
             "grid": "Grid",
             "rankCadet": "Cadet",

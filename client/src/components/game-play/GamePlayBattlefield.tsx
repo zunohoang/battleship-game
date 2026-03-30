@@ -465,7 +465,7 @@ export function BattleBoardPanel({
   const header = (
     <div
       className={`flex items-center justify-between gap-2 ${
-        isDesktopRightAligned ? 'md:justify-end' : ''
+        isDesktopRightAligned ? 'md:flex-row-reverse' : ''
       }`.trim()}
     >
       <div

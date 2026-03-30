@@ -4,6 +4,7 @@ import { AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, SlidersHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { images } from '@/assets';
+import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { BattleBoardPanel } from '@/components/game-play/GamePlayBattlefield';
 import {
@@ -58,6 +59,8 @@ export interface GamePlayHeaderSideContent {
   signature: string;
   align?: 'left' | 'right';
   elo?: number | null;
+  userId?: string | null;
+  pingMs?: number | null;
 }
 
 export interface GamePlayLoadingFallback {
@@ -167,6 +170,9 @@ function createHeaderContent({
   signature,
   fallbackSignature = '- - -',
   align,
+  elo,
+  userId,
+  pingMs,
 }: {
   avatarSrc?: string | null;
   label?: string;
@@ -175,6 +181,9 @@ function createHeaderContent({
   signature?: string | null;
   fallbackSignature?: string;
   align: 'left' | 'right';
+  elo?: number | null;
+  userId?: string | null;
+  pingMs?: number | null;
 }): GamePlayHeaderSideContent {
   return {
     avatarSrc: avatarSrc?.trim() || null,
@@ -182,6 +191,12 @@ function createHeaderContent({
     name: name?.trim() || fallbackName,
     signature: signature?.trim() || fallbackSignature,
     align,
+    elo: typeof elo === 'number' && Number.isFinite(elo) ? elo : null,
+    userId: userId ?? null,
+    pingMs:
+      typeof pingMs === 'number' && Number.isFinite(pingMs)
+        ? Math.max(0, Math.round(pingMs))
+        : null,
   };
 }
 
@@ -199,6 +214,7 @@ function GamePlayScreen({
   const [statsDisplayState, setStatsDisplayState] =
     useState<StatsDisplayState>('hidden');
   const [chatDraft, setChatDraft] = useState('');
+  const [showcaseSide, setShowcaseSide] = useState<'left' | 'right' | null>(null);
   const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(() =>
     Boolean(model?.actions.encryptedChannelMaskable),
   );
@@ -243,6 +259,17 @@ function GamePlayScreen({
   }
 
   const { header, battlefield, missionLog, actions, state } = model;
+  const showcaseContent = showcaseSide === 'left' ? header.leftContent : showcaseSide === 'right' ? header.rightContent : null;
+  const showcaseProfile = showcaseContent?.userId
+    ? {
+      id: showcaseContent.userId,
+      username: showcaseContent.name,
+      avatar: showcaseContent.avatarSrc ?? null,
+      signature: showcaseContent.signature,
+      label: showcaseContent.label,
+      elo: showcaseContent.elo ?? 800,
+    }
+    : null;
   const isStatsVisible =
     state.phase === 'gameover' || statsDisplayState === 'open';
   const isStatsMinimized =
@@ -274,10 +301,18 @@ function GamePlayScreen({
       <div className='flex h-[calc(100dvh-2rem)] min-h-[calc(100dvh-2rem)] flex-col gap-1.5 sm:h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4rem)] sm:gap-2 md:h-auto md:min-h-0 md:flex-1 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)] md:gap-3'>
         {/* Left header based on 2 device type */}
         <div className='order-1 shrink-0 md:hidden'>
-          <GamePlayIdentityCard content={header.leftContent} />
+          <GamePlayIdentityCard
+            content={header.leftContent}
+            showSignature={false}
+            onClick={header.leftContent.userId ? () => setShowcaseSide('left') : undefined}
+          />
         </div>
-        <div className='hidden md:col-start-1 md:row-start-1 md:block lg:w-[30rem] md:justify-self-start'>
-          <GamePlayIdentityCard content={header.leftContent} />
+        <div className='hidden md:col-start-1 md:row-start-1 md:block lg:w-[25rem] md:justify-self-start'>
+          <GamePlayIdentityCard
+            content={header.leftContent}
+            showSignature={false}
+            onClick={header.leftContent.userId ? () => setShowcaseSide('left') : undefined}
+          />
         </div>
 
         {/* Turn status on desktop device */}
@@ -388,11 +423,19 @@ function GamePlayScreen({
         </div>
 
         {/* Right header based on 2 device type */}
-        <div className='hidden md:col-start-3 md:row-start-1 md:block lg:w-[30rem] md:justify-self-end'>
-          <GamePlayIdentityCard content={header.rightContent} />
+        <div className='hidden md:col-start-3 md:row-start-1 md:block lg:w-[25rem] md:justify-self-end'>
+          <GamePlayIdentityCard
+            content={header.rightContent}
+            showSignature={false}
+            onClick={header.rightContent.userId ? () => setShowcaseSide('right') : undefined}
+          />
         </div>
         <div className='order-5 shrink-0 md:hidden'>
-          <GamePlayIdentityCard content={header.rightContent} />
+          <GamePlayIdentityCard
+            content={header.rightContent}
+            showSignature={false}
+            onClick={header.rightContent.userId ? () => setShowcaseSide('right') : undefined}
+          />
         </div>
 
         {/* VS divider, disabled on mobile */}
@@ -437,17 +480,7 @@ function GamePlayScreen({
           <div className='flex w-full min-w-0 flex-wrap items-center gap-2 md:flex-nowrap md:min-w-0 md:flex-1'>
             {/* Chat input */}
             {missionLog.onSendChatMessage ? (
-              <div className='flex min-w-0 flex-1 items-stretch gap-2 md:ml-2'>
-                <button
-                  type='button'
-                  onClick={handleSendChat}
-                  disabled={
-                    missionLog.chatDisabled || chatDraft.trim().length === 0
-                  }
-                  className='shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('gameBattle.chatSend')}
-                </button>
+              <div className='flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:w-[50%] lg:max-w-md'>
                 <input
                   type='text'
                   value={chatDraft}
@@ -463,16 +496,19 @@ function GamePlayScreen({
                   maxLength={280}
                   className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60'
                 />
+                <button
+                  type='button'
+                  onClick={handleSendChat}
+                  disabled={
+                    missionLog.chatDisabled || chatDraft.trim().length === 0
+                  }
+                  className='shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                  {t('gameBattle.chatSend')}
+                </button>
               </div>
             ) : null}
 
-            {/* Quit btn */}
-            <Button
-              onClick={handleQuit}
-              className='h-8 px-3 text-[10px] md:w-auto'
-            >
-              {t('gameBattle.quitMission')}
-            </Button>
             {/* Stats btn */}
             <Button
               onClick={handleToggleStats}
@@ -483,6 +519,14 @@ function GamePlayScreen({
               }`}
             >
               {t('gameBattle.statistics')}
+            </Button>
+            {/* Quit btn */}
+            <Button
+              onClick={handleQuit}
+              variant='danger'
+              className='h-8 px-3 text-[10px] md:w-auto'
+            >
+              {t('gameBattle.quitMission')}
             </Button>
           </div>
 
@@ -528,6 +572,11 @@ function GamePlayScreen({
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+      <ProfileShowcaseModal
+        isOpen={showcaseSide !== null}
+        onClose={() => setShowcaseSide(null)}
+        profile={showcaseProfile}
       />
     </GamePlayShell>
   );
@@ -607,6 +656,7 @@ export function GamePlayPage() {
   const {
     room,
     match,
+    latencyMs,
     chat,
     model: onlineModel,
     phase: onlinePhase,
@@ -660,6 +710,12 @@ export function GamePlayPage() {
       user?.username,
     ],
   );
+  const currentElo = typeof (currentPlayerProfile?.elo ?? user?.elo) === 'number' && Number.isFinite(currentPlayerProfile?.elo ?? user?.elo)
+    ? (currentPlayerProfile?.elo ?? user?.elo)
+    : 800;
+  const opponentElo = typeof opponentProfile?.elo === 'number' && Number.isFinite(opponentProfile.elo)
+    ? opponentProfile.elo
+    : null;
   const onlineLeftHeaderContent = createHeaderContent({
     avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar,
     label: 'COMMANDER',
@@ -667,6 +723,9 @@ export function GamePlayPage() {
     fallbackName: 'Commander',
     signature: currentPlayerProfile?.signature ?? user?.signature,
     align: 'left',
+    elo: currentElo,
+    userId: currentUserId,
+    pingMs: latencyMs,
   });
   const onlineRightHeaderContent = createHeaderContent({
     avatarSrc: opponentProfile?.avatar,
@@ -677,6 +736,9 @@ export function GamePlayPage() {
       : 'Opponent',
     signature: opponentProfile?.signature,
     align: 'right',
+    elo: opponentElo,
+    userId: onlineOpponentId,
+    pingMs: latencyMs,
   });
 
   useEffect(() => {
@@ -756,7 +818,10 @@ export function GamePlayPage() {
             resolveChatAuthorLabel: resolveOnlineChatAuthorLabel,
           },
           actions: {
-            onQuit: () => navigate('/game/rooms'),
+            onQuit: () => {
+              leaveOnlineRoom();
+              navigate('/game/rooms');
+            },
             showEncryptedChannel: true,
             encryptedChannelValue: room?.roomCode ?? '-----',
             encryptedChannelMaskable: true,
@@ -799,6 +864,8 @@ export function GamePlayPage() {
         fallbackName: 'Alpha',
         signature: user?.signature,
         align: 'left',
+        elo: typeof user?.elo === 'number' && Number.isFinite(user.elo) ? user.elo : 800,
+        userId: user?.id ?? null,
       });
   const rightHeaderContent =
     localMode === 'botvbot'

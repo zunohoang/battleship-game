@@ -1,18 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/Modal';
-
-const rankLevelBands = [
-  { level: 1, max: 999 },
-  { level: 2, max: 1299 },
-  { level: 3, max: 1599 },
-  { level: 4, max: 1999 },
-  { level: 5, max: Number.POSITIVE_INFINITY },
-] as const;
-
-function getRankLevel(elo: number): number {
-  return rankLevelBands.find((band) => elo <= band.max)!.level;
-}
+import { getRankTierId } from '@/utils/rankTier';
 
 type ProfileShowcaseData = {
   id?: string | null;
@@ -47,8 +36,10 @@ export function ProfileShowcaseModal({
       return '';
     }
 
-    return `${getRankLevel(profile.elo)} - ${profile.elo}`;
-  }, [profile]);
+    const tierId = getRankTierId(profile.elo);
+    const rankName = t(`rank.tiers.${tierId}.name`);
+    return `${rankName} — ${profile.elo}`;
+  }, [profile, t]);
 
   return (
     <Modal

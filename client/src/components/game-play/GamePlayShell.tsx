@@ -14,6 +14,8 @@ export type HeaderSideContent = {
   align?: 'left' | 'right';
   /** Competitive ELO; when set, rank tier and ELO are shown under the signature. */
   elo?: number | null;
+  /** Round-trip latency in milliseconds for network signal rendering. */
+  pingMs?: number | null;
 };
 
 interface GamePlayShellProps {
@@ -67,10 +69,12 @@ export function GamePlayIdentityCard({
   content,
   onClick,
   buttonAriaLabel,
+  showSignature = true,
 }: {
   content: HeaderSideContent;
   onClick?: () => void;
   buttonAriaLabel?: string;
+  showSignature?: boolean;
 }) {
   const { t } = useTranslation();
   const isRightAligned = content.align === 'right';
@@ -82,10 +86,24 @@ export function GamePlayIdentityCard({
   const rankTierId = eloValue !== null ? getRankTierId(eloValue) : null;
   const rankName =
     rankTierId !== null ? t(`rank.tiers.${rankTierId}.name`) : null;
+  const pingMs =
+    typeof content.pingMs === 'number' && Number.isFinite(content.pingMs)
+      ? Math.max(0, Math.round(content.pingMs))
+      : null;
+  const signalLevel =
+    pingMs === null
+      ? 0
+      : pingMs <= 60
+        ? 4
+        : pingMs <= 100
+          ? 3
+          : pingMs <= 170
+            ? 2
+            : 1;
 
   const cardBody = (
     <div
-      className={`flex items-center gap-3 ${
+      className={`flex items-center gap-3 my-0.5 ${
         isRightAligned ? 'lg:flex-row-reverse' : ''
       }`}
     >
@@ -102,38 +120,55 @@ export function GamePlayIdentityCard({
       </div>
 
       <div className='min-w-0 flex-1'>
-        {content.label ? (
-          <p className='ui-data-label'>{content.label}</p>
-        ) : null}
-        <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
-          {content.name}
+        <div
+          className={`flex min-w-0 items-center justify-between gap-2 ${isRightAligned ? 'lg:flex-row-reverse' : ''}`}
+        >
+          <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
+            {content.name}
+          </p>
+          {pingMs !== null ? (
+            <div className='shrink-0 flex items-center gap-1.5'>
+              <div className='flex items-end gap-0.5'>
+                {[1, 2, 3, 4].map((bar) => (
+                  <span
+                    key={bar}
+                    className={`inline-block w-1 rounded-sm ${
+                      signalLevel >= bar
+                        ? 'bg-[rgba(117,235,255,0.92)] shadow-[0_0_6px_rgba(34,211,238,0.45)]'
+                        : 'bg-[rgba(117,235,255,0.22)]'
+                    }`}
+                    style={{ height: `${4 + bar * 2}px` }}
+                  />
+                ))}
+              </div>
+              <span className='text-[11px] font-mono font-bold text-(--accent-secondary)'>
+                {pingMs}ms
+              </span>
+            </div>
+          ) : null}
+        </div>
+        {rankName ? (
+          <p className='font-mono text-[11px] tracking-[0.04em]'>
+            <span className='text-(--text-main)'>{rankName}</span>
+          </p>
+        ) : (
+          <p className='truncate text-xs text-(--text-muted)'>
+            {'- - -'}
+          </p>
+        )}
+        <p className='text-[11px] font-mono tracking-[0.06em]'>
+          <span className='text-(--text-muted)'>
+            {t('home.profile.elo')}
+            {': '}
+          </span>
+          <span className='font-bold text-(--accent-secondary)'>
+            {eloValue}
+          </span>
         </p>
-        <p className='truncate text-xs text-(--text-muted)'>
-          {content.signature}
-        </p>
-        {eloValue !== null && rankName ? (
-          <div
-            className={`mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] leading-tight ${
-              isRightAligned ? 'lg:justify-end' : ''
-            }`}
-          >
-            <span className='font-mono tracking-[0.04em]'>
-              <span className='text-(--text-muted)'>
-                {t('home.profile.rank')}
-                {': '}
-              </span>
-              <span className='text-(--text-main)'>{rankName}</span>
-            </span>
-            <span className='font-mono tracking-[0.06em]'>
-              <span className='text-(--text-muted)'>
-                {t('home.profile.elo')}
-                {': '}
-              </span>
-              <span className='font-bold text-(--accent-secondary)'>
-                {eloValue}
-              </span>
-            </span>
-          </div>
+        {showSignature ? (
+          <p className='truncate text-xs text-(--text-muted)'>
+            {content.signature}
+          </p>
         ) : null}
       </div>
     </div>

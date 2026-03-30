@@ -45,6 +45,7 @@ export function WaitingRoomPage() {
     connectionState,
     room,
     match,
+    latencyMs,
     chatMessages,
     lastError,
     startRoom,
@@ -71,6 +72,7 @@ export function WaitingRoomPage() {
     room.status === 'waiting' &&
     hasPhase1Configured &&
     !!match;
+  const showStartSetupButton = !isOwner || hasPhase1Configured;
   const [isProfileSetupOpen, setProfileSetupOpen] = useState(false);
   const [isOpponentProfileOpen, setOpponentProfileOpen] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
@@ -163,7 +165,7 @@ export function WaitingRoomPage() {
   }, [match]);
 
   const waitingRoomFeed = useMemo(() => [], []);
-  const { getProfileById, refreshProfiles } = usePlayerProfiles([
+  const { getProfileById } = usePlayerProfiles([
     currentUserId,
     opponentUserId,
   ]);
@@ -201,12 +203,14 @@ export function WaitingRoomPage() {
         '- - -',
       align: 'left' as const,
       elo: currentElo,
+      pingMs: latencyMs,
     }),
     [
       currentElo,
       currentPlayerProfile?.avatar,
       currentPlayerProfile?.signature,
       currentPlayerProfile?.username,
+      latencyMs,
       t,
       user?.avatar,
       user?.signature,
@@ -225,8 +229,10 @@ export function WaitingRoomPage() {
       signature: opponentProfile?.signature?.trim() || '- - -',
       align: 'right' as const,
       elo: opponentElo,
+      pingMs: latencyMs,
     }),
     [
+      latencyMs,
       opponentElo,
       opponentProfile?.avatar,
       opponentProfile?.signature,
@@ -329,25 +335,6 @@ export function WaitingRoomPage() {
     }
   };
 
-  const handleRefreshState = async () => {
-    reconnect({ roomId, matchId });
-
-    const refreshedProfiles = await refreshProfiles();
-    const refreshedCurrentProfile = currentUserId
-      ? (refreshedProfiles[currentUserId] ?? null)
-      : null;
-
-    if (refreshedCurrentProfile && user) {
-      setUser({
-        ...user,
-        username: refreshedCurrentProfile.username,
-        avatar: refreshedCurrentProfile.avatar,
-        signature: refreshedCurrentProfile.signature,
-        elo: refreshedCurrentProfile.elo,
-      });
-    }
-  };
-
   const resolveChatAuthorLabel = useCallback(
     (senderId: string) => {
       if (senderId === currentUserId) {
@@ -433,10 +420,10 @@ export function WaitingRoomPage() {
             />
           </div>
 
-          <div className='ui-subpanel mt-2 rounded-sm px-4 py-4'>
+          <div className='ui-subpanel flex justify-center items-center mt-2 flex-1 min-h-0 overflow-y-auto rounded-sm px-4 py-4'>
             {phase1Summary ? (
               <div className='grid gap-4'>
-                <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-5'>
+                <div className='grid gap-3 lg:grid-cols-5'>
                   <div className='ui-subpanel-strong rounded-sm px-4 py-3'>
                     <p className='ui-data-label'>{t('waitingRoom.boardSize')}</p>
                     <p className='mt-2 font-mono text-lg font-black text-(--accent-secondary)'>
@@ -482,6 +469,7 @@ export function WaitingRoomPage() {
                   </div>
                 </div>
 
+                { /* For mobile view */ }
                 <div className='grid gap-2 md:hidden'>
                   {phase1Summary.ships.map((ship) => (
                     <div
@@ -527,21 +515,15 @@ export function WaitingRoomPage() {
 
                 <div className='hidden overflow-x-auto pb-1 md:block'>
                   <div className='grid min-w-180 gap-2'>
-                    <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] gap-3 px-4 py-1'>
-                      <p className='ui-data-label'>
-                        {t('gameSetup.step1.shipName')}
-                      </p>
-                      <p className='ui-data-label'>
-                        {t('gameSetup.step1.size')}
-                      </p>
-                      <p className='ui-data-label'>
-                        {t('gameSetup.step1.count')}
-                      </p>
+                    <div className='grid grid-cols-[minmax(0,1.5fr)_120px_140px_100px_115px] gap-3 px-4 py-1'>
+                      <p className='ui-data-label'>{t('gameSetup.step1.shipName')}</p>
+                      <p className='ui-data-label'>{t('gameSetup.step1.size')}</p>
+                      <p className='ui-data-label'>{t('gameSetup.step1.count')}</p>
                       <p className='ui-data-label'>{t('waitingRoom.load')}</p>
                       <p className='ui-data-label'>{t('waitingRoom.total')}</p>
                     </div>
 
-                    <div className='themed-scrollbar max-h-72 overflow-y-auto pr-1'>
+                    <div className='themed-scrollbar max-h-65 overflow-y-auto pr-1'>
                       <div className='grid gap-2'>
                         {phase1Summary.ships.map((ship) => (
                           <div
@@ -585,7 +567,7 @@ export function WaitingRoomPage() {
             </p>
           ) : null}
 
-          <div className='ui-panel overflow-hidden rounded-md'>
+          <div className='ui-panel mt-auto overflow-hidden rounded-md'>
             <MissionLogPanel
               className='px-3 pt-3 pb-2 sm:px-4'
               title={t('waitingRoom.feedTitle')}
@@ -626,6 +608,15 @@ export function WaitingRoomPage() {
               </div>
               <div className='flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:flex-1'>
                 <Button
+                  variant='default'
+                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
+                  onClick={() => {
+                    navigate('/home');
+                  }}
+                >
+                  {t('waitingRoom.backHome')}
+                </Button>
+                <Button
                   variant='danger'
                   className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
                   onClick={() => {
@@ -635,19 +626,10 @@ export function WaitingRoomPage() {
                 >
                   {t('waitingRoom.leaveRoom')}
                 </Button>
-                <Button
-                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
-                  onClick={() => {
-                    void handleRefreshState();
-                  }}
-                >
-                  {t('waitingRoom.refreshState')}
-                </Button>
-                {isOwner ? (
+                {canConfigurePhase1 ? (
                   <Button
                     variant='primary'
                     className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
-                    disabled={!canConfigurePhase1}
                     onClick={() => {
                       const onlineSetupFlow: OnlineSetupFlow = 'phase1';
                       navigate('/game/setup', {
@@ -660,30 +642,28 @@ export function WaitingRoomPage() {
                       });
                     }}
                   >
-                    {canConfigurePhase1
-                      ? t('waitingRoom.setupPhase1')
-                      : t('waitingRoom.phase1Locked')}
+                    {t('waitingRoom.setupPhase1')}
                   </Button>
                 ) : null}
-                <Button
-                  variant='primary'
-                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
-                  disabled={!canStartSetup}
-                  onClick={() => {
-                    if (!room?.roomId) return;
-                    startRoom({ roomId: room.roomId });
-                  }}
-                >
-                  {canStartSetup
-                    ? t('waitingRoom.startSetup')
-                    : !isOwner
-                      ? t('waitingRoom.waitingForOwner')
-                      : !hasPhase1Configured
-                        ? t('waitingRoom.finishPhase1First')
+                {showStartSetupButton ? (
+                  <Button
+                    variant='primary'
+                    className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
+                    disabled={!canStartSetup}
+                    onClick={() => {
+                      if (!room?.roomId) return;
+                      startRoom({ roomId: room.roomId });
+                    }}
+                  >
+                    {canStartSetup
+                      ? t('waitingRoom.startSetup')
+                      : !isOwner
+                        ? t('waitingRoom.waitingForOwner')
                         : !room?.guestId
                           ? t('waitingRoom.waitingForOpponent')
                           : t('waitingRoom.setupLocked')}
-                </Button>
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>

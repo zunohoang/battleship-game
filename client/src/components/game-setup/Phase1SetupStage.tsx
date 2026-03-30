@@ -226,11 +226,11 @@ export function Phase1SetupStage({
 
             <div className='flex flex-wrap items-start gap-3'>
               {/* Turn timer controls */}
-              <div className='ui-subpanel rounded-sm px-4 py-2'>
+              <div className='ui-subpanel rounded-sm px-4 py-1.5'>
                 <p className='ui-data-label'>
                   {t('gameSetup.step1.turnTimer')}
                 </p>
-                <div className='mt-1 flex items-center gap-2'>
+                <div className='mt-0.5 flex items-center gap-2'>
                   <Button
                     className='px-2'
                     disabled={!canDecreaseTurnTimer}
@@ -262,11 +262,11 @@ export function Phase1SetupStage({
               </div>
 
               {/* Fleet types count */}
-              <div className='ui-subpanel rounded-sm px-4 py-2'>
+              <div className='ui-subpanel rounded-sm px-4 py-1.5'>
                 <p className='ui-data-label'>
                   {t('gameSetup.step1.fleetTypes')}
                 </p>
-                <p className='mt-1 justify-self-center font-mono text-5xl text-(--accent-secondary)'>
+                <p className='mt-0.5 justify-self-center font-mono text-5xl text-(--accent-secondary)'>
                   {ships.length}
                 </p>
               </div>
@@ -282,7 +282,7 @@ export function Phase1SetupStage({
 
           <div className='themed-scrollbar grid min-h-0 flex-1 gap-1 overflow-y-auto pr-1'>
             {ships.map((ship) => (
-              <div key={ship.id} className='ui-state-idle rounded-sm px-4 py-2'>
+              <div key={ship.id} className='ui-state-idle rounded-sm px-4 py-3'>
                 <div className='grid gap-3 xl:grid-cols-[minmax(0,1fr)_112px_112px_auto] xl:items-end'>
                   <label className='grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)'>
                     {t('gameSetup.step1.shipName')}
@@ -292,7 +292,7 @@ export function Phase1SetupStage({
                       onChange={(event) =>
                         onShipUpdate(ship.id, { name: event.target.value })
                       }
-                      className='ui-input h-8 w-full rounded-sm px-3 text-sm font-semibold'
+                      className='ui-input mt-0 h-8 w-full rounded-sm px-3 text-sm font-semibold'
                     />
                   </label>
                   <label className='grid gap-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-(--text-muted)'>
