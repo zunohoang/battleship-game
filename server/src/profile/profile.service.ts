@@ -148,7 +148,9 @@ export class ProfileService {
     });
   }
 
-  private deleteLocalAvatarIfExists(avatarUrl: string | null | undefined): void {
+  private deleteLocalAvatarIfExists(
+    avatarUrl: string | null | undefined,
+  ): void {
     if (!avatarUrl) {
       return;
     }
