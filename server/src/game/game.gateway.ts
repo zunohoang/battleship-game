@@ -40,6 +40,7 @@ type RoomUpdatePayload = {
 
 @WebSocketGateway({
   namespace: 'game',
+  path: '/api/socket.io',
   cors: {
     origin: '*',
   },

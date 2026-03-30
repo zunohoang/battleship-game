@@ -54,14 +54,6 @@ interface SocketAck<T> {
 
 const GAME_NAMESPACE = '/game';
 
-function getSocketBaseUrl(): string {
-  const envUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (!envUrl || envUrl.trim().length === 0) {
-    return window.location.origin;
-  }
-  return envUrl;
-}
-
 class GameSocketService {
   private socket: Socket | null = null;
 
@@ -71,7 +63,12 @@ class GameSocketService {
     }
 
     const token = getAccessToken();
-    this.socket = io(`${getSocketBaseUrl()}${GAME_NAMESPACE}`, {
+    // Chỉ lấy base không lấy /api/
+    const envUrl = import.meta.env.VITE_API_BASE_URL as string;
+    const socketBaseUrl = envUrl.replace(/\/api\/?$/, '')
+
+    this.socket = io(`${socketBaseUrl}${GAME_NAMESPACE}`, {
+      path: '/api/socket.io',
       transports: ['websocket'],
       withCredentials: true,
       auth: {
