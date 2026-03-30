@@ -2,12 +2,25 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/Modal';
 
+const rankLevelBands = [
+  { level: 1, max: 999 },
+  { level: 2, max: 1299 },
+  { level: 3, max: 1599 },
+  { level: 4, max: 1999 },
+  { level: 5, max: Number.POSITIVE_INFINITY },
+] as const;
+
+function getRankLevel(elo: number): number {
+  return rankLevelBands.find((band) => elo <= band.max)!.level;
+}
+
 type ProfileShowcaseData = {
   id?: string | null;
   username: string;
   signature?: string | null;
   avatar?: string | null;
   label?: string;
+  elo: number;
 };
 
 type ProfileShowcaseModalProps = {
@@ -29,6 +42,13 @@ export function ProfileShowcaseModal({
     () => profile?.username.trim().slice(0, 1).toUpperCase() || '?',
     [profile?.username],
   );
+  const rankAndEloLabel = useMemo(() => {
+    if (!profile) {
+      return '';
+    }
+
+    return `${getRankLevel(profile.elo)} - ${profile.elo}`;
+  }, [profile]);
 
   return (
     <Modal
@@ -57,6 +77,9 @@ export function ProfileShowcaseModal({
                 <p className='ui-data-label'>{profile.label ?? 'Commander Profile'}</p>
                 <p className='mt-2 wrap-anywhere font-mono text-2xl font-black tracking-[0.08em] text-(--text-main)'>
                   {profile.username}
+                </p>
+                <p className='mt-2 font-mono text-sm text-(--accent-secondary)'>
+                  {rankAndEloLabel}
                 </p>
               </div>
             </div>

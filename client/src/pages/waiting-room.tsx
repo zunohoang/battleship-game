@@ -274,11 +274,13 @@ export function WaitingRoomPage() {
           avatar: opponentProfile?.avatar ?? null,
           signature: opponentProfile?.signature?.trim() || '- - -',
           label: opponentIdentity.label,
+          elo: opponentElo ?? 800,
         }
         : null,
     [
       opponentIdentity.label,
       opponentProfile?.avatar,
+      opponentElo,
       opponentProfile?.signature,
       opponentProfile?.username,
       opponentUserId,
@@ -480,8 +482,51 @@ export function WaitingRoomPage() {
                   </div>
                 </div>
 
-                <div className='overflow-x-auto pb-1'>
-                  <div className='min-w-[720px] grid gap-2'>
+                <div className='grid gap-2 md:hidden'>
+                  {phase1Summary.ships.map((ship) => (
+                    <div
+                      key={ship.id}
+                      className='ui-state-idle rounded-sm px-4 py-3'
+                    >
+                      <p className='font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
+                        {ship.name}
+                      </p>
+                      <div className='mt-3 grid grid-cols-2 gap-x-3 gap-y-2'>
+                        <div>
+                          <p className='ui-data-label'>
+                            {t('gameSetup.step1.size')}
+                          </p>
+                          <p className='mt-1 font-mono text-sm font-bold text-(--text-main)'>
+                            {ship.size}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='ui-data-label'>
+                            {t('gameSetup.step1.count')}
+                          </p>
+                          <p className='mt-1 font-mono text-sm font-bold text-(--text-main)'>
+                            {ship.count}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='ui-data-label'>{t('waitingRoom.load')}</p>
+                          <p className='mt-1 font-mono text-sm font-bold text-(--accent-secondary)'>
+                            {ship.size} x {ship.count}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='ui-data-label'>{t('waitingRoom.total')}</p>
+                          <p className='mt-1 font-mono text-sm font-bold text-(--text-main)'>
+                            {ship.size * ship.count}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className='hidden overflow-x-auto pb-1 md:block'>
+                  <div className='grid min-w-180 gap-2'>
                     <div className='grid grid-cols-[minmax(0,1.5fr)_110px_110px_120px_90px] gap-3 px-4 py-1'>
                       <p className='ui-data-label'>
                         {t('gameSetup.step1.shipName')}
@@ -496,7 +541,7 @@ export function WaitingRoomPage() {
                       <p className='ui-data-label'>{t('waitingRoom.total')}</p>
                     </div>
 
-                    <div className='themed-scrollbar max-h-[18rem] overflow-y-auto pr-1'>
+                    <div className='themed-scrollbar max-h-72 overflow-y-auto pr-1'>
                       <div className='grid gap-2'>
                         {phase1Summary.ships.map((ship) => (
                           <div
@@ -553,16 +598,8 @@ export function WaitingRoomPage() {
               logHeightClassName='h-11 sm:h-32'
               resolveChatAuthorLabel={resolveChatAuthorLabel}
             />
-            <div className='border-t border-(--border-main) flex w-full min-w-0 flex-col gap-3 px-3 py-2 sm:px-4'>
-              <div className='flex w-full min-w-0 items-stretch gap-2'>
-                <button
-                  type='button'
-                  onClick={handleSendChat}
-                  disabled={isChatDisabled || chatDraft.trim().length === 0}
-                  className='shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
-                >
-                  {t('gameBattle.chatSend')}
-                </button>
+            <div className='border-t border-(--border-main) flex w-full min-w-0 flex-col gap-3 px-3 py-2 sm:px-4 lg:flex-row lg:items-start'>
+              <div className='flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:w-[50%] lg:max-w-md'>
                 <input
                   type='text'
                   value={chatDraft}
@@ -575,20 +612,22 @@ export function WaitingRoomPage() {
                   }}
                   placeholder={t('gameBattle.chatInputPlaceholder')}
                   disabled={isChatDisabled}
-                  maxLength={280}
+                  maxLength={240}
                   className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60'
                 />
-              </div>
-              <div className='flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-end'>
-                <Button
-                  className='!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal'
-                  onClick={() => navigate('/home')}
+                <button
+                  type='button'
+                  onClick={handleSendChat}
+                  disabled={isChatDisabled || chatDraft.trim().length === 0}
+                  className='w-full shrink-0 cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:self-center'
                 >
-                  {t('waitingRoom.backHome')}
-                </Button>
+                  {t('gameBattle.chatSend')}
+                </button>
+              </div>
+              <div className='flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:flex-1'>
                 <Button
                   variant='danger'
-                  className='!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal'
+                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
                   onClick={() => {
                     leaveRoom();
                     navigate('/game/rooms');
@@ -597,7 +636,7 @@ export function WaitingRoomPage() {
                   {t('waitingRoom.leaveRoom')}
                 </Button>
                 <Button
-                  className='!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal'
+                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
                   onClick={() => {
                     void handleRefreshState();
                   }}
@@ -607,7 +646,7 @@ export function WaitingRoomPage() {
                 {isOwner ? (
                   <Button
                     variant='primary'
-                    className='!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal'
+                    className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
                     disabled={!canConfigurePhase1}
                     onClick={() => {
                       const onlineSetupFlow: OnlineSetupFlow = 'phase1';
@@ -628,7 +667,7 @@ export function WaitingRoomPage() {
                 ) : null}
                 <Button
                   variant='primary'
-                  className='!h-auto !min-h-8 !w-auto max-w-[min(100%,18rem)] shrink-0 px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal'
+                  className='h-auto! min-h-8! w-full px-3 py-1.5 text-center text-[10px] leading-snug whitespace-normal sm:w-auto sm:max-w-[min(100%,18rem)]'
                   disabled={!canStartSetup}
                   onClick={() => {
                     if (!room?.roomId) return;

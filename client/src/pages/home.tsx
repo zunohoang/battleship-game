@@ -3,17 +3,22 @@ import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { GAME_BRAND_NAME } from '@/constants/branding';
+import { images } from '@/assets';
 import { ForgotPasswordModal } from '@/components/modal/ForgotPasswordModal';
 import { LoginModal } from '@/components/modal/LoginModal';
+import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import type { ProfileSetupPayload } from '@/components/modal/ProfileSetupModal';
 import { ProfileSetupModal } from '@/components/modal/ProfileSetupModal';
 import { RegisterModal } from '@/components/modal/RegisterModal';
 import { OnlineGameHistoryModal } from '@/components/modal/OnlineGameHistoryModal';
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { Button } from '@/components/ui/Button';
-import { SectionStatus } from '@/components/ui/SectionStatus';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import * as authService from '@/services/authService';
+import {
+  fetchLeaderboard,
+  type LeaderboardEntry,
+} from '@/services/leaderboardService';
 import {
   getApiErrorCode,
   isGloballyHandledApiError,
@@ -22,7 +27,34 @@ import {
   validateLoginInput,
   validateRegisterInput,
 } from '@/utils/authValidation';
-import { getRankTierId } from '@/utils/rankTier';
+import { getRankTierId, type RankTierId } from '@/utils/rankTier';
+import {
+  BotIcon,
+  GlobeIcon,
+  SettingsIcon,
+  SwordsIcon,
+  TrophyIcon,
+  UsersIcon,
+} from 'lucide-react';
+
+const rankTierLevelMap: Record<RankTierId, number> = {
+  apprenticeSailor: 1,
+  combatNavigator: 2,
+  eliteCaptain: 3,
+  fleetAdmiral: 4,
+  oceanConqueror: 5,
+};
+
+const badgeImageList = Object.values(images.badgeImages);
+
+function getBadgeImageForTier(tierId: RankTierId): string | null {
+  if (badgeImageList.length === 0) {
+    return null;
+  }
+
+  const badgeIndex = Math.min(rankTierLevelMap[tierId], badgeImageList.length) - 1;
+  return badgeImageList[badgeIndex] ?? badgeImageList[badgeImageList.length - 1] ?? null;
+}
 
 type AuthModalMode =
   | 'login'
@@ -35,27 +67,6 @@ type HomeNavigationState = {
   openProfileSetup?: boolean;
 };
 
-const pageTransition = { duration: 0.52, ease: [0.16, 1, 0.3, 1] } as const;
-
-const staggerParent = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.08,
-    },
-  },
-};
-
-const revealItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: pageTransition,
-  },
-};
-
 export function HomePage() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
@@ -65,6 +76,19 @@ export function HomePage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [gameHistoryOpen, setGameHistoryOpen] = useState(false);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardRankState, setLeaderboardRankState] = useState<
+    'idle' | 'loading' | 'ready' | 'error'
+  >('idle');
+  const [leaderboardProfileOpen, setLeaderboardProfileOpen] = useState(false);
+  const [selectedLeaderboardProfile, setSelectedLeaderboardProfile] = useState<{
+    id?: string | null;
+    username: string;
+    signature?: string | null;
+    avatar?: string | null;
+    label?: string;
+    elo: number;
+  } | null>(null);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode | null>(
     null,
   );
@@ -73,6 +97,7 @@ export function HomePage() {
     () => (location.state as HomeNavigationState | null) ?? null,
     [location.state],
   );
+  const isAnonymous = user?.isAnonymous ?? true;
   const openModal = (mode: AuthModalMode) => {
     setAuthModalMode(mode);
   };
@@ -91,6 +116,31 @@ export function HomePage() {
       state: null,
     });
   }, [location.pathname, location.search, navigate, navigationState]);
+
+  useEffect(() => {
+    let isActive = true;
+    setLeaderboardRankState('loading');
+
+    void fetchLeaderboard(3)
+      .then((entries) => {
+        if (!isActive) {
+          return;
+        }
+
+        setLeaderboardEntries(entries);
+        setLeaderboardRankState('ready');
+      })
+      .catch(() => {
+        if (isActive) {
+          setLeaderboardEntries([]);
+          setLeaderboardRankState('error');
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const handleSubmitLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -217,11 +267,56 @@ export function HomePage() {
     event.preventDefault();
   };
 
-  const isAnonymous = user?.isAnonymous ?? true;
-  const displayUsername =
-    user?.username?.trim() || t('home.playerStatus.anonymous');
-  const displaySignature =
-    !isAnonymous && user?.signature ? user.signature : '- - -';
+  const handleOpenLeaderboardProfile = (entry: LeaderboardEntry) => {
+    const loadingLabel = t('home.profileLoading');
+
+    setSelectedLeaderboardProfile({
+      id: entry.userId,
+      username: entry.username,
+      avatar: entry.avatar,
+      signature: loadingLabel,
+      label: t('home.profileModalLabel'),
+      elo: entry.elo,
+    });
+    setLeaderboardProfileOpen(true);
+
+    void authService
+      .getUserProfile(entry.userId)
+      .then((profile) => {
+        setSelectedLeaderboardProfile((current) => {
+          if (!current || current.id !== entry.userId) {
+            return current;
+          }
+
+          return {
+            id: profile.id,
+            username: profile.username,
+            avatar: profile.avatar,
+            signature: profile.signature,
+            label: t('home.profileModalLabel'),
+            elo: profile.elo,
+          };
+        });
+      })
+      .catch(() => {
+        setSelectedLeaderboardProfile((current) => {
+          if (!current || current.id !== entry.userId) {
+            return current;
+          }
+
+          return {
+            ...current,
+            signature: t('home.profileUnavailable'),
+          };
+        });
+      });
+  };
+
+  const currentElo = !isAnonymous && typeof user?.elo === 'number' ? user.elo : 0;
+  const currentRankTierId = getRankTierId(currentElo);
+  const currentBadgeImage = getBadgeImageForTier(currentRankTierId);
+  const topRankEntries = leaderboardEntries;
+
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
     'profileSetup',
@@ -235,32 +330,38 @@ export function HomePage() {
     {
       id: 'playOnline',
       label: t('home.menu.playOnline'),
+      icon: GlobeIcon,
       disabled: isAnonymous,
     },
     {
       id: 'playBot',
       label: t('home.menu.playBot'),
+      icon: BotIcon,
       disabled: false,
     },
 
     {
       id: 'botVsBot',
       label: t('home.menu.botVsBot'),
+      icon: SwordsIcon,
       disabled: false,
     },
     {
       id: 'settings',
       label: t('home.menu.settings'),
+      icon: SettingsIcon,
       disabled: false,
     },
     {
       id: 'community',
       label: t('home.menu.community'),
+      icon: UsersIcon,
       disabled: false,
     },
     {
       id: 'leaderboard',
       label: t('home.menu.leaderboard'),
+      icon: TrophyIcon,
       disabled: false,
     },
   ];
@@ -332,19 +433,30 @@ export function HomePage() {
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
 
       <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-7xl flex-col rounded-md p-4 sm:p-6'>
-        <SectionStatus
-          leftText={t('home.status.sectors')}
-          rightText={t('home.status.coordinates')}
-        />
-
         <motion.div
           className='relative z-10 mt-4 grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,420px)]'
-          variants={staggerParent}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.08,
+              },
+            },
+          }}
           initial='hidden'
           animate='visible'
         >
           <motion.section
-            variants={revealItem}
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.08,
+                  delayChildren: 0.08,
+                },
+              },
+            }}
             className='flex flex-col justify-between gap-6'
           >
             <div className='ui-panel ui-panel-glow rounded-md px-5 py-5 sm:px-7'>
@@ -393,8 +505,16 @@ export function HomePage() {
             </div>
 
             <motion.div
-              variants={revealItem}
-              className='grid gap-6 lg:grid-cols-[minmax(0,1fr)_240px]'
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.08,
+                    delayChildren: 0.08,
+                  },
+                },
+              }}
+              className='grid gap-6 lg:grid-cols-[minmax(0,1fr)280px]'
             >
               <div className='ui-panel rounded-md px-5 py-6 sm:px-7'>
                 <div className='relative z-10'>
@@ -410,7 +530,7 @@ export function HomePage() {
                       </span>
                       {isAnonymous ? (
                         <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
-                          {displayUsername}
+                          {user?.username?.trim() || t('home.playerStatus.anonymous')}
                         </span>
                       ) : (
                         <button
@@ -418,14 +538,14 @@ export function HomePage() {
                           onClick={() => openModal('profileSetup')}
                           className='cursor-pointer text-left font-mono text-sm font-semibold text-(--accent-secondary) underline underline-offset-4 transition-colors hover:text-white'
                         >
-                          {displayUsername}
+                          {user?.username?.trim() || t('home.playerStatus.anonymous')}
                         </button>
                       )}
                       <span className='ui-data-label text-right'>
                         {t('home.profile.signature')}
                       </span>
                       <span className='font-mono text-sm text-(--text-main)'>
-                        {displaySignature}
+                        {!isAnonymous && user?.signature ? user.signature : '- - -'}
                       </span>
                       <span className='ui-data-label text-right'>
                         {t('home.profile.rank')}
@@ -473,25 +593,77 @@ export function HomePage() {
                     <p className='ui-title-eyebrow'>{t('home.systemFeed')}</p>
                   </div>
                   <div className='grid gap-3'>
-                    <div className='ui-subpanel rounded-sm px-3 py-3'>
-                      <div className='flex flex-row gap-2 items-center'>
-                        <span className='w-2 h-2 rounded-full bg-[#22c55e] animate-pulse' />
-                        <p className='ui-data-label'>{t('home.signalLabel')}</p>
-                      </div>
-                      <p className='mt-1 font-mono text-sm text-(--accent-secondary)'>
-                        {t('home.signalStatus')}
-                      </p>
-                    </div>
-                    <div className='ui-subpanel rounded-sm px-3 py-3'>
+                    <div className='ui-subpanel space-y-1 rounded-sm px-3 py-3'>
                       <div className='flex flex-row gap-2 items-center'>
                         <span className='w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse' />
-                        <p className='ui-data-label'>
-                          {t('home.operationLabel')}
-                        </p>
+                        <p className='ui-data-label'>{t('home.rankLabel')}</p>
                       </div>
-                      <p className='mt-1 font-mono text-sm text-(--text-main)'>
-                        {t('home.operationStatus')}
-                      </p>
+                      <div className='mt-2 grid gap-1.5'>
+                        {leaderboardRankState === 'loading' ? (
+                          <p className='font-mono text-sm text-(--text-muted)'>
+                            {t('leaderboard.loading')}
+                          </p>
+                        ) : null}
+                        {leaderboardRankState === 'error' ? (
+                          <p className='font-mono text-sm text-[#ffb4b4]'>
+                            {t('home.rankUnavailable')}
+                          </p>
+                        ) : null}
+                        {leaderboardRankState === 'ready' && topRankEntries.length === 0 ? (
+                          <p className='font-mono text-sm text-(--text-muted)'>
+                            {t('leaderboard.empty')}
+                          </p>
+                        ) : null}
+                        {topRankEntries.map((entry) => (
+                          <div
+                            key={entry.userId}
+                            className='flex items-center gap-2 font-mono text-sm text-(--text-main)'
+                          >
+                            <span className='font-semibold text-(--accent-secondary)'>
+                              #{entry.rank}
+                            </span>
+                            <span className='text-(--text-subtle)'>-</span>
+                            <button
+                              type='button'
+                              onClick={() => handleOpenLeaderboardProfile(entry)}
+                              className='cursor-pointer truncate text-left font-semibold text-(--text-main) underline underline-offset-4 transition-colors hover:text-(--accent-secondary)'
+                            >
+                              {entry.username}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className='ui-subpanel rounded-sm space-y-1 px-3 py-3'>
+                      <div className='flex flex-row gap-2 items-center'>
+                        <span className='w-2 h-2 rounded-full bg-[#22d3ee] animate-pulse' />
+                        <p className='ui-data-label'>{t('home.achievementLabel')}</p>
+                      </div>
+                      <div className='flex items-center gap-3'>
+                        <div className='flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-(--border-main) bg-(--accent-soft)'>
+                          {currentBadgeImage ? (
+                            <img
+                              src={currentBadgeImage}
+                              alt={t(`rank.tiers.${currentRankTierId}.name`)}
+                              className='h-full w-full object-cover'
+                            />
+                          ) : (
+                            <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
+                              {rankTierLevelMap[currentRankTierId]}
+                            </span>
+                          )}
+                        </div>
+                        <div className='min-w-0'>
+                          <p className='mt-1 font-mono text-sm text-(--accent-secondary)'>
+                            {t('home.personalAchievementLabel')}
+                          </p>
+                          <p className='mt-1 text-xs text-(--text-muted)'>
+                            {t('home.achievementStatus', {
+                              level: rankTierLevelMap[currentRankTierId],
+                            })}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -500,7 +672,15 @@ export function HomePage() {
           </motion.section>
 
           <motion.aside
-            variants={revealItem}
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.08,
+                  delayChildren: 0.08,
+                },
+              },
+            }}
             className='ui-panel ui-panel-strong rounded-md p-4 sm:p-5'
           >
             <div className='relative z-10 flex h-full flex-col gap-5'>
@@ -521,7 +701,8 @@ export function HomePage() {
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{
-                      ...pageTransition,
+                      duration: 0.52,
+                      ease: [0.16, 1, 0.3, 1],
                       delay: 0.14 + index * 0.05,
                     }}
                   >
@@ -529,9 +710,10 @@ export function HomePage() {
                       disabled={item.disabled}
                       onClick={() => handleGameMode(item.id)}
                       variant={item.id === 'playOnline' ? 'primary' : 'default'}
-                      className='h-14 justify-start px-5 text-left'
+                      className='h-14 justify-start gap-3 px-5 flex items-center'
                     >
-                      {item.label}
+                      <item.icon className='h-5 w-5 shrink-0' aria-hidden='true' />
+                      <span>{item.label}</span>
                     </Button>
                   </motion.div>
                 ))}
@@ -574,17 +756,19 @@ export function HomePage() {
           </motion.aside>
         </motion.div>
         <motion.p
-          variants={revealItem}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.08,
+              },
+            },
+          }}
           className='ui-data-label px-1 mt-8 mb-2'
         >
           © {currentYear} {t('home.copyright')}
         </motion.p>
-
-        <SectionStatus
-          className='mt-auto'
-          leftText={t('home.status.system')}
-          rightText={t('home.status.radar')}
-        />
       </section>
 
       <LoginModal
@@ -639,6 +823,13 @@ export function HomePage() {
       <OnlineGameHistoryModal
         isOpen={gameHistoryOpen}
         onClose={() => setGameHistoryOpen(false)}
+      />
+
+      <ProfileShowcaseModal
+        isOpen={leaderboardProfileOpen}
+        onClose={() => setLeaderboardProfileOpen(false)}
+        title={t('home.profileModalTitle')}
+        profile={selectedLeaderboardProfile}
       />
     </motion.main>
   );

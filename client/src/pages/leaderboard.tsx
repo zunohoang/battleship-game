@@ -4,7 +4,6 @@ import { ChevronLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
-import { SectionStatus } from '@/components/ui/SectionStatus';
 import { fetchLeaderboard, type LeaderboardEntry } from '@/services/leaderboardService';
 import type { RankTierId } from '@/utils/rankTier';
 
@@ -57,11 +56,6 @@ export function LeaderboardPage() {
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
 
       <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-4xl flex-col rounded-md p-4 sm:p-6'>
-        <SectionStatus
-          leftText={t('home.status.sectors')}
-          rightText={t('home.status.coordinates')}
-        />
-
         <motion.div variants={revealItem} initial='hidden' animate='visible' className='mt-4'>
           <Button
             type='button'
@@ -201,11 +195,6 @@ export function LeaderboardPage() {
         <p className='ui-data-label mt-8 mb-2 px-1'>
           © {currentYear} {t('home.copyright')}
         </p>
-        <SectionStatus
-          className='mt-auto'
-          leftText={t('home.status.system')}
-          rightText={t('home.status.radar')}
-        />
       </section>
     </motion.main>
   );
