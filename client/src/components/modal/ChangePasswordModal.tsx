@@ -81,13 +81,13 @@ export function ChangePasswordModal({
       title={t('welcome.modals.changePasswordTitle')}
       onClose={handleClose}
     >
-      <form className="grid gap-4" noValidate onSubmit={handleSubmit}>
-        <label className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+      <form className='grid gap-4' noValidate onSubmit={handleSubmit}>
+        <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
           {t('welcome.modals.changePasswordCurrent')}
           <input
-            type="password"
-            name="current-password"
-            autoComplete="current-password"
+            type='password'
+            name='current-password'
+            autoComplete='current-password'
             value={currentPassword}
             onChange={(ev) => {
               setErrorMessage(null);
@@ -97,12 +97,12 @@ export function ChangePasswordModal({
           />
         </label>
 
-        <label className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+        <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
           {t('welcome.modals.changePasswordNew')}
           <input
-            type="password"
-            name="new-password"
-            autoComplete="new-password"
+            type='password'
+            name='new-password'
+            autoComplete='new-password'
             value={newPassword}
             onChange={(ev) => {
               setErrorMessage(null);
@@ -114,12 +114,12 @@ export function ChangePasswordModal({
           />
         </label>
 
-        <label className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+        <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
           {t('welcome.modals.changePasswordConfirm')}
           <input
-            type="password"
-            name="confirm-new-password"
-            autoComplete="new-password"
+            type='password'
+            name='confirm-new-password'
+            autoComplete='new-password'
             value={confirmPassword}
             onChange={(ev) => {
               setErrorMessage(null);
@@ -132,24 +132,24 @@ export function ChangePasswordModal({
         </label>
 
         {errorMessage && (
-          <p className="rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]">
+          <p className='rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]'>
             {errorMessage}
           </p>
         )}
 
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <div className='mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end'>
           <Button
-            type="button"
-            className="h-11 sm:min-w-[7rem]"
+            type='button'
+            className='h-11 sm:min-w-[7rem]'
             onClick={handleClose}
             disabled={isSubmitting}
           >
             {t('welcome.modals.cancel')}
           </Button>
           <Button
-            variant="primary"
-            type="submit"
-            className="h-11 sm:min-w-[7rem]"
+            variant='primary'
+            type='submit'
+            className='h-11 sm:min-w-[7rem]'
             disabled={isSubmitting}
           >
             {t('welcome.modals.changePasswordSubmit')}

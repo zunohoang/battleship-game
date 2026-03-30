@@ -69,23 +69,23 @@ export function ForumVotePill({
       {onOpenPost !== undefined &&
       commentCount !== undefined &&
       commentsShortLabel !== undefined ? (
-        <button
-          type='button'
-          className='inline-flex items-center gap-2 rounded-full border border-(--border-main) bg-(--surface-subtle-bg) px-3 py-2 text-xs font-bold tracking-[0.12em] text-(--text-main) uppercase transition-colors hover:border-(--border-strong) hover:bg-(--surface-idle-bg-hover)'
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenPost();
-          }}
-        >
-          <MessageSquare
-            className={`shrink-0 text-(--text-muted) ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
-            aria-hidden
-          />
-          <span>
-            {commentCount} {commentsShortLabel}
-          </span>
-        </button>
-      ) : null}
+          <button
+            type='button'
+            className='inline-flex items-center gap-2 rounded-full border border-(--border-main) bg-(--surface-subtle-bg) px-3 py-2 text-xs font-bold tracking-[0.12em] text-(--text-main) uppercase transition-colors hover:border-(--border-strong) hover:bg-(--surface-idle-bg-hover)'
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenPost();
+            }}
+          >
+            <MessageSquare
+              className={`shrink-0 text-(--text-muted) ${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
+              aria-hidden
+            />
+            <span>
+              {commentCount} {commentsShortLabel}
+            </span>
+          </button>
+        ) : null}
     </div>
   );
 }

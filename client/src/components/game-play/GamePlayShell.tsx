@@ -89,26 +89,26 @@ export function GamePlayIdentityCard({
         isRightAligned ? 'lg:flex-row-reverse' : ''
       }`}
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-sm font-black text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.16)] sm:h-11 sm:w-11">
+      <div className='flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-sm font-black text-(--accent-secondary) shadow-[0_0_18px_rgba(34,211,238,0.16)] sm:h-11 sm:w-11'>
         {content.avatarSrc ? (
           <img
             src={content.avatarSrc}
             alt={content.name}
-            className="h-full w-full object-cover"
+            className='h-full w-full object-cover'
           />
         ) : (
           initials
         )}
       </div>
 
-      <div className="min-w-0 flex-1">
+      <div className='min-w-0 flex-1'>
         {content.label ? (
-          <p className="ui-data-label">{content.label}</p>
+          <p className='ui-data-label'>{content.label}</p>
         ) : null}
-        <p className="truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)">
+        <p className='truncate font-mono text-sm font-black tracking-[0.08em] text-(--text-main)'>
           {content.name}
         </p>
-        <p className="truncate text-xs text-(--text-muted)">
+        <p className='truncate text-xs text-(--text-muted)'>
           {content.signature}
         </p>
         {eloValue !== null && rankName ? (
@@ -117,19 +117,19 @@ export function GamePlayIdentityCard({
               isRightAligned ? 'lg:justify-end' : ''
             }`}
           >
-            <span className="font-mono tracking-[0.04em]">
-              <span className="text-(--text-muted)">
+            <span className='font-mono tracking-[0.04em]'>
+              <span className='text-(--text-muted)'>
                 {t('home.profile.rank')}
                 {': '}
               </span>
-              <span className="text-(--text-main)">{rankName}</span>
+              <span className='text-(--text-main)'>{rankName}</span>
             </span>
-            <span className="font-mono tracking-[0.06em]">
-              <span className="text-(--text-muted)">
+            <span className='font-mono tracking-[0.06em]'>
+              <span className='text-(--text-muted)'>
                 {t('home.profile.elo')}
                 {': '}
               </span>
-              <span className="font-bold text-(--accent-secondary)">
+              <span className='font-bold text-(--accent-secondary)'>
                 {eloValue}
               </span>
             </span>
@@ -142,7 +142,7 @@ export function GamePlayIdentityCard({
   if (onClick) {
     return (
       <button
-        type="button"
+        type='button'
         onClick={onClick}
         aria-label={buttonAriaLabel ?? content.name}
         className={`ui-panel w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left transition-colors hover:border-(--border-strong) hover:shadow-[0_0_18px_rgba(34,211,238,0.14)] focus-visible:outline-none focus-visible:border-(--ui-outline) focus-visible:shadow-[0_0_0_2px_var(--ui-focus-ring),0_0_18px_rgba(34,211,238,0.2)] sm:px-3 sm:py-2 ${
@@ -184,8 +184,8 @@ export function GamePlayTurnStatus({
       className={`mx-auto flex w-full max-w-none items-center justify-center gap-2 rounded-full border px-4 py-1.5 sm:px-5 sm:py-2 md:max-w-[28rem] lg:w-auto lg:max-w-none lg:min-w-[15rem] ${toneClasses.container} ${className}`.trim()}
     >
       <span className={`h-2 w-2 rounded-full ${toneClasses.dot}`} />
-      <div className="flex items-center gap-1 sm:gap-3">
-        <span className="font-mono text-sm font-black uppercase tracking-[0.16em]">
+      <div className='flex items-center gap-1 sm:gap-3'>
+        <span className='font-mono text-sm font-black uppercase tracking-[0.16em]'>
           {turnLabel}
         </span>
         <span
@@ -206,20 +206,20 @@ export function GamePlayShell({
 }: GamePlayShellProps) {
   return (
     <motion.main
-      className="relative isolate h-dvh w-full min-w-0 max-w-none overflow-y-auto overflow-x-hidden px-2 py-2 text-(--text-main) sm:px-4 sm:py-4"
+      className='relative isolate h-dvh w-full min-w-0 max-w-none overflow-y-auto overflow-x-hidden px-2 py-2 text-(--text-main) sm:px-4 sm:py-4'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
       {/* Fixed to viewport so the scene background always spans the full screen width. */}
       <div
-        className="pointer-events-none fixed inset-0 -z-20 h-[100dvh] w-full min-w-[100%]"
+        className='pointer-events-none fixed inset-0 -z-20 h-[100dvh] w-full min-w-[100%]'
         aria-hidden
       >
-        <div className="ui-page-bg absolute inset-0 h-full w-full" />
+        <div className='ui-page-bg absolute inset-0 h-full w-full' />
       </div>
       <div
-        className="pointer-events-none fixed inset-0 -z-10 h-[100dvh] w-full min-w-[100%] bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]"
+        className='pointer-events-none fixed inset-0 -z-10 h-[100dvh] w-full min-w-[100%] bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_42%)]'
         aria-hidden
       />
       <section className={sectionClassName}>{children}</section>
@@ -237,12 +237,12 @@ export function GamePlayHeader({
   turnTimerTone = 'default',
 }: GamePlayHeaderProps) {
   return (
-    <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-3">
-      <div className="order-2 min-w-0 lg:order-1">
+    <div className='grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-3'>
+      <div className='order-2 min-w-0 lg:order-1'>
         <GamePlayIdentityCard content={leftContent} />
       </div>
 
-      <div className="order-1 flex w-full justify-center px-1 lg:order-2 lg:px-0">
+      <div className='order-1 flex w-full justify-center px-1 lg:order-2 lg:px-0'>
         <GamePlayTurnStatus
           turnKey={turnKey}
           turnLabel={turnLabel}
@@ -252,7 +252,7 @@ export function GamePlayHeader({
         />
       </div>
 
-      <div className="order-3 min-w-0">
+      <div className='order-3 min-w-0'>
         <GamePlayIdentityCard content={rightContent} />
       </div>
     </div>

@@ -314,28 +314,28 @@ export function ForumFeedPage() {
   };
 
   return (
-    <main className="relative flex h-[100dvh] flex-col overflow-hidden pt-0 text-(--text-main) pb-3 sm:pb-4">
-      <div className="ui-page-bg -z-20" />
-      <section className="ui-hud-shell flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-none border-x-0 px-3 sm:gap-5 sm:px-4 md:px-6 lg:h-full lg:min-h-0 lg:gap-4 lg:px-6 xl:px-8">
-        <header className="ui-panel flex w-full min-w-0 shrink-0 items-center justify-between gap-3 rounded-lg border border-(--panel-stroke) px-4 py-3 shadow-[var(--hud-shadow)] sm:gap-4 sm:px-5 sm:py-4">
-          <div className="min-w-0 flex-1">
-            <p className="ui-title-eyebrow">{t('forum.feed.eyebrow')}</p>
-            <h1 className="mt-1 text-xl font-black uppercase tracking-[0.08em] sm:text-2xl">
+    <main className='relative flex h-[100dvh] flex-col overflow-hidden pt-0 text-(--text-main) pb-3 sm:pb-4'>
+      <div className='ui-page-bg -z-20' />
+      <section className='ui-hud-shell flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-none border-x-0 px-3 sm:gap-5 sm:px-4 md:px-6 lg:h-full lg:min-h-0 lg:gap-4 lg:px-6 xl:px-8'>
+        <header className='ui-panel flex w-full min-w-0 shrink-0 items-center justify-between gap-3 rounded-lg border border-(--panel-stroke) px-4 py-3 shadow-[var(--hud-shadow)] sm:gap-4 sm:px-5 sm:py-4'>
+          <div className='min-w-0 flex-1'>
+            <p className='ui-title-eyebrow'>{t('forum.feed.eyebrow')}</p>
+            <h1 className='mt-1 text-xl font-black uppercase tracking-[0.08em] sm:text-2xl'>
               {t('forum.feed.title')}
             </h1>
           </div>
           <Button
-            type="button"
-            variant="default"
-            className="!h-10 !w-auto shrink-0 whitespace-nowrap px-4 sm:px-5 inline-flex items-center justify-center gap-2"
+            type='button'
+            variant='default'
+            className='!h-10 !w-auto shrink-0 whitespace-nowrap px-4 sm:px-5 inline-flex items-center justify-center gap-2'
             onClick={onBack}
           >
-            <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden />
+            <ChevronLeft className='h-4 w-4 shrink-0' aria-hidden />
             <span>{t('forum.feed.backLabel')}</span>
           </Button>
         </header>
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:items-stretch">
+        <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:grid lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] lg:items-stretch'>
           <ForumFeedSidebar
             searchDraft={searchDraft}
             onSearchDraftChange={setSearchDraft}
@@ -345,8 +345,8 @@ export function ForumFeedPage() {
             labels={sidebarLabels}
           />
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:h-full">
-            <div className="shrink-0">
+          <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden lg:h-full'>
+            <div className='shrink-0'>
               <ForumCreatePostComposer
                 labels={composerLabels}
                 isLoggedIn={isLoggedIn}
@@ -373,23 +373,23 @@ export function ForumFeedPage() {
 
             <div
               ref={scrollRootRef}
-              className="themed-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1"
+              className='themed-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1'
             >
-              <div className="space-y-3">
+              <div className='space-y-3'>
                 {errorCode ? (
-                  <div className="rounded-sm border border-(--accent-danger) bg-[rgba(255,90,90,0.14)] px-4 py-3 text-sm font-semibold text-(--text-main)">
+                  <div className='rounded-sm border border-(--accent-danger) bg-[rgba(255,90,90,0.14)] px-4 py-3 text-sm font-semibold text-(--text-main)'>
                     {t(`errors.${errorCode}`)}
                   </div>
                 ) : null}
 
                 {isInitialLoading ? (
-                  <div className="ui-panel rounded-lg px-4 py-3 text-sm text-(--text-muted) sm:px-5 sm:py-4">
+                  <div className='ui-panel rounded-lg px-4 py-3 text-sm text-(--text-muted) sm:px-5 sm:py-4'>
                     {t('forum.feed.loading')}
                   </div>
                 ) : null}
 
                 {!isInitialLoading && posts.length === 0 ? (
-                  <div className="ui-panel rounded-lg px-4 py-3 text-sm text-(--text-muted) sm:px-5 sm:py-4">
+                  <div className='ui-panel rounded-lg px-4 py-3 text-sm text-(--text-muted) sm:px-5 sm:py-4'>
                     {t('forum.feed.empty')}
                   </div>
                 ) : null}
@@ -418,12 +418,12 @@ export function ForumFeedPage() {
 
                 <div
                   ref={sentinelRef}
-                  className="h-px w-full shrink-0"
+                  className='h-px w-full shrink-0'
                   aria-hidden
                 />
 
                 {isLoadingMore ? (
-                  <p className="pb-2 text-center text-sm text-(--text-muted)">
+                  <p className='pb-2 text-center text-sm text-(--text-muted)'>
                     {t('forum.feed.loadingMore')}
                   </p>
                 ) : null}
@@ -446,7 +446,7 @@ export function ForumFeedPage() {
         message={t('forum.feed.deletePostConfirm')}
         cancelLabel={t('forum.post.editCancel')}
         confirmLabel={t('forum.feed.deletePost')}
-        confirmVariant="danger"
+        confirmVariant='danger'
         onConfirm={async () => {
           if (!postPendingDelete) {
             return;

@@ -63,7 +63,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Modal isOpen={isOpen} title={t('settings.title')} onClose={onClose}>
-      <div className="grid gap-4">
+      <div className='grid gap-4'>
         {volumeFields.map((field) => {
           const volumeValue = settings.volume[field.key];
           const ChannelIcon = field.icon;
@@ -72,20 +72,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           return (
             <label
               key={field.key}
-              className="grid gap-2 text-sm font-semibold text-(--text-muted)"
+              className='grid gap-2 text-sm font-semibold text-(--text-muted)'
             >
-              <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
+              <div className='flex items-center justify-between gap-3'>
+                <span className='flex items-center gap-2'>
                   <ChannelIcon
                     size={14}
-                    className="text-(--accent-secondary)"
+                    className='text-(--accent-secondary)'
                   />
                   {field.label}
                 </span>
-                <span className="flex items-center gap-2 text-xs font-bold text-(--accent-secondary)">
+                <span className='flex items-center gap-2 text-xs font-bold text-(--accent-secondary)'>
                   {volumeValue}%
                   <button
-                    type="button"
+                    type='button'
                     onMouseDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -100,35 +100,35 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         ? t('settings.unmuteVolume', { channel: field.label })
                         : t('settings.muteVolume', { channel: field.label })
                     }
-                    className="ui-subpanel cursor-pointer rounded-sm p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)"
+                    className='ui-subpanel cursor-pointer rounded-sm p-1 text-(--accent-secondary) transition-colors hover:bg-(--accent-soft)'
                   >
                     {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   </button>
                 </span>
               </div>
               <input
-                type="range"
+                type='range'
                 min={0}
                 max={100}
                 value={volumeValue}
                 onChange={(event) =>
                   setVolume(field.key, Number(event.target.value))
                 }
-                className="h-2 w-full cursor-pointer appearance-none rounded-[3px] bg-[#123647] accent-[#5eeaff]"
+                className='h-2 w-full cursor-pointer appearance-none rounded-[3px] bg-[#123647] accent-[#5eeaff]'
               />
             </label>
           );
         })}
 
-        <div className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+        <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
           <span>{t('settings.language')}</span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className='grid grid-cols-2 gap-2'>
             {LANGUAGE_OPTIONS.map((language) => {
               const isActive = settings.language === language;
               return (
                 <button
                   key={language}
-                  type="button"
+                  type='button'
                   onClick={() => setLanguage(language)}
                   className={`${toggleClassName} ${
                     isActive ? 'ui-button-primary' : 'ui-button-default'
@@ -141,15 +141,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
 
-        <div className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+        <div className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
           <span>{t('settings.theme')}</span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className='grid grid-cols-2 gap-2'>
             {THEME_OPTIONS.map((theme) => {
               const isActive = settings.theme === theme;
               return (
                 <button
                   key={theme}
-                  type="button"
+                  type='button'
                   onClick={() => setTheme(theme)}
                   className={`${toggleClassName} ${
                     isActive ? 'ui-button-primary' : 'ui-button-default'
@@ -162,7 +162,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
 
-        <Button variant="primary" onClick={onClose}>
+        <Button variant='primary' onClick={onClose}>
           {t('settings.close')}
         </Button>
       </div>

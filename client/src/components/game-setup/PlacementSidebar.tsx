@@ -49,10 +49,10 @@ export function PlacementSidebar({
   const { t } = useTranslation();
 
   return (
-    <div className="ui-panel flex flex-col gap-2 rounded-md p-3 sm:min-h-0">
-      <div className="relative z-10 space-y-1">
-        <p className="ui-panel-title">{t('gameSetup.header.step2Label')}</p>
-        <p className="text-sm text-(--text-muted)">
+    <div className='ui-panel flex flex-col gap-2 rounded-md p-3 sm:min-h-0'>
+      <div className='relative z-10 space-y-1'>
+        <p className='ui-panel-title'>{t('gameSetup.header.step2Label')}</p>
+        <p className='text-sm text-(--text-muted)'>
           {t('gameSetup.step2.boardInfo', {
             rows: boardConfig.rows,
             cols: boardConfig.cols,
@@ -60,39 +60,39 @@ export function PlacementSidebar({
         </p>
       </div>
 
-      <div className="relative z-10 grid gap-2">
+      <div className='relative z-10 grid gap-2'>
         <p
           className={`text-xs ${hasError ? 'text-[#ffb4b4]' : 'text-(--text-muted)'}`}
         >
           {statusText}
         </p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="ui-subpanel flex-1 rounded-sm px-3 py-2">
-            <p className="ui-data-label">{t('gameSetup.step2.deployment')}</p>
-            <p className="mt-1 font-mono text-lg text-(--accent-secondary)">
+        <div className='grid gap-2 sm:grid-cols-2'>
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
+            <p className='ui-data-label'>{t('gameSetup.step2.deployment')}</p>
+            <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
               {placedShipsCount}/{totalRequiredShips}
             </p>
           </div>
-          <div className="ui-subpanel flex-1 rounded-sm px-3 py-2">
-            <p className="ui-data-label">
+          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
+            <p className='ui-data-label'>
               {t('gameSetup.placement.orientation')}
             </p>
-            <p className="mt-1 font-mono text-sm uppercase text-(--accent-secondary)">
+            <p className='mt-1 font-mono text-sm uppercase text-(--accent-secondary)'>
               {orientation}
             </p>
           </div>
         </div>
         {aiDifficulty && onAiDifficultyChange && (
-          <div className="ui-subpanel rounded-sm px-3 py-2">
-            <p className="ui-data-label mb-2">
+          <div className='ui-subpanel rounded-sm px-3 py-2'>
+            <p className='ui-data-label mb-2'>
               {t('gameSetup.aiDifficulty.label')}
             </p>
-            <div className="grid grid-cols-1 gap-1 sm:grid-cols-3">
+            <div className='grid grid-cols-1 gap-1 sm:grid-cols-3'>
               {(['random', 'learning', 'probability'] as AiDifficulty[]).map(
                 (d) => (
                   <button
                     key={d}
-                    type="button"
+                    type='button'
                     onClick={() => onAiDifficultyChange(d)}
                     className={`ui-button-shell flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                       aiDifficulty === d
@@ -109,16 +109,16 @@ export function PlacementSidebar({
         )}
       </div>
 
-      <div className="relative z-10">
-        <p className="ui-panel-title">
+      <div className='relative z-10'>
+        <p className='ui-panel-title'>
           {t('gameSetup.placement.shipInstances')}
         </p>
-        <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-(--text-subtle)">
+        <p className='mt-1 text-[11px] uppercase tracking-[0.16em] text-(--text-subtle)'>
           {t('gameSetup.placement.hullDeployHint')}
         </p>
       </div>
 
-      <div className="themed-scrollbar space-y-2 overflow-visible pr-1 sm:min-h-0 sm:flex-1 sm:overflow-y-auto">
+      <div className='themed-scrollbar space-y-2 overflow-visible pr-1 sm:min-h-0 sm:flex-1 sm:overflow-y-auto'>
         {shipInstances.map((instance) => {
           const key = instanceKey(
             instance.definitionId,
@@ -137,16 +137,16 @@ export function PlacementSidebar({
               }`}
             >
               <button
-                type="button"
+                type='button'
                 onClick={() => onSelectInstance(key)}
-                className="w-full text-left"
+                className='w-full text-left'
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className='flex items-start justify-between gap-3'>
                   <div>
-                    <p className="text-(--text-main) font-mono text-sm font-bold uppercase tracking-[0.08em]">
+                    <p className='text-(--text-main) font-mono text-sm font-bold uppercase tracking-[0.08em]'>
                       {instance.name} #{instance.instanceIndex + 1}
                     </p>
-                    <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-(--text-subtle)">
+                    <p className='mt-1 text-[11px] uppercase tracking-[0.18em] text-(--text-subtle)'>
                       {t('gameSetup.placement.size')} {instance.size}
                       {' · '}
                       {placement
@@ -154,7 +154,7 @@ export function PlacementSidebar({
                         : t('gameSetup.placement.notPlaced')}
                     </p>
                   </div>
-                  <div className="flex gap-1 pt-0.5">
+                  <div className='flex gap-1 pt-0.5'>
                     {Array.from({ length: instance.size }).map((_, index) => (
                       <span
                         key={`${key}-${index}`}
@@ -171,14 +171,14 @@ export function PlacementSidebar({
 
               {placement && (
                 <Button
-                  variant="danger"
+                  variant='danger'
                   onClick={() =>
                     onRemovePlaced(
                       instance.definitionId,
                       instance.instanceIndex,
                     )
                   }
-                  className="mt-2 h-8 text-[10px] tracking-[0.12em]"
+                  className='mt-2 h-8 text-[10px] tracking-[0.12em]'
                 >
                   {t('gameSetup.placement.remove')}
                 </Button>
@@ -188,23 +188,23 @@ export function PlacementSidebar({
         })}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className='grid gap-2 sm:grid-cols-3'>
         <Button
           onClick={onRandomPlace}
-          className="h-9 rounded-sm text-[10px] tracking-[0.12em]"
+          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
         >
           {t('gameSetup.placement.random')}
         </Button>
         <Button
           onClick={onRotate}
-          className="h-9 rounded-sm text-[10px] tracking-[0.12em]"
+          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
         >
           ROTATE
         </Button>
         <Button
-          variant="danger"
+          variant='danger'
           onClick={onClearBoard}
-          className="h-9 rounded-sm text-[10px] tracking-[0.12em]"
+          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
         >
           {t('gameSetup.placement.clear')}
         </Button>
