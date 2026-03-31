@@ -33,6 +33,8 @@ interface StatsOverlayProps {
   botShots: Shot[];
   isBotVBot: boolean;
   onClose: () => void;
+  primaryFleetTitle?: string;
+  secondaryFleetTitle?: string;
   allowMinimize?: boolean;
   minimized?: boolean;
   onMinimize?: () => void;
@@ -272,6 +274,8 @@ export function StatsOverlay({
   botShots,
   isBotVBot,
   onClose,
+  primaryFleetTitle,
+  secondaryFleetTitle,
   allowMinimize = false,
   minimized = false,
   onMinimize,
@@ -340,10 +344,16 @@ export function StatsOverlay({
       <div className='relative z-10 flex h-full flex-col'>
         <BattleStatsBreakdown
           primaryFleetTitle={
-            isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.stats.youLabel')
+            primaryFleetTitle ??
+            (isBotVBot
+              ? t('gameBattle.botAFleet')
+              : t('gameBattle.stats.youLabel'))
           }
           secondaryFleetTitle={
-            isBotVBot ? t('gameBattle.botBFleet') : t('gameBattle.stats.enemyLabel')
+            secondaryFleetTitle ??
+            (isBotVBot
+              ? t('gameBattle.botBFleet')
+              : t('gameBattle.stats.enemyLabel'))
           }
           primary={primaryNumbers}
           secondary={secondaryNumbers}

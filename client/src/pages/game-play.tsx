@@ -90,7 +90,10 @@ export interface GamePlayScreenModel {
     ownTitle: string;
     opponentTitle: string;
     canFire: boolean;
+    revealOwnShips?: boolean;
     revealOpponentShips: boolean;
+    statsPrimaryTitle?: string;
+    statsSecondaryTitle?: string;
     onFire?: (x: number, y: number) => void;
     isBotVBot: boolean;
     ownFleetStatus: FleetShipStatus[];
@@ -202,7 +205,7 @@ function createHeaderContent({
 
 type StatsDisplayState = 'hidden' | 'minimized' | 'open';
 
-function GamePlayScreen({
+export function GamePlayScreen({
   model = null,
   loadingFallback = null,
 }: {
@@ -350,7 +353,7 @@ function GamePlayScreen({
                 ships: battlefield.ships,
                 placements: battlefield.ownPlacements,
                 shots: battlefield.incomingShots,
-                revealShips: true,
+                revealShips: battlefield.revealOwnShips ?? true,
               }}
               overlay={
                 <AnimatePresence>
@@ -410,6 +413,8 @@ function GamePlayScreen({
                       botShots={battlefield.incomingShots}
                       isBotVBot={battlefield.isBotVBot}
                       onClose={() => setStatsDisplayState('hidden')}
+                      primaryFleetTitle={battlefield.statsPrimaryTitle}
+                      secondaryFleetTitle={battlefield.statsSecondaryTitle}
                       allowMinimize={state.phase === 'gameover'}
                       minimized={isStatsMinimized}
                       onMinimize={() => setStatsDisplayState('minimized')}

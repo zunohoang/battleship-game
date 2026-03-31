@@ -162,7 +162,7 @@ export function GamePlayIdentityCard({
             {': '}
           </span>
           <span className='font-bold text-(--accent-secondary)'>
-            {eloValue}
+            {eloValue ?? '--'}
           </span>
         </p>
         {showSignature ? (
