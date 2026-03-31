@@ -450,7 +450,7 @@
             "back": "Quay lại",
             "backToConfig": "Quay lại cấu hình",
             "nextStep": "Tiếp theo: Đặt tàu",
-            "startGame": "Bắt đầu trò chơi"
+            "startGame": "Bắt đầu"
         },
         "aiDifficulty": {
             "label": "ĐỘ KHÓ AI",
@@ -705,6 +705,11 @@
         "quitMission": "RỜI NHIỆM VỤ",
         "tacticalMap": "BẢN ĐỒ CHIẾN THUẬT",
         "statistics": "THỐNG KÊ",
+        "pauseFlow": "Tạm dừng luồng",
+        "resumeFlow": "Tiếp tục luồng",
+        "showHeatMap": "Hiện heat map",
+        "hideHeatMap": "Ẩn heat map",
+        "nextShot": "Phát bắn kế",
         "minimize": "Thu nhỏ",
         "stats": {
             "title": "THỐNG KÊ CHIẾN ĐẤU",

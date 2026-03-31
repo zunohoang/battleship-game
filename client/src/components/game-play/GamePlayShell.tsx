@@ -12,8 +12,8 @@ export type HeaderSideContent = {
   name: string;
   signature: string;
   align?: 'left' | 'right';
-  /** Competitive ELO; when set, rank tier and ELO are shown under the signature. */
-  elo?: number | null;
+  /** Competitive ELO score; always numeric with 0 as fallback. */
+  elo: number;
   /** Round-trip latency in milliseconds for network signal rendering. */
   pingMs?: number | null;
 };
@@ -79,13 +79,9 @@ export function GamePlayIdentityCard({
   const { t } = useTranslation();
   const isRightAligned = content.align === 'right';
   const initials = content.name.trim().slice(0, 1).toUpperCase() || '?';
-  const eloValue =
-    typeof content.elo === 'number' && Number.isFinite(content.elo)
-      ? content.elo
-      : null;
-  const rankTierId = eloValue !== null ? getRankTierId(eloValue) : null;
-  const rankName =
-    rankTierId !== null ? t(`rank.tiers.${rankTierId}.name`) : null;
+  const eloValue = Number.isFinite(content.elo) ? content.elo : 0;
+  const rankTierId = getRankTierId(eloValue);
+  const rankName = t(`rank.tiers.${rankTierId}.name`);
   const pingMs =
     typeof content.pingMs === 'number' && Number.isFinite(content.pingMs)
       ? Math.max(0, Math.round(content.pingMs))
@@ -147,22 +143,16 @@ export function GamePlayIdentityCard({
             </div>
           ) : null}
         </div>
-        {rankName ? (
-          <p className='font-mono text-[11px] tracking-[0.04em]'>
-            <span className='text-(--text-main)'>{rankName}</span>
-          </p>
-        ) : (
-          <p className='truncate text-xs text-(--text-muted)'>
-            {'- - -'}
-          </p>
-        )}
+        <p className='font-mono text-[11px] tracking-[0.04em]'>
+          <span className='text-(--text-main)'>{rankName}</span>
+        </p>
         <p className='text-[11px] font-mono tracking-[0.06em]'>
           <span className='text-(--text-muted)'>
             {t('home.profile.elo')}
             {': '}
           </span>
           <span className='font-bold text-(--accent-secondary)'>
-            {eloValue ?? '--'}
+            {eloValue}
           </span>
         </p>
         {showSignature ? (

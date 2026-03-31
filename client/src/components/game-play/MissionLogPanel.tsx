@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { MessageSquare, ScrollText, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { MissionLogEntry } from '@/types/game';
@@ -6,21 +6,24 @@ import type { ChatMessage } from '@/types/chat';
 
 export interface MissionLogPanelProps {
   title: string;
-  subtitle?: string;
   entries: MissionLogEntry[];
   chatMessages?: ChatMessage[];
   currentUserId?: string | null;
-  isChatDisabled?: boolean;
   onSendMessage?: (content: string) => void;
   resolveChatAuthorLabel?: (senderId: string) => string;
-  showComposer?: boolean;
+  jumpToChatSignal?: number;
   className?: string;
   logHeightClassName?: string;
   defaultTab?: MissionLogTab;
-  mode?: 'tabs' | 'chat-only';
+  mode?: 'tabs' | 'chat-only' | 'logs-only';
 }
 
 type MissionLogTab = 'logs' | 'chats';
+
+interface PendingJumpToChat {
+  signal: number;
+  chatCount: number;
+}
 
 interface MissionLogTabButtonProps {
   active: boolean;
@@ -53,6 +56,14 @@ function getLogHighlightClass(highlight?: MissionLogEntry['highlight']) {
   return 'text-(--text-main)';
 }
 
+function formatChatTime(sentAt: string) {
+  return new Date(sentAt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
 function MissionLogTabButton({
   active,
   icon: Icon,
@@ -79,55 +90,179 @@ function MissionLogTabButton({
 
 export function MissionLogPanel({
   title,
-  subtitle,
   entries,
   chatMessages = [],
   currentUserId,
-  isChatDisabled = false,
-  onSendMessage,
   resolveChatAuthorLabel,
-  showComposer = true,
-  className = '',
-  logHeightClassName = 'h-28',
+  jumpToChatSignal = 0,
   defaultTab = 'logs',
   mode = 'tabs',
 }: MissionLogPanelProps) {
   const { t } = useTranslation();
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const [activeTab, setActiveTab] = useState<MissionLogTab>(defaultTab);
-  const [draftMessage, setDraftMessage] = useState('');
   const isChatOnly = mode === 'chat-only';
-  const isLogsTab = !isChatOnly && activeTab === 'logs';
-  const isChatTab = isChatOnly || activeTab === 'chats';
+  const isLogsOnly = mode === 'logs-only';
+  const isLogsTab = isLogsOnly || (!isChatOnly && activeTab === 'logs');
+  const currentTab: MissionLogTab = isChatOnly ? 'chats' : isLogsOnly ? 'logs' : activeTab;
   const panelTitle = isChatOnly
     ? t('gameBattle.chatTitle')
     : isLogsTab
       ? title
       : t('gameBattle.chatTitle');
-  const panelSubtitle = isChatOnly
-    ? undefined
-    : isLogsTab
-      ? subtitle
-      : t('gameBattle.chatsTab');
+  const showTabButtons = !isChatOnly && !isLogsOnly;
 
-  useEffect(() => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const logsScrollTopRef = useRef(0);
+  const chatsScrollTopRef = useRef(0);
+  const chatCountRef = useRef(chatMessages.length);
+  const handledJumpSignalRef = useRef(0);
+  const pendingJumpRef = useRef<PendingJumpToChat | null>(null);
+
+  // Lưu vị trí scroll khi chuyển tab để có thể khôi phục lại khi quay lại tab đó
+  const saveTabScrollTop = useCallback((tab: MissionLogTab) => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    if (tab === 'chats') {
+      chatsScrollTopRef.current = container.scrollTop;
+      return;
+    }
+
+    logsScrollTopRef.current = container.scrollTop;
+  }, []);
+
+  // Khôi phục vị trí scroll đã lưu khi người dùng quay lại tab đó
+  const restoreTabScrollTop = useCallback((tab: MissionLogTab) => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    container.scrollTop =
+      tab === 'chats' ? chatsScrollTopRef.current : logsScrollTopRef.current;
+  }, []);
+
+  // Cuộn xuống cuối khi có tín hiệu mới nhảy đến chat và chưa xử lý tín hiệu đó
+  const scrollToBottom = useCallback((targetTab: MissionLogTab) => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
 
     container.scrollTop = container.scrollHeight;
-  }, [activeTab, chatMessages, entries, isChatOnly]);
 
-  const handleSubmit = () => {
-    const content = draftMessage.trim();
-    if (!content || !onSendMessage || isChatDisabled) {
+    saveTabScrollTop(targetTab);
+  }, [saveTabScrollTop]);
+
+  // Xử lý scroll
+  const handleContainerScroll = useCallback(() => {
+    saveTabScrollTop(currentTab);
+  }, [currentTab, saveTabScrollTop]);
+
+  // Xử lý chuyển tab
+  const handleTabChange = useCallback((nextTab: MissionLogTab) => {
+    saveTabScrollTop(currentTab);
+    setActiveTab(nextTab);
+  }, [currentTab, saveTabScrollTop]);
+
+  // Cập nhật số lượng tin nhắn khi messages thay đổi
+  useEffect(() => {
+    chatCountRef.current = chatMessages.length;
+  }, [chatMessages.length]);
+
+  // Khôi phục vị trí scroll khi chuyển tab
+  useEffect(() => {
+    restoreTabScrollTop(currentTab);
+  }, [currentTab, restoreTabScrollTop]);
+
+  useEffect(() => {
+    if (currentTab !== 'logs') {
       return;
     }
 
-    onSendMessage(content);
-    setDraftMessage('');
-  };
+    const frameId = window.requestAnimationFrame(() => {
+      scrollToBottom('logs');
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    }
+  }, [currentTab, entries.length, scrollToBottom])
+
+  // Xử lý nhảy đến chat khi có tín hiệu mới
+  useEffect(() => {
+    if (
+      jumpToChatSignal <= 0 ||
+      jumpToChatSignal === handledJumpSignalRef.current
+    ) {
+      return;
+    }
+
+    handledJumpSignalRef.current = jumpToChatSignal;
+
+    pendingJumpRef.current = {
+      signal: jumpToChatSignal,
+      chatCount: chatCountRef.current,
+    };
+
+    let tabFrameId: number | null = null;
+    let scrollFrameId: number | null = null;
+
+    if (!isChatOnly) {
+      tabFrameId = window.requestAnimationFrame(() => {
+        setActiveTab('chats');
+        scrollFrameId = window.requestAnimationFrame(() => {
+          scrollToBottom('chats');
+        });
+      });
+    } else {
+      scrollFrameId = window.requestAnimationFrame(() => {
+        scrollToBottom('chats');
+      });
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (pendingJumpRef.current?.signal === jumpToChatSignal) {
+        pendingJumpRef.current = null;
+      }
+    }, 5000);
+
+    return () => {
+      if (tabFrameId !== null) {
+        window.cancelAnimationFrame(tabFrameId);
+      }
+      if (scrollFrameId !== null) {
+        window.cancelAnimationFrame(scrollFrameId);
+      }
+      window.clearTimeout(timeoutId);
+    };
+  }, [isChatOnly, jumpToChatSignal, scrollToBottom]);
+
+  useEffect(() => {
+    const pendingJump = pendingJumpRef.current;
+    if (!pendingJump || pendingJump.signal !== jumpToChatSignal) {
+      return;
+    }
+
+    if (!isChatOnly && activeTab !== 'chats') {
+      return;
+    }
+
+    if (chatMessages.length <= pendingJump.chatCount) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      scrollToBottom('chats');
+      pendingJumpRef.current = null;
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [activeTab, chatMessages.length, isChatOnly, jumpToChatSignal, scrollToBottom]);
 
   const renderChatContent = () => {
     if (chatMessages.length === 0) {
@@ -148,10 +283,7 @@ export function MissionLogPanel({
         : isOwnMessage
           ? t('gameBattle.chatYouLabel')
           : t('gameBattle.chatOpponentLabel');
-      const timeLabel = new Date(message.sentAt).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const timeLabel = formatChatTime(message.sentAt);
 
       return (
         <p key={message.id} className='font-mono text-[11px] leading-6'>
@@ -172,37 +304,33 @@ export function MissionLogPanel({
   };
 
   return (
-    <div className={`${className} flex items-stretch gap-3`}>
-      {!isChatOnly ? (
+    <div className='px-3 pt-3 pb-2 sm:px-4 flex items-stretch gap-3'>
+      {showTabButtons ? (
         <div className='flex shrink-0 flex-col gap-2'>
           <MissionLogTabButton
             active={activeTab === 'logs'}
             icon={ScrollText}
             label={t('gameBattle.logsTab')}
-            onClick={() => setActiveTab('logs')}
+            onClick={() => handleTabChange('logs')}
           />
           <MissionLogTabButton
             active={activeTab === 'chats'}
             icon={MessageSquare}
             label={t('gameBattle.chatsTab')}
-            onClick={() => setActiveTab('chats')}
+            onClick={() => handleTabChange('chats')}
           />
         </div>
       ) : null}
       <div className='min-w-0 flex-1'>
-        <div className='flex items-center justify-between gap-3'>
+        <div className='flex items-center gap-3'>
           <p className='font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
             {panelTitle}
           </p>
-          {panelSubtitle ? (
-            <p className='font-mono text-[9px] tracking-[0.16em] text-(--text-subtle)'>
-              {panelSubtitle}
-            </p>
-          ) : null}
         </div>
         <div
           ref={containerRef}
-          className={`themed-scrollbar mt-2 overflow-y-auto pr-1 ${logHeightClassName}`}
+          onScroll={handleContainerScroll}
+          className='themed-scrollbar overflow-y-auto pr-1 h-11 sm:h-30'
         >
           {isLogsTab ? (
             <>
@@ -224,35 +352,6 @@ export function MissionLogPanel({
             renderChatContent()
           )}
         </div>
-        {showComposer && isChatTab && onSendMessage ? (
-          <div className='mt-3 border-t border-(--border-main) pt-3'>
-            <div className='flex w-full min-w-0 items-stretch gap-2'>
-              <input
-                type='text'
-                value={draftMessage}
-                onChange={(event) => setDraftMessage(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder={t('gameBattle.chatInputPlaceholder')}
-                disabled={isChatDisabled}
-                maxLength={280}
-                className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60'
-              />
-              <button
-                type='button'
-                onClick={handleSubmit}
-                disabled={isChatDisabled || draftMessage.trim().length === 0}
-                className='shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
-              >
-                {t('gameBattle.chatSend')}
-              </button>
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );

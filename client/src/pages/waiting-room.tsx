@@ -76,6 +76,7 @@ export function WaitingRoomPage() {
   const [isProfileSetupOpen, setProfileSetupOpen] = useState(false);
   const [isOpponentProfileOpen, setOpponentProfileOpen] = useState(false);
   const [chatDraft, setChatDraft] = useState('');
+  const [chatJumpSignal, setChatJumpSignal] = useState(0);
   const [roomCodeCopied, setRoomCodeCopied] = useState(false);
 
   useEffect(() => {
@@ -173,21 +174,12 @@ export function WaitingRoomPage() {
   const opponentProfile = getProfileById(opponentUserId);
 
   const currentElo = useMemo(() => {
-    const n = currentPlayerProfile?.elo ?? user?.elo;
-    if (typeof n === 'number' && Number.isFinite(n)) {
-      return n;
-    }
-    // Matches server default when JWT/context has not refreshed ELO yet.
-    return currentUserId ? 800 : null;
-  }, [currentPlayerProfile?.elo, currentUserId, user?.elo]);
+    return currentPlayerProfile?.elo ?? user?.elo ?? 0;
+  }, [currentPlayerProfile?.elo, user?.elo]);
 
   const opponentElo = useMemo(() => {
-    if (!opponentUserId) {
-      return null;
-    }
-    const n = opponentProfile?.elo;
-    return typeof n === 'number' && Number.isFinite(n) ? n : null;
-  }, [opponentUserId, opponentProfile?.elo]);
+    return opponentProfile?.elo ?? 0;
+  }, [opponentProfile?.elo]);
 
   const currentIdentity = useMemo(
     () => ({
@@ -280,7 +272,7 @@ export function WaitingRoomPage() {
           avatar: opponentProfile?.avatar ?? null,
           signature: opponentProfile?.signature?.trim() || '- - -',
           label: opponentIdentity.label,
-          elo: opponentElo ?? 800,
+          elo: opponentElo,
         }
         : null,
     [
@@ -356,16 +348,17 @@ export function WaitingRoomPage() {
     ],
   );
 
-  const isChatDisabled = connectionState !== 'connected' || !room;
+  const canSendChat = connectionState === 'connected' && !!room;
 
   const handleSendChat = () => {
     const content = chatDraft.trim();
-    if (!content || isChatDisabled) {
+    if (!content || !canSendChat) {
       return;
     }
 
     sendChatMessage(content, room?.roomId);
     setChatDraft('');
+    setChatJumpSignal((current) => current + 1);
   };
 
   return (
@@ -569,43 +562,41 @@ export function WaitingRoomPage() {
 
           <div className='ui-panel mt-auto overflow-hidden rounded-md'>
             <MissionLogPanel
-              className='px-3 pt-3 pb-2 sm:px-4'
               title={t('waitingRoom.feedTitle')}
               entries={waitingRoomFeed}
               chatMessages={chatMessages}
               currentUserId={currentUserId}
               mode='chat-only'
-              isChatDisabled={isChatDisabled}
-              showComposer={false}
-              logHeightClassName='h-11 sm:h-32'
               resolveChatAuthorLabel={resolveChatAuthorLabel}
+              jumpToChatSignal={chatJumpSignal}
             />
             <div className='border-t border-(--border-main) flex w-full min-w-0 flex-col gap-3 px-3 py-2 sm:px-4 lg:flex-row lg:items-start'>
-              <div className='flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:w-[50%] lg:max-w-md'>
-                <input
-                  type='text'
-                  value={chatDraft}
-                  onChange={(event) => setChatDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      handleSendChat();
-                    }
-                  }}
-                  placeholder={t('gameBattle.chatInputPlaceholder')}
-                  disabled={isChatDisabled}
-                  maxLength={240}
-                  className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60'
-                />
-                <button
-                  type='button'
-                  onClick={handleSendChat}
-                  disabled={isChatDisabled || chatDraft.trim().length === 0}
-                  className='w-full shrink-0 cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:self-center'
-                >
-                  {t('gameBattle.chatSend')}
-                </button>
-              </div>
+              {canSendChat ? (
+                <div className='flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:w-[50%] lg:max-w-md'>
+                  <input
+                    type='text'
+                    value={chatDraft}
+                    onChange={(event) => setChatDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        handleSendChat();
+                      }
+                    }}
+                    placeholder={t('gameBattle.chatInputPlaceholder')}
+                    maxLength={240}
+                    className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted)'
+                  />
+                  <button
+                    type='button'
+                    onClick={handleSendChat}
+                    disabled={chatDraft.trim().length === 0}
+                    className='w-full shrink-0 cursor-pointer rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:self-center'
+                  >
+                    {t('gameBattle.chatSend')}
+                  </button>
+                </div>
+              ) : null}
               <div className='flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end lg:flex-1'>
                 <Button
                   variant='default'

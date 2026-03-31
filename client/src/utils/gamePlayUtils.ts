@@ -1,4 +1,5 @@
 import { HardBot } from '@/services/bots/hardBot';
+import { buildProbabilityHeatMap } from '@/services/bots/core/scoring/probability';
 import type { BotShot } from '@/services/bots/types';
 import type {
   AiDifficulty,
@@ -294,6 +295,55 @@ function buildSinkAwareBotShots(
 }
 
 const hardBot = new HardBot();
+
+export function buildBotHeatMap(
+  boardConfig: BoardConfig,
+  ships: ShipDefinition[],
+  shots: Shot[],
+  difficulty: AiDifficulty,
+  targetPlacements?: PlacedShip[],
+  targetShipsById?: Map<string, ShipDefinition>,
+): Map<string, number> {
+  if (difficulty !== 'probability') {
+    return new Map();
+  }
+
+  const attemptedShots = new Set(shots.map((shot) => cellKey(shot.x, shot.y)));
+  let botShots: BotShot[] = shots.map((shot) => ({
+    x: shot.x,
+    y: shot.y,
+    isHit: shot.isHit,
+  }));
+  let remainingShipSizes: number[] | undefined;
+
+  if (targetPlacements && targetShipsById) {
+    const analyzed = buildSinkAwareBotShots(shots, targetPlacements, targetShipsById);
+    botShots = analyzed.botShots;
+    remainingShipSizes = analyzed.remainingShipSizes;
+  }
+
+  const { rows, cols } = boardConfig;
+  const shipSizes = remainingShipSizes?.length
+    ? remainingShipSizes
+    : ships.map((s) => s.size);
+
+  const availableKeys = new Set<string>();
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const key = cellKey(x, y);
+      if (!attemptedShots.has(key)) {
+        availableKeys.add(key);
+      }
+    }
+  }
+
+  const missKeys = new Set(
+    botShots.filter((s) => !s.isHit).map((s) => cellKey(s.x, s.y)),
+  );
+
+  return buildProbabilityHeatMap({ rows, cols, shipSizes, availableKeys, missKeys });
+}
+
 export function getBotShot(
   boardConfig: BoardConfig,
   ships: ShipDefinition[],

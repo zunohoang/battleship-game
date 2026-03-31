@@ -235,6 +235,9 @@ export class GameGateway {
     this.server
       .to(`room:${roomId}`)
       .emit(GameEvents.ServerRoomUpdated, { room, match: null });
+    this.server
+      .to(this.spectatorRoom(roomId))
+      .emit(GameEvents.ServerRoomUpdated, { room, match: null });
     return { room };
   }
 

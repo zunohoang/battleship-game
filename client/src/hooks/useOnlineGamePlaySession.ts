@@ -53,6 +53,7 @@ interface UseOnlineGamePlaySessionParams {
 interface UseOnlineGamePlaySessionResult {
   room: RoomSnapshot | null;
   match: MatchSnapshot | null;
+  currentUserId: string | null;
   latencyMs: number | null;
   chat: {
     messages: ChatMessage[];
@@ -75,7 +76,6 @@ export function useOnlineGamePlaySession({
 }: UseOnlineGamePlaySessionParams): UseOnlineGamePlaySessionResult {
   const { t } = useTranslation();
   const { user, setUser } = useGlobalContext();
-  const currentUserId = user?.id ?? null;
   const [turnNowMs, setTurnNowMs] = useState<number | null>(null);
   const eloSyncedForMatchRef = useRef<string | null>(null);
 
@@ -91,6 +91,11 @@ export function useOnlineGamePlaySession({
     sendChatMessage,
     leaveRoom,
   } = useOnlineRoom(roomId, enabled);
+  const matchIdValue = match?.id ?? null;
+  const matchStatus = match?.status ?? null;
+  const turnDeadlineAt = match?.turnDeadlineAt ?? null;
+  const matchVersion = match?.version ?? null;
+  const turnPlayerId = match?.turnPlayerId ?? null;
 
   const refresh = useCallback(() => {
     if (!enabled) {
@@ -116,8 +121,8 @@ export function useOnlineGamePlaySession({
   useEffect(() => {
     if (
       !enabled ||
-      !currentUserId ||
       !user ||
+      !user.id ||
       user.isAnonymous ||
       match?.status !== 'finished' ||
       !match?.id
@@ -131,15 +136,15 @@ export function useOnlineGamePlaySession({
 
     eloSyncedForMatchRef.current = match.id;
 
-    void getUserProfile(currentUserId).then((profile) => {
+    void getUserProfile(user.id).then((profile) => {
       setUser((prev) =>
-        prev && !prev.isAnonymous && prev.id === currentUserId
+        prev && !prev.isAnonymous && prev.id === user.id
           ? { ...prev, elo: profile.elo }
           : prev,
       );
     });
   }, [
-    currentUserId,
+    user?.id,
     enabled,
     match?.id,
     match?.status,
@@ -177,64 +182,64 @@ export function useOnlineGamePlaySession({
       return fallbackPlacements ?? [];
     }
 
-    if (currentUserId === match.player1Id) {
+    if (user?.id === match.player1Id) {
       return match.player1Placements ?? [];
     }
 
-    if (currentUserId === match.player2Id) {
+    if (user?.id === match.player2Id) {
       return match.player2Placements ?? [];
     }
 
     return fallbackPlacements ?? [];
-  }, [currentUserId, fallbackPlacements, match]);
+  }, [user?.id, fallbackPlacements, match]);
 
   const opponentPlacements = useMemo(() => {
     if (!match) {
       return [];
     }
 
-    if (currentUserId === match.player1Id) {
+    if (user?.id === match.player1Id) {
       return match.player2Placements ?? [];
     }
 
-    if (currentUserId === match.player2Id) {
+    if (user?.id === match.player2Id) {
       return match.player1Placements ?? [];
     }
 
     return [];
-  }, [currentUserId, match]);
+  }, [user?.id, match]);
 
   const ownShots = useMemo<Shot[]>(() => {
     if (!match) {
       return [];
     }
 
-    if (currentUserId === match.player1Id) {
+    if (user?.id === match.player1Id) {
       return toBattleShots(match.player1Shots);
     }
 
-    if (currentUserId === match.player2Id) {
+    if (user?.id === match.player2Id) {
       return toBattleShots(match.player2Shots);
     }
 
     return [];
-  }, [currentUserId, match]);
+  }, [user?.id, match]);
 
   const incomingShots = useMemo<Shot[]>(() => {
     if (!match) {
       return [];
     }
 
-    if (currentUserId === match.player1Id) {
+    if (user?.id === match.player1Id) {
       return toBattleShots(match.player2Shots);
     }
 
-    if (currentUserId === match.player2Id) {
+    if (user?.id === match.player2Id) {
       return toBattleShots(match.player1Shots);
     }
 
     return [];
-  }, [currentUserId, match]);
+  }, [user?.id, match]);
 
   const ownFleetStatus = useMemo(
     () => calculateFleetShipStatuses(ownPlacements, shipsById, incomingShots),
@@ -249,7 +254,7 @@ export function useOnlineGamePlaySession({
     enabled && match?.status === 'finished' ? 'gameover' : 'playing';
   const result: GameResult | null =
     enabled && match?.status === 'finished' && match.winnerId
-      ? match.winnerId === currentUserId
+      ? match.winnerId === user?.id
         ? 'player_wins'
         : 'bot_wins'
       : null;
@@ -259,7 +264,7 @@ export function useOnlineGamePlaySession({
     !!match &&
     phase === 'playing' &&
     connectionState === 'connected' &&
-    match.turnPlayerId === currentUserId;
+    match.turnPlayerId === user?.id;
 
   const handlePlayerFire = useCallback(
     (x: number, y: number) => {
@@ -295,12 +300,12 @@ export function useOnlineGamePlaySession({
       (left, right) => left.sequence - right.sequence,
     );
     const finalLogEntry =
-      match.status === 'finished' && match.winnerId && currentUserId
+      match.status === 'finished' && match.winnerId && user?.id
         ? {
           id: -(match.version ?? history.length + 1),
           timestamp: formatLogTime(match.updatedAt),
           message: t(
-            match.winnerId === currentUserId
+            match.winnerId === user?.id
               ? 'gameBattle.logEnemyFleetSunk'
               : 'gameBattle.logYourFleetSunk',
           ),
@@ -311,7 +316,7 @@ export function useOnlineGamePlaySession({
     return [
       initialLogEntry,
       ...history.map((shot) => {
-        const isOwnShot = shot.by === currentUserId;
+        const isOwnShot = shot.by === user?.id;
         const highlight: MissionLogEntry['highlight'] = isOwnShot
           ? shot.isHit
             ? 'friendly'
@@ -337,7 +342,7 @@ export function useOnlineGamePlaySession({
       }),
       ...(finalLogEntry ? [finalLogEntry] : []),
     ];
-  }, [currentUserId, initialLogEntry, match, t]);
+  }, [user?.id, initialLogEntry, match, t]);
 
   const turnLabel =
     phase === 'gameover'
@@ -368,6 +373,45 @@ export function useOnlineGamePlaySession({
       Math.ceil((new Date(match.turnDeadlineAt).getTime() - turnNowMs) / 1000),
     );
   }, [enabled, match, turnNowMs]);
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      matchStatus !== 'in_progress' ||
+      !turnDeadlineAt ||
+      turnNowMs === null
+    ) {
+      return;
+    }
+
+    const millisecondsLeft = new Date(turnDeadlineAt).getTime() - turnNowMs;
+    if (millisecondsLeft > 1000) {
+      return;
+    }
+
+    let attempts = 0;
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      refresh();
+
+      if (attempts >= 8) {
+        window.clearInterval(intervalId);
+      }
+    }, 200);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    enabled,
+    matchIdValue,
+    matchStatus,
+    turnDeadlineAt,
+    turnNowMs,
+    turnPlayerId,
+    matchVersion,
+    refresh,
+  ]);
   const turnTimerValue =
     turnTimerSecondsLeft === null
       ? '--:--'
@@ -410,6 +454,7 @@ export function useOnlineGamePlaySession({
           name: user?.username?.trim() || 'Bạn',
           signature: user?.signature?.trim() || '- - -',
           align: 'left',
+          elo: user?.elo ?? 0,
         },
         rightContent: {
           avatarSrc: null,
@@ -417,6 +462,7 @@ export function useOnlineGamePlaySession({
           name: 'Đối thủ',
           signature: '- - -',
           align: 'right',
+          elo: 0,
         },
       },
       battlefield: {
@@ -462,6 +508,7 @@ export function useOnlineGamePlaySession({
     turnTimerTone,
     turnTimerValue,
     user?.avatar,
+    user?.elo,
     user?.signature,
     user?.username,
   ]);
@@ -469,6 +516,7 @@ export function useOnlineGamePlaySession({
   return {
     room,
     match,
+    currentUserId: user?.id ?? null,
     latencyMs,
     chat: {
       messages: chatMessages,

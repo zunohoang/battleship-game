@@ -22,8 +22,7 @@ export interface GlobalUser {
   username: string
   avatar: string | null
   signature: string | null
-  /** Competitive rating; optional for legacy persisted sessions. */
-  elo?: number
+  elo: number
   isAnonymous: boolean
 }
 
@@ -32,6 +31,7 @@ export const ANONYMOUS_USER: GlobalUser = {
   username: 'Alpha',
   avatar: null,
   signature: '- - -',
+  elo: 0,
   isAnonymous: true,
 }
 
@@ -57,7 +57,7 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
     typeof username === 'string' &&
     (typeof avatar === 'string' || avatar === null) &&
     (typeof signature === 'string' || signature === null) &&
-    (typeof elo === 'number' || typeof elo === 'undefined') &&
+    typeof elo === 'number' &&
     typeof isAnonymous === 'boolean'
   )
 }
@@ -89,7 +89,7 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
     username,
     avatar,
     signature,
-    elo: typeof eloRaw === 'number' ? eloRaw : undefined,
+    elo: typeof eloRaw === 'number' ? eloRaw : 0,
     isAnonymous: false,
   }
 }
@@ -131,7 +131,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   useEffect(() => {
-    if (!user?.id || user.isAnonymous || typeof user.elo === 'number') {
+    if (!user?.id || user.isAnonymous || user.elo > 0) {
       return
     }
 

@@ -609,7 +609,7 @@ export function GameRoomsPage() {
 
                 <div className='hidden xl:block'>
                   <div className='ui-subpanel rounded-sm'>
-                    <div className='grid min-w-[750px] grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
+                    <div className='grid min-w-187.5 grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
                       <StaticHeaderCell
                         label={t('gameRooms.columnRoomCode')}
                         value={t('gameRooms.columnCode')}
@@ -796,7 +796,7 @@ export function GameRoomsPage() {
                             }
                           }}
                         >
-                          <div className='grid min-w-[750px] grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
+                          <div className='grid min-w-187.5 grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
                             <div className='flex min-h-10 min-w-0 items-center px-3 py-2 lg:px-4'>
                               <p className='truncate font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
                                 {roomItem.roomCode}

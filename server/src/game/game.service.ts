@@ -987,8 +987,22 @@ export class GameService {
     userId: string,
     roomId: string,
   ): Promise<{ room: RoomSnapshot; match: MatchSnapshot }> {
-    const room = await this.getRoomOrThrow(roomId);
-    const match = await this.getCurrentMatchOrThrow(room);
+    let room = await this.getRoomOrThrow(roomId);
+    let match = await this.getCurrentMatchOrThrow(room);
+
+    if (
+      room.status === 'in_game' &&
+      match.status === 'in_progress' &&
+      this.resolveExpiredTurns(room, match)
+    ) {
+      [room, match] = await Promise.all([
+        this.roomRepo.save(room),
+        this.matchRepo.save(match),
+      ]);
+      if (match.status === 'finished') {
+        await this.eloMatchService.settleMatchElo(match.id);
+      }
+    }
 
     this.assertSpectatorAccess(room, match, userId);
 
@@ -1247,7 +1261,12 @@ export class GameService {
       });
     }
 
-    if (room.status !== 'in_game' || match.status !== 'in_progress') {
+    const canSpectateActiveMatch =
+      room.status === 'in_game' && match.status === 'in_progress';
+    const canSpectateFinishedMatch =
+      room.status === 'finished' && match.status === 'finished';
+
+    if (!canSpectateActiveMatch && !canSpectateFinishedMatch) {
       throw new BadRequestException({
         error: 'SPECTATOR_NOT_AVAILABLE',
         message: 'This room is not available for spectating',

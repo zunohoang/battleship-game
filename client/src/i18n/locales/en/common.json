@@ -705,6 +705,11 @@
         "quitMission": "QUIT MISSION",
         "tacticalMap": "TACTICAL MAP",
         "statistics": "STATISTICS",
+        "pauseFlow": "Pause Flow",
+        "resumeFlow": "Resume Flow",
+        "showHeatMap": "Show Heat Map",
+        "hideHeatMap": "Hide Heat Map",
+        "nextShot": "Next Shot",
         "minimize": "Minimize",
         "stats": {
             "title": "BATTLE STATISTICS",

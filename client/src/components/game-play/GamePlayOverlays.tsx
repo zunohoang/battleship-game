@@ -198,7 +198,7 @@ export function BattleStatsBreakdown({
   const enemyStats = statsFromNumbers(secondary);
 
   return (
-    <div className='ui-gameplay-overlay-panel relative z-10 flex flex-col gap-3 overflow-y-auto rounded-md p-4'>
+    <div className='ui-gameplay-overlay-panel relative z-10 h-full flex flex-col gap-3 overflow-y-auto rounded-md p-4'>
       <div className='flex items-center justify-between gap-2'>
         <p className='font-mono text-[11px] font-black uppercase tracking-[0.24em] text-(--accent-secondary)'>
           {t('gameBattle.stats.title')}

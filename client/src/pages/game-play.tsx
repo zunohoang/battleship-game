@@ -19,7 +19,6 @@ import {
 } from '@/components/game-play/GamePlayShell';
 import { Button } from '@/components/ui/Button';
 import { useGamePlayMusic } from '@/hooks/useGamePlayMusic';
-import { useGlobalContext } from '@/hooks/useGlobalContext';
 import { useLocalGamePlaySession } from '@/hooks/useLocalGamePlaySession';
 import { useOnlineGamePlaySession } from '@/hooks/useOnlineGamePlaySession';
 import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
@@ -58,7 +57,7 @@ export interface GamePlayHeaderSideContent {
   name: string;
   signature: string;
   align?: 'left' | 'right';
-  elo?: number | null;
+  elo: number;
   userId?: string | null;
   pingMs?: number | null;
 }
@@ -98,14 +97,17 @@ export interface GamePlayScreenModel {
     isBotVBot: boolean;
     ownFleetStatus: FleetShipStatus[];
     opponentFleetStatus: FleetShipStatus[];
+    ownBoardHeatMap?: Map<string, number>;
+    opponentBoardHeatMap?: Map<string, number>;
+    plannedOwnBoardShot?: { x: number; y: number } | null;
+    plannedOpponentBoardShot?: { x: number; y: number } | null;
   };
   missionLog: {
     entries: MissionLogEntry[];
-    subtitle?: string;
     heightClassName?: string;
+    defaultTab?: 'logs' | 'chats';
     chatMessages?: ChatMessage[];
     currentUserId?: string | null;
-    chatDisabled?: boolean;
     onSendChatMessage?: (content: string) => void;
     resolveChatAuthorLabel?: (senderId: string) => string;
   };
@@ -115,6 +117,10 @@ export interface GamePlayScreenModel {
     encryptedChannelValue?: string;
     encryptedChannelMaskable?: boolean;
     encryptedChannelMaskedValue?: string;
+    isBotVBotPaused?: boolean;
+    canApplyBotVBotStep?: boolean;
+    onToggleBotVBotPause?: () => void;
+    onStepBotVBotTurn?: () => void;
   };
   state: {
     phase: GamePhase;
@@ -137,7 +143,7 @@ function FleetStatusBar({
   if (total === 0) {
     return (
       <p className='font-mono text-[9px] font-bold tracking-[0.14em] text-(--text-subtle)'>
-        {label}: --
+        {label}
       </p>
     );
   }
@@ -184,7 +190,7 @@ function createHeaderContent({
   signature?: string | null;
   fallbackSignature?: string;
   align: 'left' | 'right';
-  elo?: number | null;
+  elo?: number;
   userId?: string | null;
   pingMs?: number | null;
 }): GamePlayHeaderSideContent {
@@ -194,7 +200,7 @@ function createHeaderContent({
     name: name?.trim() || fallbackName,
     signature: signature?.trim() || fallbackSignature,
     align,
-    elo: typeof elo === 'number' && Number.isFinite(elo) ? elo : null,
+    elo: typeof elo === 'number' && Number.isFinite(elo) ? elo : 0,
     userId: userId ?? null,
     pingMs:
       typeof pingMs === 'number' && Number.isFinite(pingMs)
@@ -214,9 +220,10 @@ export function GamePlayScreen({
 }) {
   const { t } = useTranslation();
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [statsDisplayState, setStatsDisplayState] =
-    useState<StatsDisplayState>('hidden');
+  const [statsDisplayState, setStatsDisplayState] = useState<StatsDisplayState>('hidden');
   const [chatDraft, setChatDraft] = useState('');
+  const [chatJumpSignal, setChatJumpSignal] = useState(0);
+  const [isHeatMapVisible, setIsHeatMapVisible] = useState(false);
   const [showcaseSide, setShowcaseSide] = useState<'left' | 'right' | null>(null);
   const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(() =>
     Boolean(model?.actions.encryptedChannelMaskable),
@@ -267,10 +274,10 @@ export function GamePlayScreen({
     ? {
       id: showcaseContent.userId,
       username: showcaseContent.name,
-      avatar: showcaseContent.avatarSrc ?? null,
+      avatar: showcaseContent.avatarSrc,
       signature: showcaseContent.signature,
       label: showcaseContent.label,
-      elo: showcaseContent.elo ?? 800,
+      elo: showcaseContent.elo,
     }
     : null;
   const isStatsVisible =
@@ -283,6 +290,7 @@ export function GamePlayScreen({
     actions.encryptedChannelMaskable && isEncryptedChannelMasked
       ? (actions.encryptedChannelMaskedValue ?? '***')
       : encryptedChannelValue;
+  const canSendChat = typeof missionLog.onSendChatMessage === 'function';
 
   const handleQuit = () => {
     stopBackgroundMusic();
@@ -291,12 +299,13 @@ export function GamePlayScreen({
 
   const handleSendChat = () => {
     const content = chatDraft.trim();
-    if (!content || !missionLog.onSendChatMessage || missionLog.chatDisabled) {
+    if (!content || !missionLog.onSendChatMessage) {
       return;
     }
 
     missionLog.onSendChatMessage(content);
     setChatDraft('');
+    setChatJumpSignal((current) => current + 1);
   };
 
   return (
@@ -310,7 +319,7 @@ export function GamePlayScreen({
             onClick={header.leftContent.userId ? () => setShowcaseSide('left') : undefined}
           />
         </div>
-        <div className='hidden md:col-start-1 md:row-start-1 md:block lg:w-[25rem] md:justify-self-start'>
+        <div className='hidden md:col-start-1 md:row-start-1 md:block lg:w-100 md:justify-self-start'>
           <GamePlayIdentityCard
             content={header.leftContent}
             showSignature={false}
@@ -320,7 +329,7 @@ export function GamePlayScreen({
 
         {/* Turn status on desktop device */}
         <div className='hidden md:col-start-1 md:col-end-4 md:row-start-1 md:block md:pointer-events-none'>
-          <div className='relative h-full min-h-[4.75rem]'>
+          <div className='relative h-full min-h-19'>
             <div className='absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center px-4'>
               <GamePlayTurnStatus
                 turnKey={header.turnKey}
@@ -328,7 +337,7 @@ export function GamePlayScreen({
                 turnTone={header.turnTone}
                 turnTimerValue={header.turnTimerValue}
                 turnTimerTone={header.turnTimerTone}
-                className='pointer-events-auto md:w-auto md:min-w-[15rem] md:max-w-[18rem]'
+                className='pointer-events-auto md:w-auto md:min-w-60 md:max-w-[18rem]'
               />
             </div>
           </div>
@@ -354,6 +363,17 @@ export function GamePlayScreen({
                 placements: battlefield.ownPlacements,
                 shots: battlefield.incomingShots,
                 revealShips: battlefield.revealOwnShips ?? true,
+                heatMap:
+                  battlefield.isBotVBot && isHeatMapVisible
+                    ? battlefield.ownBoardHeatMap
+                    : undefined,
+                plannedShot: battlefield.isBotVBot
+                  ? battlefield.plannedOwnBoardShot
+                  : undefined,
+                heatEmphasis:
+                  battlefield.isBotVBot && header.turnKey === 'bot'
+                    ? 'strong'
+                    : 'normal',
               }}
               overlay={
                 <AnimatePresence>
@@ -404,6 +424,17 @@ export function GamePlayScreen({
                 onFire: battlefield.onFire,
                 isActive: battlefield.canFire,
                 revealShips: battlefield.revealOpponentShips,
+                heatMap:
+                  battlefield.isBotVBot && isHeatMapVisible
+                    ? battlefield.opponentBoardHeatMap
+                    : undefined,
+                plannedShot: battlefield.isBotVBot
+                  ? battlefield.plannedOpponentBoardShot
+                  : undefined,
+                heatEmphasis:
+                  battlefield.isBotVBot && header.turnKey === 'player'
+                    ? 'strong'
+                    : 'normal',
               }}
               overlay={
                 <AnimatePresence>
@@ -428,7 +459,7 @@ export function GamePlayScreen({
         </div>
 
         {/* Right header based on 2 device type */}
-        <div className='hidden md:col-start-3 md:row-start-1 md:block lg:w-[25rem] md:justify-self-end'>
+        <div className='hidden md:col-start-3 md:row-start-1 md:block lg:w-100 md:justify-self-end'>
           <GamePlayIdentityCard
             content={header.rightContent}
             showSignature={false}
@@ -444,7 +475,7 @@ export function GamePlayScreen({
         </div>
 
         {/* VS divider, disabled on mobile */}
-        <div className='hidden md:flex md:col-start-2 md:row-start-2 md:flex-col md:items-center md:justify-center md:gap-3 md:px-1'>
+        <div className='hidden md:flex md:col-start-2 md:row-start-2 md:flex-col md:items-center md:justify-center md:gap-3 md:px-10'>
           <div
             className='h-full w-px opacity-70'
             style={{
@@ -465,26 +496,24 @@ export function GamePlayScreen({
         </div>
       </div>
 
-      <div className='mt-2 ui-panel overflow-hidden rounded-md md:mt-3'>
+      <div className='mt-2 ui-panel overflow-hidden rounded-md'>
         <MissionLogPanel
-          className='px-3 pt-3 pb-2 sm:px-4'
           title={t('gameBattle.missionLog')}
-          subtitle={missionLog.subtitle}
           entries={missionLog.entries}
           chatMessages={missionLog.chatMessages}
           currentUserId={missionLog.currentUserId}
-          isChatDisabled={missionLog.chatDisabled}
           onSendMessage={missionLog.onSendChatMessage}
           resolveChatAuthorLabel={missionLog.resolveChatAuthorLabel}
-          showComposer={false}
-          logHeightClassName={missionLog.heightClassName ?? 'h-11 sm:h-32'}
+          jumpToChatSignal={chatJumpSignal}
+          defaultTab={missionLog.defaultTab}
+          mode={battlefield.isBotVBot ? 'logs-only' : 'tabs'}
         />
 
         {/* Bottom panel */}
         <div className='border-t border-(--border-main) flex w-full min-w-0 flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:justify-between'>
           <div className='flex w-full min-w-0 flex-wrap items-center gap-2 md:flex-nowrap md:min-w-0 md:flex-1'>
             {/* Chat input */}
-            {missionLog.onSendChatMessage ? (
+            {canSendChat ? (
               <div className='flex w-full min-w-0 flex-col gap-2 sm:flex-row lg:w-[50%] lg:max-w-md'>
                 <input
                   type='text'
@@ -497,21 +526,48 @@ export function GamePlayScreen({
                     }
                   }}
                   placeholder={t('gameBattle.chatInputPlaceholder')}
-                  disabled={missionLog.chatDisabled}
                   maxLength={280}
-                  className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted) disabled:cursor-not-allowed disabled:opacity-60'
+                  className='ui-input min-w-0 flex-1 basis-0 rounded-sm px-3 py-2 font-mono text-[11px] outline-none transition-colors placeholder:text-(--text-muted)'
                 />
                 <button
                   type='button'
                   onClick={handleSendChat}
-                  disabled={
-                    missionLog.chatDisabled || chatDraft.trim().length === 0
-                  }
+                  disabled={chatDraft.trim().length === 0}
                   className='shrink-0 cursor-pointer self-center rounded-sm border border-[rgba(117,235,255,0.68)] bg-[rgba(117,235,255,0.12)] px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.16em] text-(--accent-secondary) transition-colors hover:bg-[rgba(117,235,255,0.18)] disabled:cursor-not-allowed disabled:opacity-50'
                 >
                   {t('gameBattle.chatSend')}
                 </button>
               </div>
+            ) : null}
+
+            {battlefield.isBotVBot && state.phase === 'playing' ? (
+              <>
+                <Button
+                  onClick={actions.onToggleBotVBotPause}
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                >
+                  {actions.isBotVBotPaused
+                    ? t('gameBattle.resumeFlow')
+                    : t('gameBattle.pauseFlow')}
+                </Button>
+                <Button
+                  onClick={() => setIsHeatMapVisible((current) => !current)}
+                  className='h-8 px-3 text-[10px] md:w-auto'
+                >
+                  {isHeatMapVisible
+                    ? t('gameBattle.hideHeatMap')
+                    : t('gameBattle.showHeatMap')}
+                </Button>
+                {actions.isBotVBotPaused ? (
+                  <Button
+                    onClick={actions.onStepBotVBotTurn}
+                    disabled={!actions.canApplyBotVBotStep}
+                    className='h-8 px-3 text-[10px] md:w-auto disabled:opacity-50'
+                  >
+                    {t('gameBattle.nextShot')}
+                  </Button>
+                ) : null}
+              </>
             ) : null}
 
             {/* Stats btn */}
@@ -621,7 +677,6 @@ export function GamePlayPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user } = useGlobalContext();
   const state = location.state as GamePlayLocationState | null;
   const isOnlineMode = state?.mode === 'online';
   const localState = isValidLocalGamePlayState(state) ? state : null;
@@ -648,6 +703,13 @@ export function GamePlayPage() {
     canPlayerFire,
     logEntries,
     handlePlayerFire,
+    ownBoardHeatMap,
+    opponentBoardHeatMap,
+    isBotVBotPaused,
+    toggleBotVBotPause,
+    stepBotVBotTurn,
+    plannedOwnBoardShot,
+    plannedOpponentBoardShot,
   } = useLocalGamePlaySession({
     mode: localMode,
     config: localState?.config ?? EMPTY_GAME_CONFIG,
@@ -666,6 +728,7 @@ export function GamePlayPage() {
     model: onlineModel,
     phase: onlinePhase,
     result: onlineResult,
+    currentUserId,
     loadingFallback,
     leaveRoom: leaveOnlineRoom,
   } = useOnlineGamePlaySession({
@@ -675,7 +738,6 @@ export function GamePlayPage() {
     fallbackPlacements: onlineState?.placements,
     enabled: isOnlineMode && !!onlineState,
   });
-  const currentUserId = user?.id ?? null;
   const onlineOpponentId =
     currentUserId === match?.player1Id
       ? match.player2Id
@@ -693,7 +755,6 @@ export function GamePlayPage() {
       if (senderId === currentUserId) {
         return (
           currentPlayerProfile?.username?.trim() ||
-          user?.username?.trim() ||
           t('gameBattle.chatYouLabel')
         );
       }
@@ -712,21 +773,16 @@ export function GamePlayPage() {
       onlineOpponentId,
       opponentProfile?.username,
       t,
-      user?.username,
     ],
   );
-  const currentElo = typeof (currentPlayerProfile?.elo ?? user?.elo) === 'number' && Number.isFinite(currentPlayerProfile?.elo ?? user?.elo)
-    ? (currentPlayerProfile?.elo ?? user?.elo)
-    : 800;
-  const opponentElo = typeof opponentProfile?.elo === 'number' && Number.isFinite(opponentProfile.elo)
-    ? opponentProfile.elo
-    : null;
+  const currentElo = currentPlayerProfile?.elo ?? 0;
+  const opponentElo = opponentProfile?.elo ?? 0;
   const onlineLeftHeaderContent = createHeaderContent({
-    avatarSrc: currentPlayerProfile?.avatar ?? user?.avatar,
+    avatarSrc: currentPlayerProfile?.avatar,
     label: 'COMMANDER',
-    name: currentPlayerProfile?.username ?? user?.username,
+    name: currentPlayerProfile?.username,
     fallbackName: 'Commander',
-    signature: currentPlayerProfile?.signature ?? user?.signature,
+    signature: currentPlayerProfile?.signature,
     align: 'left',
     elo: currentElo,
     userId: currentUserId,
@@ -759,7 +815,7 @@ export function GamePlayPage() {
         replace: true,
       });
     }
-  }, [isOnlineMode, localState, navigate, onlineState]);
+  }, [isOnlineMode, localMode, localState, navigate, onlineState]);
 
   useEffect(() => {
     if (!isOnlineMode || !onlineState || !room) {
@@ -795,6 +851,15 @@ export function GamePlayPage() {
     }
   }, [isOnlineMode, leaveOnlineRoom, match?.id, navigate, onlineState, room]);
 
+  const ownFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(playerPlacements, shipsById, botShots),
+    [botShots, playerPlacements, shipsById],
+  );
+  const opponentFleetStatus = useMemo(
+    () => calculateFleetShipStatuses(botPlacements, shipsById, playerShots),
+    [botPlacements, playerShots, shipsById],
+  );
+
   if (isOnlineMode) {
     if (!onlineState) {
       return null;
@@ -818,8 +883,7 @@ export function GamePlayPage() {
             ...onlineModel.missionLog,
             chatMessages: chat.messages,
             currentUserId,
-            chatDisabled: !room || !match,
-            onSendChatMessage: chat.sendMessage,
+            onSendChatMessage: room && match ? chat.sendMessage : undefined,
             resolveChatAuthorLabel: resolveOnlineChatAuthorLabel,
           },
           actions: {
@@ -863,14 +927,14 @@ export function GamePlayPage() {
         align: 'left',
       })
       : createHeaderContent({
-        avatarSrc: user?.avatar,
+        avatarSrc: currentPlayerProfile?.avatar,
         label: 'COMMANDER',
-        name: user?.username,
+        name: currentPlayerProfile?.username,
         fallbackName: 'Alpha',
-        signature: user?.signature,
+        signature: currentPlayerProfile?.signature,
         align: 'left',
-        elo: typeof user?.elo === 'number' && Number.isFinite(user.elo) ? user.elo : 800,
-        userId: user?.id ?? null,
+        elo: currentPlayerProfile?.elo,
+        userId: currentUserId,
       });
   const rightHeaderContent =
     localMode === 'botvbot'
@@ -895,15 +959,6 @@ export function GamePlayPage() {
         signature: t(`gameSetup.aiDifficulty.${localAiDifficulty}`),
         align: 'right',
       });
-
-  const ownFleetStatus = useMemo(
-    () => calculateFleetShipStatuses(playerPlacements, shipsById, botShots),
-    [botShots, playerPlacements, shipsById],
-  );
-  const opponentFleetStatus = useMemo(
-    () => calculateFleetShipStatuses(botPlacements, shipsById, playerShots),
-    [botPlacements, playerShots, shipsById],
-  );
 
   return (
     <GamePlayScreen
@@ -943,10 +998,15 @@ export function GamePlayPage() {
           revealOpponentShips: localPhase === 'gameover' || isBotVBot,
           onFire: isBotVBot ? undefined : handlePlayerFire,
           isBotVBot,
+          ownBoardHeatMap: isBotVBot ? ownBoardHeatMap : undefined,
+          opponentBoardHeatMap: isBotVBot ? opponentBoardHeatMap : undefined,
+          plannedOwnBoardShot: isBotVBot ? plannedOwnBoardShot : undefined,
+          plannedOpponentBoardShot: isBotVBot
+            ? plannedOpponentBoardShot
+            : undefined,
         },
         missionLog: {
           entries: logEntries,
-          subtitle: t('gameBattle.systemVersion'),
           heightClassName: 'h-11 sm:h-32',
         },
         actions: {
@@ -954,6 +1014,12 @@ export function GamePlayPage() {
           showEncryptedChannel: true,
           encryptedChannelValue: '77.2',
           encryptedChannelMaskable: false,
+          isBotVBotPaused: isBotVBot ? isBotVBotPaused : undefined,
+          canApplyBotVBotStep: isBotVBot
+            ? Boolean(plannedOwnBoardShot || plannedOpponentBoardShot)
+            : undefined,
+          onToggleBotVBotPause: isBotVBot ? toggleBotVBotPause : undefined,
+          onStepBotVBotTurn: isBotVBot ? stepBotVBotTurn : undefined,
         },
         state: {
           phase: localPhase,

@@ -27,9 +27,12 @@ interface BattleBoardProps {
   ships: ShipDefinition[];
   placements: PlacedShip[];
   shots: Shot[];
+  plannedShot?: { x: number; y: number } | null;
   onFire?: (x: number, y: number) => void;
   isActive?: boolean;
   revealShips?: boolean;
+  heatMap?: Map<string, number> | null;
+  heatEmphasis?: 'normal' | 'strong';
 }
 
 interface BattleBoardPanelProps {
@@ -77,9 +80,12 @@ function BattleBoard({
   ships,
   placements,
   shots,
+  plannedShot,
   onFire,
   isActive = false,
   revealShips = false,
+  heatMap,
+  heatEmphasis = 'normal',
 }: BattleBoardProps) {
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const [cellSize, setCellSize] = useState<number>(
@@ -101,6 +107,41 @@ function BattleBoard({
     () => new Map(shots.map((shot) => [cellKey(shot.x, shot.y), shot])),
     [shots],
   );
+  const latestShotKey = useMemo(() => {
+    if (shots.length === 0) {
+      return null;
+    }
+
+    const lastShot = shots[shots.length - 1];
+    return cellKey(lastShot.x, lastShot.y);
+  }, [shots]);
+  const plannedShotKey = useMemo(() => {
+    if (!plannedShot) {
+      return null;
+    }
+
+    return cellKey(plannedShot.x, plannedShot.y);
+  }, [plannedShot]);
+  const heatMapVisual = useMemo(() => {
+    if (!heatMap || heatMap.size === 0) return null;
+    const max = Math.max(...heatMap.values());
+    if (max === 0) return null;
+
+    const normalized = new Map<string, number>();
+    const peakKeys = new Set<string>();
+
+    for (const [key, value] of heatMap) {
+      normalized.set(key, value / max);
+      if (value === max) {
+        peakKeys.add(key);
+      }
+    }
+
+    return {
+      normalized,
+      peakKeys,
+    };
+  }, [heatMap]);
 
   useEffect(() => {
     let cancelled = false;
@@ -233,6 +274,7 @@ function BattleBoard({
         (sprite): sprite is NonNullable<typeof sprite> => sprite !== null,
       )
     : [];
+  const shipSpriteOpacity = heatMap ? 0.4 : 0.82;
 
   return (
     <div ref={boardViewportRef} className='h-full w-full overflow-hidden'>
@@ -292,6 +334,7 @@ function BattleBoard({
                 const shot = shotMap.get(key);
                 const alreadyShot = shot !== undefined;
                 const canFire = isActive && !alreadyShot && !!onFire;
+                const isPlannedShot = !alreadyShot && plannedShotKey === key;
 
                 let cellClassName = 'relative rounded-md transition-colors ';
                 if (shot?.isHit) {
@@ -315,7 +358,65 @@ function BattleBoard({
                     className={cellClassName}
                     style={{ width: `${cellSize}px`, height: `${cellSize}px` }}
                     title={`${toColumnLabel(x)}${y + 1}`}
-                  />
+                  >
+                    {isPlannedShot ? (
+                      <>
+                        <span
+                          className='pointer-events-none absolute inset-0 rounded-md border-2'
+                          style={{
+                            borderColor: 'rgba(255, 190, 80, 0.98)',
+                            background:
+                              'radial-gradient(circle, rgba(255,150,40,0.36) 0%, rgba(255,120,20,0.14) 55%, rgba(255,100,10,0) 100%)',
+                            boxShadow:
+                              '0 0 13px rgba(255,160,60,0.95), inset 0 0 7px rgba(255,230,180,0.48)',
+                          }}
+                        />
+                        <span
+                          className='pointer-events-none absolute inset-0 rounded-md border animate-ping'
+                          style={{ borderColor: 'rgba(255, 180, 70, 0.78)' }}
+                        />
+                      </>
+                    ) : null}
+                    {!alreadyShot && heatMapVisual ? (() => {
+                      const heat = heatMapVisual.normalized.get(key) ?? 0;
+                      const raw = heatMap?.get(key) ?? 0;
+                      const isPeak = heatMapVisual.peakKeys.has(key);
+                      if (heat <= 0) return null;
+                      return (
+                        <span
+                          className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-md font-mono font-bold leading-none tabular-nums'
+                          style={{
+                            fontSize: `${Math.max(8, Math.round(cellSize * 0.32))}px`,
+                            fontWeight: heatEmphasis === 'strong' ? 900 : 700,
+                            color: isPeak
+                              ? 'rgba(255, 255, 255, 0.98)'
+                              : `rgba(255, ${Math.round(220 - heat * 140)}, 30, ${
+                                heatEmphasis === 'strong'
+                                  ? 0.8 + heat * 0.2
+                                  : 0.45 + heat * 0.35
+                              })`,
+                            background: isPeak
+                              ? 'radial-gradient(circle, rgba(255,120,20,0.95) 0%, rgba(255,70,0,0.82) 55%, rgba(255,40,0,0.18) 100%)'
+                              : heatEmphasis === 'strong'
+                                ? `rgba(255, 120, 20, ${0.1 + heat * 0.24})`
+                                : undefined,
+                            boxShadow: isPeak
+                              ? '0 0 16px rgba(255,110,20,0.92), inset 0 0 10px rgba(255,255,255,0.52)'
+                              : heatEmphasis === 'strong'
+                                ? `0 0 10px rgba(255,130,30,${0.3 + heat * 0.3})`
+                                : undefined,
+                            textShadow: isPeak
+                              ? '0 0 8px rgba(255,255,255,0.95)'
+                              : heatEmphasis === 'strong'
+                                ? '0 0 5px rgba(255,180,120,0.7)'
+                                : undefined,
+                          }}
+                        >
+                          {raw}
+                        </span>
+                      );
+                    })() : null}
+                  </button>
                 );
               }),
             )}
@@ -334,7 +435,7 @@ function BattleBoard({
               <div
                 key={sprite.key}
                 className='absolute rounded-md'
-                style={sprite.baseStyle}
+                style={{ ...sprite.baseStyle, opacity: shipSpriteOpacity }}
               >
                 {sprite.spriteStyle ? (
                   <div className='h-full w-full' style={sprite.spriteStyle} />
@@ -357,12 +458,14 @@ function BattleBoard({
             }}
           >
             {shots.map((shot) => {
+              const shotKey = cellKey(shot.x, shot.y);
+              const isLatestShot = latestShotKey === shotKey;
               const markerLeft = shot.x * (cellSize + cellGap);
               const markerTop = shot.y * (cellSize + cellGap);
 
               return (
                 <div
-                  key={cellKey(shot.x, shot.y)}
+                  key={shotKey}
                   className='absolute flex items-center justify-center'
                   style={{
                     left: `${markerLeft}px`,
@@ -371,6 +474,29 @@ function BattleBoard({
                     height: `${cellSize}px`,
                   }}
                 >
+                  {isLatestShot ? (
+                    <>
+                      <span
+                        className='absolute inset-0 rounded-md border-2'
+                        style={{
+                          borderColor: shot.isHit
+                            ? 'rgba(255, 210, 120, 0.95)'
+                            : 'rgba(120, 235, 255, 0.95)',
+                          boxShadow: shot.isHit
+                            ? '0 0 10px rgba(255, 140, 70, 0.92), inset 0 0 6px rgba(255,255,255,0.48)'
+                            : '0 0 10px rgba(70, 210, 255, 0.85), inset 0 0 6px rgba(170,245,255,0.35)',
+                        }}
+                      />
+                      <span
+                        className='absolute inset-0 rounded-md border animate-ping'
+                        style={{
+                          borderColor: shot.isHit
+                            ? 'rgba(255, 180, 90, 0.8)'
+                            : 'rgba(120, 235, 255, 0.75)',
+                        }}
+                      />
+                    </>
+                  ) : null}
                   {shot.isHit ? (
                     <span
                       className='select-none'

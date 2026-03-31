@@ -35,7 +35,7 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
     lastError: null,
   });
 
-  const joinSpectator = useCallback(() => {
+  const refreshSpectatorState = useCallback(() => {
     gameSocketService.spectateJoin({ roomId }, (response) => {
       setState((current) => ({
         ...current,
@@ -44,8 +44,12 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
         lastError: null,
       }));
     });
-    gameSocketService.requestSpectatorChatHistory({ roomId });
   }, [roomId]);
+
+  const joinSpectator = useCallback(() => {
+    refreshSpectatorState();
+    gameSocketService.requestSpectatorChatHistory({ roomId });
+  }, [refreshSpectatorState, roomId]);
 
   useEffect(() => {
     if (!enabled) {
@@ -68,6 +72,14 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
         socketConnected: false,
       }));
     };
+
+    const offRoom = gameSocketService.onRoomUpdated((payload) => {
+      setState((current) => ({
+        ...current,
+        room: payload.room,
+        match: payload.match,
+      }));
+    });
 
     const offMatch = gameSocketService.onMatchUpdated((payload) => {
       setState((current) => ({
@@ -113,6 +125,7 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
 
     return () => {
       gameSocketService.spectateLeave({ roomId });
+      offRoom();
       offMatch();
       offError();
       offSpectatorHistory();
@@ -122,6 +135,19 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
       gameSocketService.disconnect();
     };
   }, [enabled, joinSpectator, roomId]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    refreshSpectatorState();
+    const intervalId = window.setInterval(refreshSpectatorState, 1500);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [enabled, refreshSpectatorState]);
 
   const connectionState: ConnectionState = useMemo(() => {
     if (!enabled) {
@@ -152,7 +178,7 @@ export function useSpectatorRoom(roomId: string, enabled = true) {
     match: state.match,
     chatMessages: state.chatMessages,
     lastError: state.lastError,
-    refresh: joinSpectator,
+    refresh: refreshSpectatorState,
     sendSpectatorMessage,
   };
 }
