@@ -177,8 +177,8 @@ function ActionButton({
   isLightTheme: boolean;
 }) {
   const buttonClassName = isLightTheme
-    ? 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#37b8d3] bg-[linear-gradient(180deg,rgba(240,251,255,0.98),rgba(215,240,247,0.96))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#123748] uppercase shadow-[0_0_24px_rgba(79,172,198,0.16)]'
-    : 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#77efff]/82 bg-[linear-gradient(180deg,rgba(76,224,255,0.24),rgba(17,124,162,0.24))] px-7 py-3.5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#f2fdff] uppercase shadow-[0_0_32px_rgba(30,194,228,0.2)]';
+    ? 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#37b8d3] bg-[linear-gradient(180deg,rgba(240,251,255,0.98),rgba(215,240,247,0.96))] px-8 py-5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#123748] uppercase shadow-[0_0_24px_rgba(79,172,198,0.16)]'
+    : 'inline-flex cursor-pointer items-center gap-4 rounded-xl border border-[#77efff]/82 bg-[linear-gradient(180deg,rgba(76,224,255,0.24),rgba(17,124,162,0.24))] px-8 py-5 font-mono text-[11px] font-bold tracking-[0.3em] text-[#f2fdff] uppercase shadow-[0_0_32px_rgba(30,194,228,0.2)]';
 
   return (
     <motion.button
@@ -190,9 +190,6 @@ function ActionButton({
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
     >
       <span>{label}</span>
-      <span className='flex h-8 w-8 items-center justify-center rounded-full border border-current/60 text-[10px] tracking-[0.16em]'>
-        GO
-      </span>
     </motion.button>
   );
 }
@@ -352,17 +349,17 @@ function LandingMediaCarousel({
   };
 
   const expandedOverlayClassName = isLightTheme
-    ? 'fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(231,241,247,0.82)] p-4 backdrop-blur-md sm:p-6 lg:p-10'
-    : 'fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(2,8,14,0.82)] p-4 backdrop-blur-md sm:p-6 lg:p-10';
+    ? 'fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(231,241,247,0.82)] p-5 backdrop-blur-md sm:p-7 lg:p-12'
+    : 'fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(2,8,14,0.82)] p-5 backdrop-blur-md sm:p-7 lg:p-12';
   const expandedPanelClassName = isLightTheme
-    ? 'relative flex w-full max-w-6xl flex-col gap-4 rounded-[28px] border border-[#8ebdcb] bg-[rgba(255,255,255,0.96)] p-4 shadow-[0_24px_90px_rgba(86,123,145,0.18)] sm:p-5 lg:p-6'
-    : 'relative flex w-full max-w-6xl flex-col gap-4 rounded-[28px] border border-[#1d6078] bg-[rgba(5,16,24,0.94)] p-4 shadow-[0_24px_90px_rgba(0,0,0,0.5)] sm:p-5 lg:p-6';
+    ? 'relative flex w-full max-w-6xl flex-col gap-5 rounded-[28px] border border-[#8ebdcb] bg-[rgba(255,255,255,0.96)] p-5 shadow-[0_24px_90px_rgba(86,123,145,0.18)] sm:p-6 lg:p-7'
+    : 'relative flex w-full max-w-6xl flex-col gap-5 rounded-[28px] border border-[#1d6078] bg-[rgba(5,16,24,0.94)] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.5)] sm:p-6 lg:p-7';
   const expandedCloseClassName = isLightTheme
     ? 'absolute right-4 top-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#9bc7d5] bg-[rgba(247,252,255,0.95)] text-[#1d4a5e] transition-colors hover:border-[#4ac0d7]'
     : 'absolute right-4 top-4 z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#2a647b] bg-[rgba(4,16,24,0.92)] text-[#d9fbff] transition-colors hover:border-[#79f0ff]';
   const expandedFrameClassName = isLightTheme
-    ? 'overflow-hidden rounded-[22px] border border-[#c1dae5] bg-[rgba(241,248,252,0.92)] p-3 sm:p-4'
-    : 'overflow-hidden rounded-[22px] border border-[#194b5f] bg-[rgba(2,10,16,0.88)] p-3 sm:p-4';
+    ? 'overflow-hidden rounded-[22px] border border-[#c1dae5] bg-[rgba(241,248,252,0.92)] p-4 sm:p-5'
+    : 'overflow-hidden rounded-[22px] border border-[#194b5f] bg-[rgba(2,10,16,0.88)] p-4 sm:p-5';
   const expandedTagClassName = isLightTheme
     ? 'font-mono text-[10px] tracking-[0.32em] text-[#2896b1] uppercase'
     : 'font-mono text-[10px] tracking-[0.32em] text-[#79eefe] uppercase';
@@ -373,8 +370,8 @@ function LandingMediaCarousel({
     ? 'mt-2 text-sm leading-7 text-[#5f7e8d]'
     : 'mt-2 text-sm leading-7 text-[#98c3d1]';
   const carouselShellClassName = isLightTheme
-    ? 'relative z-10 w-full max-w-[720px] rounded-[30px] border border-[#8cbcc9]/82 bg-[rgba(255,255,255,0.82)] p-4 shadow-[0_0_0_1px_rgba(141,186,205,0.2),0_26px_80px_rgba(91,132,155,0.16)] backdrop-blur-xl'
-    : 'relative z-10 w-full max-w-[720px] rounded-[30px] border border-[#1c5f76]/76 bg-[rgba(5,16,24,0.78)] p-4 shadow-[0_0_0_1px_rgba(32,149,186,0.12),0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl';
+    ? 'relative z-10 w-full max-w-[720px] rounded-[30px] border border-[#8cbcc9]/82 bg-[rgba(255,255,255,0.82)] p-6 shadow-[0_0_0_1px_rgba(141,186,205,0.2),0_26px_80px_rgba(91,132,155,0.16)] backdrop-blur-xl'
+    : 'relative z-10 w-full max-w-[720px] rounded-[30px] border border-[#1c5f76]/76 bg-[rgba(5,16,24,0.78)] p-6 shadow-[0_0_0_1px_rgba(32,149,186,0.12),0_26px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl';
   const carouselGridOverlay = isLightTheme
     ? 'linear-gradient(180deg, rgba(111, 203, 225, 0.05) 0%, transparent 14%, transparent 86%, rgba(111, 203, 225, 0.04) 100%), repeating-linear-gradient(180deg, rgba(93, 176, 198, 0.06) 0 1px, transparent 1px 4px)'
     : 'linear-gradient(180deg, rgba(140, 245, 255, 0.06) 0%, transparent 14%, transparent 86%, rgba(140, 245, 255, 0.05) 100%), repeating-linear-gradient(180deg, rgba(109, 230, 255, 0.07) 0 1px, transparent 1px 4px)';
@@ -396,12 +393,6 @@ function LandingMediaCarousel({
   const panelGridOverlay = isLightTheme
     ? 'linear-gradient(90deg, rgba(63, 167, 196, 0.06) 1px, transparent 1px), linear-gradient(180deg, rgba(63, 167, 196, 0.05) 1px, transparent 1px)'
     : 'linear-gradient(90deg, rgba(78, 216, 243, 0.08) 1px, transparent 1px), linear-gradient(180deg, rgba(78, 216, 243, 0.07) 1px, transparent 1px)';
-  const panelTagClassName = isLightTheme
-    ? 'pointer-events-none absolute left-4 top-4 z-10 rounded-full border border-[#97c6d3] bg-[rgba(255,255,255,0.88)] px-3 py-1 font-mono text-[10px] tracking-[0.28em] text-[#2997b3] uppercase'
-    : 'pointer-events-none absolute left-4 top-4 z-10 rounded-full border border-[#265f77] bg-[rgba(4,18,28,0.8)] px-3 py-1 font-mono text-[10px] tracking-[0.28em] text-[#8eeeff] uppercase';
-  const panelIndexClassName = isLightTheme
-    ? 'pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-[#adcfd9] bg-[rgba(255,255,255,0.88)] px-3 py-1 font-mono text-[10px] tracking-[0.24em] text-[#648694] uppercase'
-    : 'pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-[#214f63] bg-[rgba(4,18,28,0.8)] px-3 py-1 font-mono text-[10px] tracking-[0.24em] text-[#71b5c8] uppercase';
   const panelImageOverlayClassName = isLightTheme
     ? 'absolute inset-0 bg-[linear-gradient(180deg,rgba(245,250,253,0.04),rgba(211,229,237,0.16)_40%,rgba(44,93,111,0.34))]'
     : 'absolute inset-0 bg-[linear-gradient(180deg,rgba(2,9,14,0.08),rgba(2,9,14,0.28)_40%,rgba(2,9,14,0.55))]';
@@ -414,12 +405,14 @@ function LandingMediaCarousel({
   const panelPlaceholderHintClassName = isLightTheme
     ? 'mt-4 text-sm leading-7 text-[#698895]'
     : 'mt-4 text-sm leading-7 text-[#8db8c7]';
-  const panelDescriptionTagClassName = isLightTheme
+  const panelFooterClassName =
+    'relative mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between';
+  const panelFooterTagClassName = isLightTheme
     ? 'font-mono text-[10px] tracking-[0.32em] text-[#2f95af] uppercase'
     : 'font-mono text-[10px] tracking-[0.32em] text-[#6fd7eb] uppercase';
-  const panelDescriptionClassName = isLightTheme
-    ? 'mt-2 text-sm leading-7 text-[#5f7f8e]'
-    : 'mt-2 text-sm leading-7 text-[#9cc6d4]';
+  const panelFooterDescriptionClassName = isLightTheme
+    ? 'mt-1 max-w-2xl text-sm leading-7 text-[#5f7f8e]'
+    : 'mt-1 max-w-2xl text-sm leading-7 text-[#9cc6d4]';
   const dotActiveClassName = isLightTheme
     ? 'w-10 bg-[#1ea3c1] shadow-[0_0_14px_rgba(30,163,193,0.28)]'
     : 'w-10 bg-[#79f0ff] shadow-[0_0_14px_rgba(121,240,255,0.55)]';
@@ -531,12 +524,6 @@ function LandingMediaCarousel({
                   backgroundSize: 'clamp(42px, 7vw, 80px) clamp(42px, 7vw, 80px)',
                 }}
               />
-              <div className={panelTagClassName}>
-                {panel.tag}
-              </div>
-              <div className={panelIndexClassName}>
-                {String(panelIndex + 1).padStart(2, '0')}
-              </div>
 
               {panel.imageSrc ? (
                 <button
@@ -570,13 +557,13 @@ function LandingMediaCarousel({
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={panelTransition}
-          className='relative mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between'
+          className={panelFooterClassName}
         >
           <div className='max-w-xl'>
-            <p className={panelDescriptionTagClassName}>
+            <p className={panelFooterTagClassName}>
               {activePanel.tag}
             </p>
-            <p className={panelDescriptionClassName}>
+            <p className={panelFooterDescriptionClassName}>
               {activePanel.description}
             </p>
           </div>

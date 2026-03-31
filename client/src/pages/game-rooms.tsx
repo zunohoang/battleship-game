@@ -38,14 +38,6 @@ const DEFAULT_FILTERS: RoomFilters = {
   occupancy: 'all',
 };
 
-const columnGridClassName =
-  'grid min-w-[980px] grid-cols-[minmax(160px,0.7fr)_1px_minmax(150px,1fr)_1px_minmax(180px,1fr)_1px_minmax(132px,0.75fr)_1px_minmax(172px,1fr)] items-stretch gap-0';
-const headerPanelClassName =
-  'cursor-pointer ui-button-shell ui-button-default flex h-15 w-full items-center rounded-sm border px-5 py-3 text-left md:px-6';
-const rowCellClassName = 'flex h-10 min-w-0 items-center px-4 py-2';
-const dividerClassName =
-  'h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]';
-
 function getRoomActionState(
   roomItem: RoomListSummary,
   pendingAction: PendingAction,
@@ -120,29 +112,29 @@ function FilterHeader({
   onSelect: (value: string) => void;
 }) {
   return (
-    <div className='relative px-3'>
+    <div className='relative px-3 py-1'>
       <button
         type='button'
-        className={headerPanelClassName}
+        className='cursor-pointer ui-button-shell ui-button-default h-15 w-full rounded-sm border px-5 text-left'
         aria-expanded={isOpen}
         aria-haspopup='listbox'
         onClick={onToggle}
       >
-        <div className='min-w-0 flex-1'>
-          <p className='ui-data-label'>{label}</p>
-          <p className='truncate font-mono text-lg font-black uppercase text-(--text-main)'>
+        <p className='ui-data-label'>{label}</p>
+        <div className='min-w-0 flex justify-between'>
+          <p className='truncate font-mono text-sm font-black uppercase text-(--text-main)'>
             {currentLabel}
           </p>
+          <span
+            aria-hidden='true'
+            className='ml-3 flex h-5 w-5 items-center justify-center text-(--text-muted)'
+          >
+            <ChevronDown
+              size={18}
+              className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          </span>
         </div>
-        <span
-          aria-hidden='true'
-          className='ml-3 flex h-5 w-5 items-center justify-center text-(--text-muted)'
-        >
-          <ChevronDown
-            size={18}
-            className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          />
-        </span>
       </button>
 
       {isOpen ? (
@@ -167,8 +159,8 @@ function FilterHeader({
 
 function StaticHeaderCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className=''>
-      <div className='flex h-15 w-full items-center rounded-sm px-5 py-3 text-left md:px-6'>
+    <div className='px-3 py-1'>
+      <div className='flex h-15 w-full items-center rounded-sm py-3 text-left md:px-3'>
         <div className='min-w-0 flex-1'>
           <p className='ui-data-label'>{label}</p>
           <p className='truncate font-mono text-lg font-black uppercase text-(--text-main)'>
@@ -391,7 +383,7 @@ export function GameRoomsPage() {
 
   return (
     <motion.main
-      className='relative min-h-screen overflow-hidden px-4 py-5 text-(--text-main) sm:px-8'
+      className='relative min-h-screen overflow-x-hidden overflow-y-auto px-2 py-3 text-(--text-main) lg:py-4 lg:px-6'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
@@ -399,9 +391,9 @@ export function GameRoomsPage() {
       <div className='ui-page-bg -z-20' />
       <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(50,217,255,0.08),transparent_38%)]' />
 
-      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-2.5rem)] w-full flex-col rounded-md p-4 sm:p-6'>
-        <div className='grid min-h-0 flex-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]'>
-          <aside className='ui-panel flex min-h-0 flex-col rounded-md p-4 sm:p-5'>
+      <section className='ui-hud-shell mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-7xl flex-col rounded-md p-3 lg:min-h-[calc(100vh-2rem)] lg:p-4'>
+        <div className='grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] xl:gap-5'>
+          <aside className='ui-panel flex min-h-0 flex-col rounded-md p-4 lg:p-5'>
             <div>
               <h1 className='font-mono text-xl font-black uppercase tracking-[0.08em] text-(--text-main)'>
                 {t('gameRooms.title')}
@@ -485,7 +477,7 @@ export function GameRoomsPage() {
             </div>
 
             <div className='mt-auto pt-4'>
-              <div className='flex gap-2'>
+              <div className='grid gap-2 lg:grid-cols-2'>
                 <Button className='h-10' onClick={() => listRooms()}>
                   {t('gameRooms.refresh')}
                 </Button>
@@ -524,8 +516,8 @@ export function GameRoomsPage() {
             </div>
           </aside>
 
-          <section className='ui-panel flex min-h-0 flex-col rounded-md p-4 sm:p-5'>
-            <div className='flex flex-wrap items-center justify-between gap-3'>
+          <section className='ui-panel flex min-h-0 flex-col rounded-md p-4 lg:p-5'>
+            <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
               <div>
                 <h2 className='font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
                   {t('gameRooms.availableRooms')}
@@ -540,7 +532,7 @@ export function GameRoomsPage() {
 
               <div className='flex gap-2'>
                 <Button
-                  className='h-10 w-auto px-4'
+                  className='h-10 w-full px-4 lg:w-auto'
                   disabled={!hasActiveFilters}
                   onClick={() => {
                     setFilters(DEFAULT_FILTERS);
@@ -552,17 +544,10 @@ export function GameRoomsPage() {
               </div>
             </div>
 
-            <div className='mt-4 min-h-0 flex-1 overflow-auto'>
-              <div className='min-w-[980px]'>
-                <div ref={filterBarRef} className='ui-subpanel rounded-sm p-3'>
-                  <div className={columnGridClassName}>
-                    <StaticHeaderCell
-                      label={t('gameRooms.columnRoomCode')}
-                      value={t('gameRooms.columnCode')}
-                    />
-
-                    <div aria-hidden='true' className={dividerClassName} />
-
+            <div className='mt-4 min-h-0 flex-1 overflow-hidden'>
+              <div ref={filterBarRef}>
+                <div className='ui-subpanel rounded-sm p-3 xl:hidden'>
+                  <div className='grid gap-3 lg:grid-cols-2'>
                     <FilterHeader
                       label={t('gameRooms.columnStatus')}
                       currentLabel={
@@ -581,8 +566,6 @@ export function GameRoomsPage() {
                         handleFilterSelect('status', value);
                       }}
                     />
-
-                    <div aria-hidden='true' className={dividerClassName} />
 
                     <FilterHeader
                       label={t('gameRooms.columnAccessState')}
@@ -603,8 +586,6 @@ export function GameRoomsPage() {
                       }}
                     />
 
-                    <div aria-hidden='true' className={dividerClassName} />
-
                     <FilterHeader
                       label={t('gameRooms.columnOccupancy')}
                       currentLabel={
@@ -623,25 +604,101 @@ export function GameRoomsPage() {
                         handleFilterSelect('occupancy', value);
                       }}
                     />
-
-                    <div aria-hidden='true' className={dividerClassName} />
-
-                    <StaticHeaderCell
-                      label={t('gameRooms.columnJoin')}
-                      value={t('gameRooms.columnAction')}
-                    />
                   </div>
                 </div>
 
-                <div className='themed-scrollbar mt-3 flex min-h-0 flex-col gap-2 overflow-y-auto pr-1'>
-                  {filteredRooms.length === 0 ? (
-                    <div className='ui-subpanel rounded-sm px-4 py-6 text-sm text-(--text-muted)'>
-                      {rooms.length === 0
-                        ? t('gameRooms.emptyNoRooms')
-                        : t('gameRooms.emptyFiltered')}
+                <div className='hidden xl:block'>
+                  <div className='ui-subpanel rounded-sm'>
+                    <div className='grid min-w-187.5 grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
+                      <StaticHeaderCell
+                        label={t('gameRooms.columnRoomCode')}
+                        value={t('gameRooms.columnCode')}
+                      />
+
+                      <div aria-hidden='true' className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]' />
+
+                      <FilterHeader
+                        label={t('gameRooms.columnStatus')}
+                        currentLabel={
+                          filters.status === 'all'
+                            ? t('gameRooms.filterAll')
+                            : statusLabelMap[filters.status]
+                        }
+                        isOpen={openFilter === 'status'}
+                        options={statusOptions}
+                        onToggle={() =>
+                          setOpenFilter((current) =>
+                            current === 'status' ? null : 'status',
+                          )
+                        }
+                        onSelect={(value) => {
+                          handleFilterSelect('status', value);
+                        }}
+                      />
+
+                      <div aria-hidden='true' className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]' />
+
+                      <FilterHeader
+                        label={t('gameRooms.columnAccessState')}
+                        currentLabel={
+                          filters.accessState === 'all'
+                            ? t('gameRooms.filterAll')
+                            : accessStateLabelMap[filters.accessState]
+                        }
+                        isOpen={openFilter === 'accessState'}
+                        options={accessStateOptions}
+                        onToggle={() =>
+                          setOpenFilter((current) =>
+                            current === 'accessState' ? null : 'accessState',
+                          )
+                        }
+                        onSelect={(value) => {
+                          handleFilterSelect('accessState', value);
+                        }}
+                      />
+
+                      <div aria-hidden='true' className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]' />
+
+                      <FilterHeader
+                        label={t('gameRooms.columnOccupancy')}
+                        currentLabel={
+                          filters.occupancy === 'all'
+                            ? t('gameRooms.filterAll')
+                            : filters.occupancy
+                        }
+                        isOpen={openFilter === 'occupancy'}
+                        options={occupancyOptions}
+                        onToggle={() =>
+                          setOpenFilter((current) =>
+                            current === 'occupancy' ? null : 'occupancy',
+                          )
+                        }
+                        onSelect={(value) => {
+                          handleFilterSelect('occupancy', value);
+                        }}
+                      />
+
+                      <div aria-hidden='true' className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]' />
+
+                      <StaticHeaderCell
+                        label={t('gameRooms.columnJoin')}
+                        value={t('gameRooms.columnAction')}
+                      />
                     </div>
-                  ) : (
-                    filteredRooms.map((roomItem) => {
+                  </div>
+                </div>
+              </div>
+
+              {filteredRooms.length === 0 ? (
+                <div className='ui-subpanel mt-3 rounded-sm px-4 py-6 text-sm text-(--text-muted)'>
+                  {rooms.length === 0
+                    ? t('gameRooms.emptyNoRooms')
+                    : t('gameRooms.emptyFiltered')}
+                </div>
+              ) : (
+                <>
+                  <div className='themed-scrollbar mt-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1 xl:hidden'>
+                    {filteredRooms.map((roomItem) => {
                       const actionState = getRoomActionState(
                         roomItem,
                         pendingAction,
@@ -653,7 +710,7 @@ export function GameRoomsPage() {
                           key={roomItem.roomId}
                           role='button'
                           tabIndex={0}
-                          className='ui-subpanel cursor-pointer rounded-sm p-3 transition-colors duration-150 hover:border-[rgba(77,223,255,0.44)] focus-visible:border-[rgba(90,229,255,0.65)] focus-visible:outline-none'
+                          className='ui-subpanel cursor-pointer rounded-sm p-4 transition-colors duration-150 hover:border-[rgba(77,223,255,0.44)] focus-visible:border-[rgba(90,229,255,0.65)] focus-visible:outline-none'
                           onClick={() => handleRowPreview(roomItem)}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter' || event.key === ' ') {
@@ -662,53 +719,130 @@ export function GameRoomsPage() {
                             }
                           }}
                         >
-                          <div className={columnGridClassName}>
-                            <div className={rowCellClassName}>
-                              <p className='truncate font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                          <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between'>
+                            <div className='min-w-0'>
+                              <p className='ui-data-label'>
+                                {t('gameRooms.columnRoomCode')}
+                              </p>
+                              <p className='mt-2 truncate font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
+                                {roomItem.roomCode}
+                              </p>
+                            </div>
+
+                            <Button
+                              className='h-10 w-full lg:w-auto lg:min-w-36'
+                              disabled={actionState.disabled}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRoomAction(roomItem);
+                              }}
+                            >
+                              {actionState.label}
+                            </Button>
+                          </div>
+
+                          <div className='mt-3 grid gap-2 lg:grid-cols-3'>
+                            <div className='ui-state-idle rounded-sm px-3 py-2'>
+                              <p className='ui-data-label'>
+                                {t('gameRooms.columnStatus')}
+                              </p>
+                              <p className='mt-1 wrap-break-word font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {statusLabelMap[roomItem.status]}
+                              </p>
+                            </div>
+
+                            <div className='ui-state-idle rounded-sm px-3 py-2'>
+                              <p className='ui-data-label'>
+                                {t('gameRooms.columnAccessState')}
+                              </p>
+                              <p className='mt-1 wrap-break-word font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {accessStateLabelMap[roomItem.accessState]}
+                              </p>
+                            </div>
+
+                            <div className='ui-state-idle rounded-sm px-3 py-2'>
+                              <p className='ui-data-label'>
+                                {t('gameRooms.columnOccupancy')}
+                              </p>
+                              <p className='mt-1 font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                {roomItem.occupancy}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className='themed-scrollbar mt-3 hidden min-h-0 flex-1 overflow-auto pr-1 xl:block'>
+                    {filteredRooms.map((roomItem) => {
+                      const actionState = getRoomActionState(
+                        roomItem,
+                        pendingAction,
+                        t,
+                      );
+
+                      return (
+                        <div
+                          key={roomItem.roomId}
+                          role='button'
+                          tabIndex={0}
+                          className='ui-subpanel mb-2 cursor-pointer rounded-sm transition-colors duration-150 hover:border-[rgba(77,223,255,0.44)] focus-visible:border-[rgba(90,229,255,0.65)] focus-visible:outline-none'
+                          onClick={() => handleRowPreview(roomItem)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              handleRowPreview(roomItem);
+                            }
+                          }}
+                        >
+                          <div className='grid min-w-187.5 grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
+                            <div className='flex min-h-10 min-w-0 items-center px-3 py-2 lg:px-4'>
+                              <p className='truncate font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
                                 {roomItem.roomCode}
                               </p>
                             </div>
 
                             <div
                               aria-hidden='true'
-                              className={dividerClassName}
+                              className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]'
                             />
 
-                            <div className={rowCellClassName}>
-                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                            <div className='flex min-h-10 min-w-0 items-center px-4 py-2'>
+                              <p className='font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
                                 {statusLabelMap[roomItem.status]}
                               </p>
                             </div>
 
                             <div
                               aria-hidden='true'
-                              className={dividerClassName}
+                              className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]'
                             />
 
-                            <div className={rowCellClassName}>
-                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                            <div className='flex min-h-10 min-w-0 items-center px-4 py-2'>
+                              <p className='font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
                                 {accessStateLabelMap[roomItem.accessState]}
                               </p>
                             </div>
 
                             <div
                               aria-hidden='true'
-                              className={dividerClassName}
+                              className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]'
                             />
 
-                            <div className={rowCellClassName}>
-                              <p className='font-mono text-sm font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                            <div className='flex min-h-10 min-w-0 items-center px-4 py-2'>
+                              <p className='font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
                                 {roomItem.occupancy}
                               </p>
                             </div>
 
                             <div
                               aria-hidden='true'
-                              className={dividerClassName}
+                              className='h-full bg-[linear-gradient(180deg,rgba(63,203,232,0.06),rgba(63,203,232,0.34),rgba(63,203,232,0.06))]'
                             />
 
                             <div
-                              className={`${rowCellClassName} justify-start`}
+                              className='flex min-h-10 min-w-0 items-center px-3   py-2 justify-start'
                             >
                               <Button
                                 className='h-10 w-full'
@@ -724,10 +858,10 @@ export function GameRoomsPage() {
                           </div>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              </div>
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </section>
         </div>
@@ -753,7 +887,7 @@ export function GameRoomsPage() {
 
             {selectedRoom.phase1Config ? (
               <>
-                <div className='grid gap-3 sm:grid-cols-4'>
+                <div className='grid gap-3 lg:grid-cols-4'>
                   <div className='ui-subpanel rounded-sm p-4'>
                     <p className='ui-data-label'>{t('gameRooms.board')}</p>
                     <p className='mt-2 font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
@@ -845,7 +979,7 @@ export function GameRoomsPage() {
 
                 return (
                   <Button
-                    className='h-11 w-full sm:w-52'
+                    className='h-11 w-full lg:w-52'
                     disabled={actionState.disabled}
                     onClick={() => handleRoomAction(selectedRoom)}
                   >

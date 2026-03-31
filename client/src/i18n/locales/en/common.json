@@ -245,12 +245,12 @@
                 "number": "01",
                 "railLabel": "Intro",
                 "eyebrow": "Slide 01 / Game Intro",
-                "title": "{{gameName}} turns naval duels into a cinematic command room.",
-                "description": "This opening slide sets the tone of the product: a sci-fi battleship experience that feels immediate, sleek, and ready for live presentation.",
+                "title": "{{gameName}} brings the player into a sci-fi naval command room from the very first screen.",
+                "description": "The overall interface, presentation style, and match atmosphere come first before the showcase moves into the detailed gameplay flow.",
                 "highlights": [
                     "Sci-fi naval mood",
-                    "Made for live demo",
-                    "One click to play"
+                    "Clear tactical HUD",
+                    "Fast match entry"
                 ],
                 "ctaLabel": "Play now",
                 "ctaHint": "Scroll down to continue the showcase",
@@ -259,7 +259,9 @@
                         "id": "intro-hero",
                         "tag": "Scene 01",
                         "title": "Hero Overview",
-                        "description": "Use the first panel for a bold opening screenshot that introduces the command-deck atmosphere at a glance.",
+                        "description": "The main game interface appears immediately, placing the player inside a modern naval duel with a clear command-deck feel.",
+                        "imageSrc": "/game_thumbnail.png",
+                        "imageAlt": "Battleship cinematic hero screen",
                         "frameLabel": "Hero visual placeholder",
                         "frameHint": "Drop in your strongest opening composition here."
                     },
@@ -267,17 +269,11 @@
                         "id": "intro-world",
                         "tag": "Scene 02",
                         "title": "World & Tone",
-                        "description": "This panel can focus on the visual identity of the game: radar glow, tactical glass, and oceanic sci-fi lighting.",
+                        "description": "The board layout, tactical HUD, and sci-fi atmosphere define the environment the player interacts with throughout the match.",
+                        "imageSrc": "/game_slide1.png",
+                        "imageAlt": "Battleship gameplay thumbnail",
                         "frameLabel": "Mood visual placeholder",
                         "frameHint": "Use a close-up that sells the universe and style."
-                    },
-                    {
-                        "id": "intro-hook",
-                        "tag": "Scene 03",
-                        "title": "Why It Feels Different",
-                        "description": "The final panel of the intro should explain why the game is exciting to watch before a single match even begins.",
-                        "frameLabel": "Hook visual placeholder",
-                        "frameHint": "Use a clean shot that supports your spoken hook."
                     }
                 ]
             },
@@ -287,35 +283,41 @@
                 "number": "02",
                 "railLabel": "Gameplay",
                 "eyebrow": "Slide 02 / Core Loop",
-                "title": "The match flow is simple to understand and satisfying to follow.",
-                "description": "Use this slide to explain the experience in player language: deploy your fleet, take turns firing, read the board, and sink the opposing fleet first.",
+                "title": "Gameplay revolves around reading the board, choosing targets, and reviewing the result of each match.",
+                "description": "The flow moves from reading the current match state, to making a turn-based firing decision, and finally to the result summary with win-loss information and hit probability.",
                 "highlights": [
-                    "Deploy ships",
-                    "Take turns firing",
-                    "Read hits and misses"
+                    "Read match state",
+                    "Choose target cells",
+                    "Review match results"
                 ],
                 "panels": [
                     {
                         "id": "gameplay-deploy",
-                        "tag": "Step 01",
+                        "tag": "Scene 01",
                         "title": "Deploy The Fleet",
-                        "description": "Start with a visual that shows the player preparing their side of the ocean before the first exchange begins.",
+                        "description": "The player reads the state of both sides and prepares to enter the first firing turn.",
+                        "imageSrc": "/game_slide2_1.png",
+                        "imageAlt": "Battleship fleet deployment screen",
                         "frameLabel": "Deployment placeholder",
                         "frameHint": "Use a setup or opening battle state capture here."
                     },
                     {
                         "id": "gameplay-fire",
-                        "tag": "Step 02",
+                        "tag": "Scene 02",
                         "title": "Choose The Shot",
-                        "description": "Show how the player reads the battlefield and commits to a target in a clear, turn-based rhythm.",
+                        "description": "Here the player reads the information already revealed on the enemy board, picks a target cell, and commits to the next turn-based shot.",
+                        "imageSrc": "/game_slide2_2.png",
+                        "imageAlt": "Battleship targeting screen",
                         "frameLabel": "Targeting placeholder",
                         "frameHint": "Pick a screenshot that communicates the moment before impact."
                     },
                     {
                         "id": "gameplay-result",
-                        "tag": "Step 03",
-                        "title": "Read The Result",
-                        "description": "End with the board feedback that tells the audience whether the shot landed, missed, or changed the battle pace.",
+                        "tag": "Scene 03",
+                        "title": "Match Result Screen",
+                        "description": "The post-match summary presents the win-loss outcome along with the player's hit probability.",
+                        "imageSrc": "/game_slide2_3.png",
+                        "imageAlt": "Battleship shot result screen",
                         "frameLabel": "Result placeholder",
                         "frameHint": "Use a frame that highlights hit and miss clarity."
                     }
@@ -327,8 +329,8 @@
                 "number": "03",
                 "railLabel": "Flow",
                 "eyebrow": "Slide 03 / Before Match",
-                "title": "Setup and online entry feel like part of the experience, not a waiting room.",
-                "description": "This slide is about the journey into battle: configure the board, place ships, find a room, and move naturally into an online match.",
+                "title": "Before the match starts, players move through room setup, lobby review, and match entry in one connected flow.",
+                "description": "The pre-match experience covers room setup, settings review, real-time chat, and the transition into the game.",
                 "highlights": [
                     "Board setup",
                     "Ship placement",
@@ -337,25 +339,31 @@
                 "panels": [
                     {
                         "id": "flow-config",
-                        "tag": "Step 01",
-                        "title": "Configure The Match",
-                        "description": "Use this panel to show the player shaping the battlefield before the battle narrative starts.",
+                        "tag": "Scene 01",
+                        "title": "Room Settings",
+                        "description": "The host configures the room settings for the match before both players move into the waiting state and start the game.",
+                        "imageSrc": "/game_slide3_1.png",
+                        "imageAlt": "Battleship room settings screen",
                         "frameLabel": "Config placeholder",
                         "frameHint": "A fleet or board setup capture fits well here."
                     },
                     {
                         "id": "flow-placement",
-                        "tag": "Step 02",
-                        "title": "Place The Fleet",
-                        "description": "The second panel should explain the setup rhythm visually through a clear placement scene.",
+                        "tag": "Scene 02",
+                        "title": "Pre-Match Lobby",
+                        "description": "The two-player waiting room lets both players review the host's settings and chat with each other in real time before starting.",
+                        "imageSrc": "/game_slide3_2.png",
+                        "imageAlt": "Battleship pre-match lobby screen",
                         "frameLabel": "Placement placeholder",
                         "frameHint": "Use a shot of the placement phase with ship silhouettes visible."
                     },
                     {
                         "id": "flow-room",
-                        "tag": "Step 03",
+                        "tag": "Scene 03",
                         "title": "Find Or Join A Room",
-                        "description": "Show the online layer from the player's perspective: getting ready, joining a room, and moving toward match start.",
+                        "description": "The online flow moves from creating or joining a room, through synchronization, into the match itself.",
+                        "imageSrc": "/game_slide3_3.png",
+                        "imageAlt": "Battleship online room screen",
                         "frameLabel": "Online room placeholder",
                         "frameHint": "Choose a waiting room or room list screenshot later."
                     }
@@ -367,35 +375,35 @@
                 "number": "04",
                 "railLabel": "Bot",
                 "eyebrow": "Slide 04 / Bot Behavior",
-                "title": "The bot is easy to explain visually: it watches, reacts, and presses the advantage.",
-                "description": "Keep this part conceptual. The audience only needs to understand how the bot behaves in a match, not how it is implemented under the hood.",
+                "title": "The bot reads board state to search for targets, follow up after a hit, and maintain pressure until the ship is finished.",
+                "description": "Its behavior is split into three clear phases: probing open cells, tracking after a confirmed hit, and pressing the attack until the target is sunk.",
                 "highlights": [
-                    "Searches the field",
-                    "Follows confirmed damage",
-                    "Keeps pressure on the player"
+                    "Probe open cells",
+                    "Track after a hit",
+                    "Pressure to the sink"
                 ],
                 "panels": [
                     {
                         "id": "bot-scan",
-                        "tag": "Phase 01",
+                        "tag": "Scene 01",
                         "title": "Search Mode",
-                        "description": "Use the first illustration to show the bot probing the field and building pressure before it finds anything important.",
+                        "description": "The bot starts by probing open cells and narrowing the area where a ship is likely to be.",
                         "frameLabel": "Bot scan placeholder",
                         "frameHint": "A clean board state with early bot actions works well here."
                     },
                     {
                         "id": "bot-hit",
-                        "tag": "Phase 02",
+                        "tag": "Scene 02",
                         "title": "Reaction After A Hit",
-                        "description": "The second panel should show how the bot changes tone once it confirms a successful strike.",
+                        "description": "After a hit, the bot checks neighboring cells to determine the ship's direction.",
                         "frameLabel": "Bot reaction placeholder",
                         "frameHint": "Use a frame where the bot has clearly locked onto a ship."
                     },
                     {
                         "id": "bot-pressure",
-                        "tag": "Phase 03",
+                        "tag": "Scene 03",
                         "title": "Pressure And Finish",
-                        "description": "Close the explanation with a visual of the bot keeping momentum and pushing toward a sink.",
+                        "description": "Once it has enough information, the bot keeps attacking until the ship is sunk.",
                         "frameLabel": "Bot pressure placeholder",
                         "frameHint": "A later-match board state is ideal for this panel."
                     }
@@ -407,8 +415,8 @@
                 "number": "05",
                 "railLabel": "Credits",
                 "eyebrow": "Slide 05 / Thank You",
-                "title": "Thank you to everyone who helped bring this project to life.",
-                "description": "This closing slide is dedicated to the people behind the game and to everyone who supported the project with feedback, time, and energy.",
+                "title": "The final slide highlights the team behind the project and everyone who helped support it.",
+                "description": "Members, GitHub links, and support details close the showcase in a clear and complete way.",
                 "highlights": [
                     "Closing thank-you note",
                     "Member GitHub links",
@@ -697,6 +705,11 @@
         "quitMission": "QUIT MISSION",
         "tacticalMap": "TACTICAL MAP",
         "statistics": "STATISTICS",
+        "pauseFlow": "Pause Flow",
+        "resumeFlow": "Resume Flow",
+        "showHeatMap": "Show Heat Map",
+        "hideHeatMap": "Hide Heat Map",
+        "nextShot": "Next Shot",
         "minimize": "Minimize",
         "stats": {
             "title": "BATTLE STATISTICS",

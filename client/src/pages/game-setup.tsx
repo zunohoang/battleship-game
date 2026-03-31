@@ -162,11 +162,7 @@ export function GameSetupPage() {
     botB: PlacedShip[];
   }>({ botA: [], botB: [] });
   const [onlineSetupNowMs, setOnlineSetupNowMs] = useState<number | null>(null);
-  const [localSetupSecondsLeft, setLocalSetupSecondsLeft] = useState<
-    number | null
-  >(null);
   const [isSavingPhase1, setIsSavingPhase1] = useState(false);
-  const localSetupAutoStartTriggeredRef = useRef(false);
 
   const { boardConfig, ships, turnTimerSeconds } = state.config;
   const currentConfig = state.config;
@@ -176,6 +172,33 @@ export function GameSetupPage() {
   const hasManualBotB =
     (botVBotSettings.botB.placementMode ?? 'auto') === 'manual';
   const hasAnyManualBot = hasManualBotA || hasManualBotB;
+  const resolvedBotVBotEditTarget = useMemo<'botA' | 'botB'>(() => {
+    if (mode !== 'botvbot') {
+      return botVBotEditTarget;
+    }
+
+    if (
+      (botVBotSettings[botVBotEditTarget].placementMode ?? 'auto') === 'manual'
+    ) {
+      return botVBotEditTarget;
+    }
+
+    if (hasManualBotA) {
+      return 'botA';
+    }
+
+    if (hasManualBotB) {
+      return 'botB';
+    }
+
+    return botVBotEditTarget;
+  }, [
+    botVBotEditTarget,
+    botVBotSettings,
+    hasManualBotA,
+    hasManualBotB,
+    mode,
+  ]);
 
   const buildPlacementsByStrategy = useCallback(
     (strategy: BotPlacementStrategy) => {
@@ -211,10 +234,6 @@ export function GameSetupPage() {
     setPlacementOrientation('horizontal');
     setBotVBotEditTarget('botA');
     setBotVBotManualPlacements({ botA: [], botB: [] });
-    localSetupAutoStartTriggeredRef.current = false;
-    setLocalSetupSecondsLeft(
-      mode === 'botvbot' ? null : DEFAULT_SETUP_TIMER_SECONDS,
-    );
     setStep(2);
   };
 
@@ -223,8 +242,6 @@ export function GameSetupPage() {
     setPlacementOrientation('horizontal');
     setBotVBotEditTarget('botA');
     setBotVBotManualPlacements({ botA: [], botB: [] });
-    localSetupAutoStartTriggeredRef.current = false;
-    setLocalSetupSecondsLeft(null);
     setStep(1);
   };
 
@@ -315,27 +332,6 @@ export function GameSetupPage() {
   useEffect(() => {
     setReady(mode === 'botvbot' ? botVBotPlacementReady : allShipsPlaced);
   }, [allShipsPlaced, botVBotPlacementReady, mode, setReady]);
-
-  useEffect(() => {
-    if (mode !== 'botvbot') {
-      return;
-    }
-
-    if (
-      (botVBotSettings[botVBotEditTarget].placementMode ?? 'auto') === 'manual'
-    ) {
-      return;
-    }
-
-    if (hasManualBotA) {
-      setBotVBotEditTarget('botA');
-      return;
-    }
-
-    if (hasManualBotB) {
-      setBotVBotEditTarget('botB');
-    }
-  }, [botVBotEditTarget, botVBotSettings, hasManualBotA, hasManualBotB, mode]);
 
   useEffect(() => {
     if (mode !== 'online') return;
@@ -460,68 +456,6 @@ export function GameSetupPage() {
     };
   }, [match?.setupDeadlineAt, mode]);
 
-  useEffect(() => {
-    if (
-      mode === 'online' ||
-      mode === 'botvbot' ||
-      step !== 2 ||
-      localSetupSecondsLeft === null
-    ) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setLocalSetupSecondsLeft((current) => {
-        if (current === null) {
-          return current;
-        }
-
-        return Math.max(0, current - 1);
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [localSetupSecondsLeft, mode, step]);
-
-  useEffect(() => {
-    if (
-      mode === 'online' ||
-      mode === 'botvbot' ||
-      step !== 2 ||
-      localSetupSecondsLeft !== 0 ||
-      localSetupAutoStartTriggeredRef.current
-    ) {
-      return;
-    }
-
-    localSetupAutoStartTriggeredRef.current = true;
-    if (allShipsPlaced) {
-      launchLocalGame();
-      return;
-    }
-
-    const shipInstances = buildShipInstances(ships);
-    const shipsById = new Map(ships.map((ship) => [ship.id, ship]));
-    const autoPlacements =
-      buildRandomPlacements(shipInstances, boardConfig, shipsById) ??
-      currentPlacements;
-
-    setPlacements(autoPlacements);
-    launchLocalGame(autoPlacements);
-  }, [
-    allShipsPlaced,
-    boardConfig,
-    currentPlacements,
-    launchLocalGame,
-    localSetupSecondsLeft,
-    mode,
-    setPlacements,
-    ships,
-    step,
-  ]);
-
   const onlineSetupSecondsLeft =
     mode !== 'online' || !match?.setupDeadlineAt || onlineSetupNowMs === null
       ? null
@@ -546,14 +480,9 @@ export function GameSetupPage() {
             remaining: onlineSetupSecondsLeft,
             total: DEFAULT_SETUP_TIMER_SECONDS,
           })
-        : localSetupSecondsLeft === null
-          ? t('gameSetup.step1.setupTimerValue', {
-            seconds: DEFAULT_SETUP_TIMER_SECONDS,
-          })
-          : t('gameSetup.step1.setupTimerCountdown', {
-            remaining: localSetupSecondsLeft,
-            total: DEFAULT_SETUP_TIMER_SECONDS,
-          });
+        : t('gameSetup.step1.setupTimerValue', {
+          seconds: DEFAULT_SETUP_TIMER_SECONDS,
+        });
   const canAdjustTurnTimer =
     step === 1 &&
     (mode !== 'online' ||
@@ -573,6 +502,7 @@ export function GameSetupPage() {
       ? 'Saving Phase 1...'
       : 'Save Phase 1'
     : t('gameSetup.header.nextStep');
+  const showLinkedPhasePills = !isOnlinePhase1Flow && !isOnlinePlacementFlow;
 
   return (
     <motion.main
@@ -621,7 +551,7 @@ export function GameSetupPage() {
           </motion.div>
 
           <div className='grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center xl:justify-end'>
-            {step === 2 ? (
+            {step === 2 && mode === 'online' ? (
               <div className='ui-panel rounded-md px-4 py-3'>
                 <p className='ui-data-label'>
                   {t('gameSetup.step1.setupTimer')}
@@ -631,22 +561,39 @@ export function GameSetupPage() {
                 </p>
               </div>
             ) : null}
-            {step === 1 ? (
+            {showLinkedPhasePills ? (
+              <div className='flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap'>
+                <StepPill
+                  number={1}
+                  label={t('gameSetup.header.step1Label')}
+                  phaseLabel={`${t('gameSetup.header.phase')} 1`}
+                  status={step === 1 ? 'active' : 'done'}
+                />
+                <div className='hidden items-center px-1 sm:flex' aria-hidden='true'>
+                  <span className='h-px w-10 bg-[linear-gradient(90deg,rgba(63,203,232,0.16),rgba(117,235,255,0.82),rgba(63,203,232,0.16))]' />
+                </div>
+                <StepPill
+                  number={2}
+                  label={t('gameSetup.header.step2Label')}
+                  phaseLabel={`${t('gameSetup.header.phase')} 2`}
+                  status={step === 2 ? 'active' : 'upcoming'}
+                />
+              </div>
+            ) : step === 1 ? (
               <StepPill
                 number={1}
                 label={t('gameSetup.header.step1Label')}
                 phaseLabel={t('gameSetup.header.phase')}
                 status='active'
               />
-            ) : null}
-            {step === 2 ? (
+            ) : (
               <StepPill
                 number={2}
                 label={t('gameSetup.header.step2Label')}
                 phaseLabel={t('gameSetup.header.phase')}
                 status='active'
               />
-            ) : null}
+            )}
             {isOnlinePlacementFlow ? null : (
               <Button
                 onClick={() => {
@@ -665,7 +612,7 @@ export function GameSetupPage() {
                     return;
                   }
 
-                  navigate(mode === 'botvbot' ? '/game/bot-setup' : '/home');
+                  navigate('/home');
                 }}
                 className='h-10 w-full px-4 sm:w-auto'
               >
@@ -699,7 +646,7 @@ export function GameSetupPage() {
 
                   launchLocalGame();
                 }}
-                className='h-10 w-full px-4 sm:w-auto sm:min-w-52'
+                className='h-10 w-full px-4 sm:w-auto sm:min-w-40'
               >
                 {mode === 'online' ? 'Ready' : t('gameSetup.header.startGame')}
               </Button>
@@ -748,7 +695,7 @@ export function GameSetupPage() {
                   <BotVsBotMenu
                     settings={botVBotSettings}
                     onChange={setBotVBotSettings}
-                    editTargetBot={botVBotEditTarget}
+                    editTargetBot={resolvedBotVBotEditTarget}
                     onEditTargetBotChange={setBotVBotEditTarget}
                   />
                 ) : null}
@@ -760,7 +707,7 @@ export function GameSetupPage() {
                         ships={ships}
                         placements={
                           mode === 'botvbot'
-                            ? botVBotManualPlacements[botVBotEditTarget]
+                            ? botVBotManualPlacements[resolvedBotVBotEditTarget]
                             : state.placements
                         }
                         orientation={placementOrientation}
@@ -770,7 +717,7 @@ export function GameSetupPage() {
                             ? (placements) =>
                               setBotVBotManualPlacements((current) => ({
                                 ...current,
-                                [botVBotEditTarget]: placements,
+                                [resolvedBotVBotEditTarget]: placements,
                               }))
                             : setPlacements
                         }

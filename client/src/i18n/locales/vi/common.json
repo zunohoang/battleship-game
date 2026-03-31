@@ -245,12 +245,12 @@
                 "number": "01",
                 "railLabel": "Mở đầu",
                 "eyebrow": "Slide 01 / Giới thiệu trò chơi",
-                "title": "{{gameName}} biến đối đầu hải chiến thành một command room đậm chất điện ảnh.",
-                "description": "Slide mở đầu này dùng để chốt tông của sản phẩm: sci-fi, gọn, sắc và đủ cuốn hút để bắt đầu buổi trình chiếu ngay bên trong ứng dụng.",
+                "title": "{{gameName}} đưa người chơi vào phòng chỉ huy của một trận hải chiến sci-fi ngay từ màn hình đầu tiên.",
+                "description": "Giao diện tổng quan, phong cách hiển thị và cảm giác điều khiển trận đấu được giới thiệu trước khi đi sâu vào gameplay chi tiết.",
                 "highlights": [
                     "Không khí sci-fi hải chiến",
-                    "Hợp để demo trực tiếp",
-                    "Một nút để vào chơi"
+                    "HUD chiến thuật rõ ràng",
+                    "Vào trận nhanh"
                 ],
                 "ctaLabel": "Chơi ngay",
                 "ctaHint": "Cuộn xuống để xem tiếp showcase",
@@ -259,7 +259,9 @@
                         "id": "intro-hero",
                         "tag": "Cảnh 01",
                         "title": "Tổng quan mở màn",
-                        "description": "Dùng panel đầu tiên cho ảnh hero mạnh nhất, đủ để người xem nhận ra chất command deck ngay từ giây đầu.",
+                        "description": "Giao diện chính xuất hiện ngay từ đầu, cho thấy người chơi bước vào một trận hải chiến với tông command deck rõ ràng và trực quan.",
+                        "imageSrc": "/game_thumbnail.png",
+                        "imageAlt": "Màn hình mở đầu của Battleship",
                         "frameLabel": "Khung hero placeholder",
                         "frameHint": "Đặt composition mở màn đẹp nhất của bạn vào đây."
                     },
@@ -267,17 +269,11 @@
                         "id": "intro-world",
                         "tag": "Cảnh 02",
                         "title": "Không khí và thế giới",
-                        "description": "Panel thứ hai nên nói bằng hình ảnh: ánh radar, kính chiến thuật và ánh sáng biển đêm mang tông sci-fi.",
+                        "description": "Bố cục bàn chơi, lớp HUD chiến thuật và không khí sci-fi hiện ra đầy đủ, tạo nên bối cảnh người chơi sẽ tương tác xuyên suốt ván đấu.",
+                        "imageSrc": "/game_slide1.png",
+                        "imageAlt": "Ảnh gameplay Battleship",
                         "frameLabel": "Khung mood placeholder",
                         "frameHint": "Dùng một ảnh cận để bán được chất thế giới."
-                    },
-                    {
-                        "id": "intro-hook",
-                        "tag": "Cảnh 03",
-                        "title": "Điểm móc cho buổi demo",
-                        "description": "Panel cuối của phần mở đầu nên giải thích vì sao trò chơi hấp dẫn để theo dõi ngay cả trước khi trận đấu bắt đầu.",
-                        "frameLabel": "Khung hook placeholder",
-                        "frameHint": "Chọn một ảnh hỗ trợ tốt cho câu giới thiệu của bạn."
                     }
                 ]
             },
@@ -287,35 +283,41 @@
                 "number": "02",
                 "railLabel": "Gameplay",
                 "eyebrow": "Slide 02 / Cơ chế chơi",
-                "title": "Nhịp trận đấu dễ hiểu, dễ theo dõi và đủ đã khi trình bày trực tiếp.",
-                "description": "Hãy giải thích vòng lặp cốt lõi bằng ngôn ngữ người chơi: triển khai đội tàu, bắn theo lượt, đọc phản hồi trên bàn cờ và đánh chìm toàn bộ hạm đội đối phương.",
+                "title": "Gameplay xoay quanh việc đọc bàn cờ, chọn mục tiêu và theo dõi kết quả sau mỗi ván.",
+                "description": "Nhịp chơi đi từ quan sát trạng thái trận, sang quyết định khai hỏa theo lượt, rồi khép lại ở màn tổng kết thắng thua và xác suất bắn trúng.",
                 "highlights": [
-                    "Triển khai đội tàu",
-                    "Bắn theo lượt",
-                    "Đọc hit và miss"
+                    "Đọc trạng thái trận",
+                    "Chọn ô mục tiêu",
+                    "Tổng kết sau trận"
                 ],
                 "panels": [
                     {
                         "id": "gameplay-deploy",
-                        "tag": "Bước 01",
+                        "tag": "Cảnh 01",
                         "title": "Vào vị trí chiến đấu",
-                        "description": "Mở phần gameplay bằng một hình cho thấy người chơi chuẩn bị vùng biển của mình trước khi loạt bắn đầu tiên diễn ra.",
+                        "description": "Người chơi quan sát trạng thái hai bên và chuẩn bị bước vào lượt bắn đầu tiên.",
+                        "imageSrc": "/game_slide2_1.png",
+                        "imageAlt": "Màn hình triển khai đội tàu Battleship",
                         "frameLabel": "Khung triển khai placeholder",
                         "frameHint": "Một ảnh trạng thái đầu trận sẽ hợp nhất ở đây."
                     },
                     {
                         "id": "gameplay-fire",
-                        "tag": "Bước 02",
+                        "tag": "Cảnh 02",
                         "title": "Chọn phát bắn",
-                        "description": "Cho người xem thấy khoảnh khắc ra quyết định, nơi người chơi đọc tình hình và khóa mục tiêu tiếp theo.",
+                        "description": "Người chơi đọc dữ liệu đã mở trên bàn đối thủ, chọn ô mục tiêu và quyết định phát bắn tiếp theo theo kiểu đánh theo lượt.",
+                        "imageSrc": "/game_slide2_2.png",
+                        "imageAlt": "Màn hình ngắm bắn Battleship",
                         "frameLabel": "Khung ngắm bắn placeholder",
                         "frameHint": "Chọn ảnh thể hiện rõ thời điểm trước khi khai hỏa."
                     },
                     {
                         "id": "gameplay-result",
-                        "tag": "Bước 03",
-                        "title": "Đọc kết quả",
-                        "description": "Kết lại bằng phản hồi trên bàn cờ để người xem hiểu ngay hit, miss và nhịp chuyển của trận đấu.",
+                        "tag": "Cảnh 03",
+                        "title": "Màn hình kết quả trận",
+                        "description": "Màn tổng kết sau trận hiển thị kết quả thắng thua cùng xác suất bắn trúng mà người chơi đạt được.",
+                        "imageSrc": "/game_slide2_3.png",
+                        "imageAlt": "Màn hình kết quả phát bắn Battleship",
                         "frameLabel": "Khung kết quả placeholder",
                         "frameHint": "Một ảnh nhấn mạnh độ rõ của hit và miss sẽ rất hợp."
                     }
@@ -327,8 +329,8 @@
                 "number": "03",
                 "railLabel": "Flow",
                 "eyebrow": "Slide 03 / Trước trận",
-                "title": "Setup và vào trận online được kể như một phần của trải nghiệm, không chỉ là bước chờ.",
-                "description": "Slide này nói về hành trình đi vào trận: cấu hình bản đồ, đặt tàu, tìm phòng, vào room và tiến tự nhiên tới trận online.",
+                "title": "Trước khi vào trận, người chơi thiết lập phòng, chờ đối thủ và bắt đầu match ngay trong cùng một flow.",
+                "description": "Phần trải nghiệm trước trận bao gồm chủ phòng cài thông số, hai người chơi xem lại thiết lập, chat trực tiếp rồi chuyển vào ván đấu.",
                 "highlights": [
                     "Cấu hình bàn cờ",
                     "Đặt đội tàu",
@@ -337,25 +339,31 @@
                 "panels": [
                     {
                         "id": "flow-config",
-                        "tag": "Bước 01",
-                        "title": "Chuẩn bị trận đấu",
-                        "description": "Panel đầu cho thấy người chơi định hình chiến trường trước khi bước vào phần giao tranh thật sự.",
+                        "tag": "Cảnh 01",
+                        "title": "Cài đặt thông số phòng",
+                        "description": "Chủ phòng thiết lập các thông số cho ván chơi trước khi cả hai người chơi bước vào phần chờ và bắt đầu trận.",
+                        "imageSrc": "/game_slide3_1.png",
+                        "imageAlt": "Màn hình cài đặt thông số phòng Battleship",
                         "frameLabel": "Khung cấu hình placeholder",
                         "frameHint": "Ảnh màn cấu hình đội tàu hoặc board rất hợp ở đây."
                     },
                     {
                         "id": "flow-placement",
-                        "tag": "Bước 02",
-                        "title": "Đặt tàu có nhịp rõ ràng",
-                        "description": "Panel thứ hai dùng hình ảnh để giải thích phase placement như một lớp chuẩn bị chiến thuật rõ ràng và dễ trình bày.",
+                        "tag": "Cảnh 02",
+                        "title": "Chuẩn bị trước trận",
+                        "description": "Phòng chờ trước trận cho 2 người chơi cho phép cả hai xem lại các thông số mà chủ phòng đã cài đặt và trò chuyện trực tiếp với nhau trước khi bắt đầu.",
+                        "imageSrc": "/game_slide3_2.png",
+                        "imageAlt": "Màn hình phòng chờ trước trận Battleship",
                         "frameLabel": "Khung placement placeholder",
                         "frameHint": "Dùng ảnh đặt tàu với silhouette hoặc bố cục dễ đọc."
                     },
                     {
                         "id": "flow-room",
-                        "tag": "Bước 03",
+                        "tag": "Cảnh 03",
                         "title": "Tìm phòng và vào trận",
-                        "description": "Panel cuối diễn tả layer online từ góc nhìn người dùng: vào room, chờ đồng bộ và bắt đầu trận.",
+                        "description": "Flow online bắt đầu từ lúc người chơi tạo hoặc tham gia phòng, chờ đồng bộ với đối thủ rồi bước vào ván đấu.",
+                        "imageSrc": "/game_slide3_3.png",
+                        "imageAlt": "Màn hình phòng online Battleship",
                         "frameLabel": "Khung room online placeholder",
                         "frameHint": "Về sau có thể thay bằng ảnh room list hoặc waiting room."
                     }
@@ -367,35 +375,35 @@
                 "number": "04",
                 "railLabel": "Bot",
                 "eyebrow": "Slide 04 / Cơ chế Bot",
-                "title": "Bot được giải thích bằng hành vi trong trận đấu, không phải bằng chi tiết kỹ thuật.",
-                "description": "Giữ phần này ở mức trực quan. Người xem chỉ cần hiểu bot quan sát, phản ứng sau khi có tín hiệu tốt và tiếp tục tạo áp lực lên người chơi.",
+                "title": "Bot đọc trạng thái bàn cờ để quét mục tiêu, truy vết sau cú bắn trúng và duy trì áp lực tới cuối lượt chơi.",
+                "description": "Hành vi của bot được chia thành ba pha rõ ràng: quét ô trống, bám theo dấu hiệu sau khi trúng đích và dồn ép cho đến khi đánh chìm mục tiêu.",
                 "highlights": [
-                    "Quét mặt trận",
-                    "Bám theo tín hiệu tốt",
-                    "Duy trì áp lực"
+                    "Quét ô trống",
+                    "Truy vết sau cú trúng",
+                    "Dồn ép đến khi chìm"
                 ],
                 "panels": [
                     {
                         "id": "bot-scan",
-                        "tag": "Pha 01",
+                        "tag": "Cảnh 01",
                         "title": "Bot thăm dò mặt biển",
-                        "description": "Panel đầu nên cho thấy bot đang quét trận địa và tạo nhịp áp lực trước khi tìm ra dấu hiệu rõ ràng.",
+                        "description": "Bot bắt đầu bằng cách thử các ô còn trống và thu hẹp dần khu vực có khả năng chứa tàu.",
                         "frameLabel": "Khung quét bot placeholder",
                         "frameHint": "Một board state đầu trận phù hợp nhất cho panel này."
                     },
                     {
                         "id": "bot-hit",
-                        "tag": "Pha 02",
+                        "tag": "Cảnh 02",
                         "title": "Bot phản ứng sau khi trúng đích",
-                        "description": "Panel thứ hai nên thể hiện rõ khoảnh khắc bot đổi nhịp ngay sau khi xác nhận một phát bắn hiệu quả.",
+                        "description": "Sau khi bắn trúng, bot chuyển sang truy vết các ô lân cận để xác định hướng của con tàu.",
                         "frameLabel": "Khung phản ứng bot placeholder",
                         "frameHint": "Dùng một ảnh khi bot đã khóa được mục tiêu rõ ràng."
                     },
                     {
                         "id": "bot-pressure",
-                        "tag": "Pha 03",
+                        "tag": "Cảnh 03",
                         "title": "Bot giữ sức ép tới cuối",
-                        "description": "Khóa phần giải thích bằng một hình cho thấy bot tiếp tục duy trì thế ép và tiến gần tới một pha đánh chìm.",
+                        "description": "Khi đã có đủ dữ liệu, bot giữ mạch tấn công liên tục cho đến khi hoàn tất pha đánh chìm.",
                         "frameLabel": "Khung áp lực bot placeholder",
                         "frameHint": "Một board state cuối hoặc giữa trận sẽ rất hợp ở đây."
                     }
@@ -407,8 +415,8 @@
                 "number": "05",
                 "railLabel": "Kết",
                 "eyebrow": "Slide 05 / Lời cảm ơn",
-                "title": "Cảm ơn tất cả những người đã góp sức để dự án này thành hình.",
-                "description": "Phần cuối của showcase dành để ghi nhận những đóng góp trong quá trình làm game và gửi một lời cảm ơn chân thành tới mọi người đã theo dõi, góp ý và hỗ trợ nhóm.",
+                "title": "Slide cuối cùng dành để ghi nhận nhóm thực hiện và những người đã đồng hành cùng dự án.",
+                "description": "Phần kết này tổng hợp thành viên, liên kết GitHub và thông tin ủng hộ để khép lại showcase một cách rõ ràng và trọn vẹn.",
                 "highlights": [
                     "Lời cảm ơn cuối showcase",
                     "GitHub của thành viên",
@@ -442,7 +450,7 @@
             "back": "Quay lại",
             "backToConfig": "Quay lại cấu hình",
             "nextStep": "Tiếp theo: Đặt tàu",
-            "startGame": "Bắt đầu trò chơi"
+            "startGame": "Bắt đầu"
         },
         "aiDifficulty": {
             "label": "ĐỘ KHÓ AI",
@@ -697,6 +705,11 @@
         "quitMission": "RỜI NHIỆM VỤ",
         "tacticalMap": "BẢN ĐỒ CHIẾN THUẬT",
         "statistics": "THỐNG KÊ",
+        "pauseFlow": "Tạm dừng luồng",
+        "resumeFlow": "Tiếp tục luồng",
+        "showHeatMap": "Hiện heat map",
+        "hideHeatMap": "Ẩn heat map",
+        "nextShot": "Phát bắn kế",
         "minimize": "Thu nhỏ",
         "stats": {
             "title": "THỐNG KÊ CHIẾN ĐẤU",
