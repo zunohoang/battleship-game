@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/Button';
 import type {
   AiDifficulty,
   BotPlacementMode,
@@ -52,7 +51,7 @@ function BotConfigCard({
                   },
                 })
               }
-              className={`ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
+              className={`cursor-pointer ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                 config.difficulty === difficulty
                   ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
                   : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
@@ -80,7 +79,7 @@ function BotConfigCard({
                   },
                 })
               }
-              className={`ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
+              className={`cursor-pointer ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                 (config.placementMode ?? 'auto') === placementMode
                   ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
                   : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
@@ -108,7 +107,7 @@ function BotConfigCard({
                   },
                 })
               }
-              className={`ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
+              className={`cursor-pointer ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                 config.placementStrategy === placementStrategy
                   ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
                   : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
@@ -129,38 +128,20 @@ export function BotVsBotMenu({
   editTargetBot,
   onEditTargetBotChange,
 }: BotVsBotMenuProps) {
-  const hasManualBot =
-    (settings.botA.placementMode ?? 'auto') === 'manual' ||
-    (settings.botB.placementMode ?? 'auto') === 'manual';
+  const hasManualBotA = (settings.botA.placementMode ?? 'auto') === 'manual';
+  const hasManualBotB = (settings.botB.placementMode ?? 'auto') === 'manual';
+  const hasManualBot = hasManualBotA || hasManualBotB;
+  const bothManual = hasManualBotA && hasManualBotB;
 
   return (
     <div className='ui-panel ui-panel-strong rounded-md p-4'>
-      <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+      <div className='mb-4'>
         <div>
           <p className='ui-panel-title'>Bot vs Bot Configuration</p>
           <p className='mt-1 text-sm text-(--text-muted)'>
             Choose difficulty and ship placement strategy for each bot.
           </p>
         </div>
-        <Button
-          onClick={() =>
-            onChange({
-              botA: {
-                difficulty: 'random',
-                placementStrategy: 'random',
-                placementMode: 'auto',
-              },
-              botB: {
-                difficulty: 'random',
-                placementStrategy: 'random',
-                placementMode: 'auto',
-              },
-            })
-          }
-          className='h-8 px-3 text-[10px]'
-        >
-          Reset to random
-        </Button>
       </div>
 
       <div className='grid gap-3 md:grid-cols-2'>
@@ -178,7 +159,7 @@ export function BotVsBotMenu({
         />
       </div>
 
-      {hasManualBot ? (
+      {hasManualBot && !bothManual ? (
         <div className='ui-subpanel mt-3 rounded-sm px-4 py-3'>
           <p className='ui-data-label mb-2'>Manual configuration target</p>
           <div className='grid grid-cols-2 gap-1 sm:max-w-64'>

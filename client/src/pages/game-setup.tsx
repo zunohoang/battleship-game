@@ -24,7 +24,6 @@ import type {
   BotVBotSettings,
   GameMode,
   OnlineSetupFlow,
-  Orientation,
   PlacedShip,
 } from '@/types/game';
 
@@ -40,6 +39,14 @@ interface StepPillProps {
   label: string;
   phaseLabel: string;
   status: 'active' | 'done' | 'upcoming';
+}
+type HeaderFlow = 'standard' | 'onlinePhase1' | 'onlinePlacement';
+
+interface HeaderStepPill {
+  number: number;
+  label: string;
+  phaseLabel: string;
+  status: StepPillProps['status'];
 }
 
 function StepPill({ number, label, phaseLabel, status }: StepPillProps) {
@@ -139,8 +146,6 @@ export function GameSetupPage() {
   const hasInitializedOnlineConfig = useRef(false);
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [placementOrientation, setPlacementOrientation] =
-    useState<Orientation>('horizontal');
   const [aiDifficulty, setAiDifficulty] = useState<AiDifficulty>('random');
   const [botVBotSettings, setBotVBotSettings] = useState<BotVBotSettings>({
     botA: {
@@ -167,10 +172,8 @@ export function GameSetupPage() {
   const { boardConfig, ships, turnTimerSeconds } = state.config;
   const currentConfig = state.config;
   const currentPlacements = state.placements;
-  const hasManualBotA =
-    (botVBotSettings.botA.placementMode ?? 'auto') === 'manual';
-  const hasManualBotB =
-    (botVBotSettings.botB.placementMode ?? 'auto') === 'manual';
+  const hasManualBotA = (botVBotSettings.botA.placementMode ?? 'auto') === 'manual';
+  const hasManualBotB = (botVBotSettings.botB.placementMode ?? 'auto') === 'manual';
   const hasAnyManualBot = hasManualBotA || hasManualBotB;
   const resolvedBotVBotEditTarget = useMemo<'botA' | 'botB'>(() => {
     if (mode !== 'botvbot') {
@@ -231,7 +234,6 @@ export function GameSetupPage() {
     }
 
     clearPlacements();
-    setPlacementOrientation('horizontal');
     setBotVBotEditTarget('botA');
     setBotVBotManualPlacements({ botA: [], botB: [] });
     setStep(2);
@@ -239,7 +241,6 @@ export function GameSetupPage() {
 
   const handleBackToConfig = () => {
     clearPlacements();
-    setPlacementOrientation('horizontal');
     setBotVBotEditTarget('botA');
     setBotVBotManualPlacements({ botA: [], botB: [] });
     setStep(1);
@@ -502,7 +503,86 @@ export function GameSetupPage() {
       ? 'Saving Phase 1...'
       : 'Save Phase 1'
     : t('gameSetup.header.nextStep');
-  const showLinkedPhasePills = !isOnlinePhase1Flow && !isOnlinePlacementFlow;
+  const headerFlow: HeaderFlow = isOnlinePhase1Flow
+    ? 'onlinePhase1'
+    : isOnlinePlacementFlow
+      ? 'onlinePlacement'
+      : 'standard';
+  const headerStepPills: HeaderStepPill[] =
+    headerFlow === 'standard'
+      ? [
+        {
+          number: 1,
+          label: t('gameSetup.header.step1Label'),
+          phaseLabel: `${t('gameSetup.header.phase')} 1`,
+          status: step === 1 ? 'active' : 'done',
+        },
+        {
+          number: 2,
+          label: t('gameSetup.header.step2Label'),
+          phaseLabel: `${t('gameSetup.header.phase')} 2`,
+          status: step === 2 ? 'active' : 'upcoming',
+        },
+      ]
+      : [
+        {
+          number: headerFlow === 'onlinePhase1' ? 1 : 2,
+          label: t(
+            headerFlow === 'onlinePhase1'
+              ? 'gameSetup.header.step1Label'
+              : 'gameSetup.header.step2Label',
+          ),
+          phaseLabel: t('gameSetup.header.phase'),
+          status: 'active',
+        },
+      ];
+  const showSetupTimer = step === 2 && mode === 'online';
+  const showHeaderBackButton = headerFlow !== 'onlinePlacement';
+  const primaryActionDisabled =
+    mode === 'online'
+      ? !allShipsPlaced || !roomId || room?.status !== 'setup'
+      : mode === 'botvbot'
+        ? !botVBotPlacementReady
+        : !allShipsPlaced;
+  const isOpponentReady =
+    mode === 'online'
+      ? currentUserId === room?.ownerId
+        ? Boolean(room?.guestReady)
+        : Boolean(room?.ownerReady)
+      : true;
+
+  const handleHeaderBack = () => {
+    if (isOnlinePhase1Flow && roomId) {
+      navigate('/game/waiting', {
+        state: {
+          roomId,
+          matchId: match?.id ?? matchId,
+        },
+      });
+      return;
+    }
+
+    if (step === 2) {
+      handleBackToConfig();
+      return;
+    }
+
+    navigate('/home');
+  };
+
+  const handleHeaderPrimaryAction = () => {
+    if (mode === 'online') {
+      if (!roomId) return;
+
+      markReady({
+        roomId,
+        placements: state.placements,
+      });
+      return;
+    }
+
+    launchLocalGame();
+  };
 
   return (
     <motion.main
@@ -535,6 +615,7 @@ export function GameSetupPage() {
             </div>
           </div>
 
+          {/* Mode badge */}
           <motion.div
             key='mode-badge'
             initial={{ opacity: 0, scale: 0.96 }}
@@ -549,9 +630,10 @@ export function GameSetupPage() {
               {t(`gameSetup.header.modes.${mode}`)}
             </p>
           </motion.div>
-
+          
+          {/* Controls */}
           <div className='grid w-full gap-2 sm:flex sm:flex-wrap sm:items-center xl:justify-end'>
-            {step === 2 && mode === 'online' ? (
+            {showSetupTimer ? (
               <div className='ui-panel rounded-md px-4 py-3'>
                 <p className='ui-data-label'>
                   {t('gameSetup.step1.setupTimer')}
@@ -561,99 +643,27 @@ export function GameSetupPage() {
                 </p>
               </div>
             ) : null}
-            {showLinkedPhasePills ? (
+            {headerStepPills.length === 2 ? (
               <div className='flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap'>
-                <StepPill
-                  number={1}
-                  label={t('gameSetup.header.step1Label')}
-                  phaseLabel={`${t('gameSetup.header.phase')} 1`}
-                  status={step === 1 ? 'active' : 'done'}
-                />
+                <StepPill {...headerStepPills[0]} />
                 <div className='hidden items-center px-1 sm:flex' aria-hidden='true'>
                   <span className='h-px w-10 bg-[linear-gradient(90deg,rgba(63,203,232,0.16),rgba(117,235,255,0.82),rgba(63,203,232,0.16))]' />
                 </div>
-                <StepPill
-                  number={2}
-                  label={t('gameSetup.header.step2Label')}
-                  phaseLabel={`${t('gameSetup.header.phase')} 2`}
-                  status={step === 2 ? 'active' : 'upcoming'}
-                />
+                <StepPill {...headerStepPills[1]} />
               </div>
-            ) : step === 1 ? (
-              <StepPill
-                number={1}
-                label={t('gameSetup.header.step1Label')}
-                phaseLabel={t('gameSetup.header.phase')}
-                status='active'
-              />
             ) : (
-              <StepPill
-                number={2}
-                label={t('gameSetup.header.step2Label')}
-                phaseLabel={t('gameSetup.header.phase')}
-                status='active'
-              />
+              <StepPill {...headerStepPills[0]} />
             )}
-            {isOnlinePlacementFlow ? null : (
+            {showHeaderBackButton ? (
               <Button
-                onClick={() => {
-                  if (isOnlinePhase1Flow && roomId) {
-                    navigate('/game/waiting', {
-                      state: {
-                        roomId,
-                        matchId: match?.id ?? matchId,
-                      },
-                    });
-                    return;
-                  }
-
-                  if (step === 2) {
-                    handleBackToConfig();
-                    return;
-                  }
-
-                  navigate('/home');
-                }}
+                onClick={handleHeaderBack}
                 className='h-10 w-full px-4 sm:w-auto'
               >
                 {t('gameSetup.header.back')}
               </Button>
-            )}
-            {step === 2 ? (
-              <Button
-                variant='primary'
-                disabled={
-                  mode === 'online'
-                    ? !allShipsPlaced || !roomId || room?.status !== 'setup'
-                    : mode === 'botvbot'
-                      ? !botVBotPlacementReady
-                      : !allShipsPlaced
-                }
-                onClick={() => {
-                  if (mode === 'online') {
-                    if (!roomId) return;
-                    markReady({
-                      roomId,
-                      placements: state.placements,
-                    });
-                    return;
-                  }
-
-                  if (mode === 'botvbot') {
-                    launchLocalGame();
-                    return;
-                  }
-
-                  launchLocalGame();
-                }}
-                className='h-10 w-full px-4 sm:w-auto sm:min-w-40'
-              >
-                {mode === 'online' ? 'Ready' : t('gameSetup.header.startGame')}
-              </Button>
             ) : null}
           </div>
         </div>
-
         <div className='mt-3 flex-1 overflow-visible sm:min-h-0 sm:overflow-hidden'>
           <AnimatePresence mode='wait'>
             {step === 1 ? (
@@ -699,7 +709,67 @@ export function GameSetupPage() {
                     onEditTargetBotChange={setBotVBotEditTarget}
                   />
                 ) : null}
-                {mode !== 'botvbot' || hasAnyManualBot ? (
+                {/* Nút bắt đầu game khi ở bot vs bot */}
+                {mode === 'botvbot' && !hasAnyManualBot ? (
+                  <div className='flex justify-end'>
+                    <Button
+                      variant='primary'
+                      disabled={primaryActionDisabled}
+                      onClick={handleHeaderPrimaryAction}
+                      className='h-10 px-6'
+                    >
+                      {t('gameSetup.header.startGame')}
+                    </Button>
+                  </div>
+                ) : null}
+                {/* Cả 2 bot đều manual: layout 2 cột song song */}
+                {mode === 'botvbot' && hasManualBotA && hasManualBotB ? (
+                  <>
+                    <div className='grid gap-3 sm:min-h-0 sm:flex-1 xl:grid-cols-2'>
+                      {(['botA', 'botB'] as const).map((botKey) => (
+                        <section
+                          key={botKey}
+                          className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'
+                        >
+                          <p className='ui-panel-title mb-2'>
+                            {botKey === 'botA' ? 'BOT A' : 'BOT B'}
+                          </p>
+                          <div className='flex-1 sm:min-h-0'>
+                            <ShipPlacementStage
+                              boardConfig={boardConfig}
+                              ships={ships}
+                              placements={botVBotManualPlacements[botKey]}
+                              onPlacementsChange={(placements) =>
+                                setBotVBotManualPlacements((current) => ({
+                                  ...current,
+                                  [botKey]: placements,
+                                }))
+                              }
+                              isOpponentReady={
+                                botVBotManualPlacements[
+                                  botKey === 'botA' ? 'botB' : 'botA'
+                                ].length === requiredShipCount
+                              }
+                              primaryActionDisabled={true}
+                            />
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                    <div className='flex justify-end'>
+                      <Button
+                        variant='primary'
+                        disabled={primaryActionDisabled}
+                        onClick={handleHeaderPrimaryAction}
+                        className='h-10 px-6'
+                      >
+                        {t('gameSetup.header.startGame')}
+                      </Button>
+                    </div>
+                  </>
+                ) : null}
+                {/* 1 bot manual hoặc không phải botvbot: layout đơn */}
+                {mode !== 'botvbot' || (hasAnyManualBot && !(hasManualBotA && hasManualBotB)) ? (
                   <section className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'>
                     <div className='flex-1 sm:min-h-0'>
                       <ShipPlacementStage
@@ -710,8 +780,6 @@ export function GameSetupPage() {
                             ? botVBotManualPlacements[resolvedBotVBotEditTarget]
                             : state.placements
                         }
-                        orientation={placementOrientation}
-                        onOrientationChange={setPlacementOrientation}
                         onPlacementsChange={
                           mode === 'botvbot'
                             ? (placements) =>
@@ -725,6 +793,9 @@ export function GameSetupPage() {
                         onAiDifficultyChange={
                           mode === 'bot' ? setAiDifficulty : undefined
                         }
+                        isOpponentReady={isOpponentReady}
+                        primaryActionDisabled={primaryActionDisabled}
+                        onPrimaryAction={handleHeaderPrimaryAction}
                       />
                     </div>
                   </section>

@@ -11,7 +11,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { clearAccessToken, getAccessTokenUserId } from '@/services/authToken'
+import { clearAccessToken, getAccessToken, getAccessTokenUserId } from '@/services/authToken'
 import { getUserProfile } from '@/services/authService'
 import { setForceLogoutCallback } from '@/services/interceptors'
 
@@ -36,9 +36,9 @@ export const ANONYMOUS_USER: GlobalUser = {
 }
 
 export interface GlobalContextValue {
-  user: GlobalUser | null
+  user: GlobalUser
   isLoggedIn: boolean
-  setUser: Dispatch<SetStateAction<GlobalUser | null>>
+  setUser: Dispatch<SetStateAction<GlobalUser>>
   logout: () => void
 }
 
@@ -62,13 +62,13 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
   )
 }
 
-const normalizeStoredUser = (value: unknown): GlobalUser | null => {
+const normalizeStoredUser = (value: unknown): GlobalUser => {
   if (isGlobalUser(value)) {
     return value
   }
 
   if (typeof value !== 'object' || value === null) {
-    return null
+    return ANONYMOUS_USER
   }
 
   const candidate = value as Record<string, unknown>
@@ -80,7 +80,7 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
     (typeof avatar !== 'string' && avatar !== null) ||
     (typeof signature !== 'string' && signature !== null)
   ) {
-    return null
+    return ANONYMOUS_USER
   }
 
   const eloRaw = candidate.elo
@@ -94,23 +94,34 @@ const normalizeStoredUser = (value: unknown): GlobalUser | null => {
   }
 }
 
-const loadStoredUser = (): GlobalUser | null => {
+const loadStoredUser = (): GlobalUser => {
   try {
+    const token = getAccessToken()
+    if (!token) {
+      return ANONYMOUS_USER
+    }
+
     const raw = localStorage.getItem(AUTH_USER_STORAGE_KEY)
     if (!raw) {
-      return null
+      return ANONYMOUS_USER
     }
 
     const parsed = JSON.parse(raw)
-    return normalizeStoredUser(parsed)
+    const normalized = normalizeStoredUser(parsed)
+
+    if (normalized.isAnonymous || !normalized.id) {
+      return ANONYMOUS_USER
+    }
+
+    return normalized
   } catch {
-    return null
+    return ANONYMOUS_USER
   }
 }
 
-const saveStoredUser = (user: GlobalUser | null): void => {
+const saveStoredUser = (user: GlobalUser): void => {
   try {
-    if (!user) {
+    if (user.isAnonymous) {
       localStorage.removeItem(AUTH_USER_STORAGE_KEY)
       return
     }
@@ -123,7 +134,7 @@ const saveStoredUser = (user: GlobalUser | null): void => {
 
 export function GlobalProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation('common')
-  const [user, setUserState] = useState<GlobalUser | null>(() => loadStoredUser())
+  const [user, setUserState] = useState<GlobalUser>(() => loadStoredUser())
   const [isSessionExpiredModalOpen, setSessionExpiredModalOpen] = useState(false)
 
   useEffect(() => {
@@ -154,7 +165,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearAccessToken()
-    setUserState(null)
+    setUserState(ANONYMOUS_USER)
   }, [])
 
   const redirectToWelcome = useCallback(() => {
@@ -164,6 +175,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const handleForceLogout = useCallback(
     (reasonCode?: string) => {
       if (reasonCode === 'INVALID_REFRESH_TOKEN') {
+        logout()
         setSessionExpiredModalOpen(true)
         return
       }
@@ -181,7 +193,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     <GlobalContext.Provider
       value={{
         user,
-        isLoggedIn: user !== null && !user.isAnonymous,
+        isLoggedIn: !user.isAnonymous,
         setUser: setUserState,
         logout,
       }}
