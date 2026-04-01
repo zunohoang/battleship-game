@@ -53,7 +53,6 @@ const EMPTY_GAME_CONFIG: GameConfig = {
 const EMPTY_PLACEMENTS: PlacedShip[] = [];
 
 export type GamePlayHeaderTone = 'active' | 'alert';
-export type GamePlayHeaderTimerTone = 'default' | 'warning' | 'muted';
 
 export interface GamePlayHeaderSideContent {
   avatarSrc: string | null;
@@ -79,8 +78,7 @@ export interface GamePlayScreenModel {
     turnKey: string | number;
     turnLabel: string;
     turnTone: GamePlayHeaderTone;
-    turnTimerValue: string;
-    turnTimerTone?: GamePlayHeaderTimerTone;
+    turnTimerValue?: string;
   };
   battlefield: {
     boardConfig: BoardConfig;
@@ -351,7 +349,6 @@ export function GamePlayScreen({
                 turnLabel={header.turnLabel}
                 turnTone={header.turnTone}
                 turnTimerValue={header.turnTimerValue}
-                turnTimerTone={header.turnTimerTone}
                 className='pointer-events-auto md:w-auto md:min-w-60 md:max-w-[18rem]'
               />
             </div>
@@ -417,7 +414,6 @@ export function GamePlayScreen({
             turnLabel={header.turnLabel}
             turnTone={header.turnTone}
             turnTimerValue={header.turnTimerValue}
-            turnTimerTone={header.turnTimerTone}
           />
         </div>
 
@@ -533,7 +529,7 @@ export function GamePlayScreen({
           resolveChatAuthorLabel={missionLog.resolveChatAuthorLabel}
           jumpToChatSignal={chatJumpSignal}
           defaultTab={missionLog.defaultTab}
-          mode={battlefield.isBotVBot ? 'logs-only' : 'tabs'}
+          mode={battlefield.isBotVBot || !missionLog.onSendChatMessage ? 'logs-only' : 'tabs'}
         />
 
         {/* Bottom panel */}
@@ -579,11 +575,13 @@ export function GamePlayScreen({
                 </Button>
                 <Button
                   onClick={() => setIsHeatMapVisible((current) => !current)}
-                  className='h-8 px-3 text-[10px] md:w-auto'
+                  className={`h-8 px-3 text-[10px] md:w-auto ${
+                    isHeatMapVisible
+                      ? 'border-[rgba(117,235,255,0.7)] text-(--accent-secondary)'
+                      : ''
+                  }`}
                 >
-                  {isHeatMapVisible
-                    ? t('gameBattle.hideHeatMap')
-                    : t('gameBattle.showHeatMap')}
+                  {t('gameBattle.heatMap')}
                 </Button>
                 {actions.isBotVBotPaused ? (
                   <Button
@@ -1033,77 +1031,70 @@ export function GamePlayPage() {
         align: 'right',
       });
 
+  const localHeader: GamePlayScreenModel['header'] = {
+    leftContent: leftHeaderContent,
+    rightContent: rightHeaderContent,
+    turnKey: turn,
+    turnLabel,
+    turnTone: isBotThinking ? 'alert' : 'active',
+    turnTimerValue: isBotVBot || isBotThinking ? undefined : timerDisplay,
+  };
+
+  const localBattlefield: GamePlayScreenModel['battlefield'] = {
+    boardConfig,
+    ships,
+    shipsById,
+    ownPlacements: playerPlacements,
+    opponentPlacements: botPlacements,
+    ownShots: playerShots,
+    incomingShots: botShots,
+    ownFleetStatus,
+    opponentFleetStatus,
+    ownTitle: isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.myFleet'),
+    opponentTitle: isBotVBot ? t('gameBattle.botBFleet') : t('gameBattle.enemyWaters'),
+    canFire: canPlayerFire,
+    revealOpponentShips: localPhase === 'gameover' || isBotVBot,
+    onFire: isBotVBot ? undefined : handlePlayerFire,
+    isBotVBot,
+    ownBoardHeatMap: isBotVBot ? ownBoardHeatMap : undefined,
+    opponentBoardHeatMap: isBotVBot ? opponentBoardHeatMap : undefined,
+    plannedOwnBoardShot: isBotVBot ? plannedOwnBoardShot : undefined,
+    plannedOpponentBoardShot: isBotVBot ? plannedOpponentBoardShot : undefined,
+    activeHeatExplanation,
+  };
+
+  const localActions: GamePlayScreenModel['actions'] = {
+    onQuit: () => navigate('/home'),
+    showEncryptedChannel: true,
+    encryptedChannelValue: '77.2',
+    encryptedChannelMaskable: false,
+    isBotVBotPaused: isBotVBot ? isBotVBotPaused : undefined,
+    canApplyBotVBotStep: isBotVBot
+      ? Boolean(plannedOwnBoardShot || plannedOpponentBoardShot)
+      : undefined,
+    onToggleBotVBotPause: isBotVBot ? toggleBotVBotPause : undefined,
+    onStepBotVBotTurn: isBotVBot ? stepBotVBotTurn : undefined,
+  };
+
+  const localState_: GamePlayScreenModel['state'] = {
+    phase: localPhase,
+    result: localResult,
+    onPlayAgain: () =>
+      navigate(
+        localMode === 'botvbot' ? '/game/bot-setup' : '/game/setup',
+        { state: { mode: localMode } },
+      ),
+  };
+
   return (
     <GamePlayScreen
       key={`local:${localMode}`}
       model={{
-        header: {
-          leftContent: leftHeaderContent,
-          rightContent: rightHeaderContent,
-          turnKey: turn,
-          turnLabel,
-          turnTone: isBotThinking ? 'alert' : 'active',
-          turnTimerValue: isBotThinking || isBotVBot ? '--:--' : timerDisplay,
-          turnTimerTone:
-            isBotThinking || isBotVBot
-              ? 'muted'
-              : timer <= 10
-                ? 'warning'
-                : 'default',
-        },
-        battlefield: {
-          boardConfig,
-          ships,
-          shipsById,
-          ownPlacements: playerPlacements,
-          opponentPlacements: botPlacements,
-          ownShots: playerShots,
-          incomingShots: botShots,
-          ownFleetStatus,
-          opponentFleetStatus,
-          ownTitle: isBotVBot
-            ? t('gameBattle.botAFleet')
-            : t('gameBattle.myFleet'),
-          opponentTitle: isBotVBot
-            ? t('gameBattle.botBFleet')
-            : t('gameBattle.enemyWaters'),
-          canFire: canPlayerFire,
-          revealOpponentShips: localPhase === 'gameover' || isBotVBot,
-          onFire: isBotVBot ? undefined : handlePlayerFire,
-          isBotVBot,
-          ownBoardHeatMap: isBotVBot ? ownBoardHeatMap : undefined,
-          opponentBoardHeatMap: isBotVBot ? opponentBoardHeatMap : undefined,
-          plannedOwnBoardShot: isBotVBot ? plannedOwnBoardShot : undefined,
-          plannedOpponentBoardShot: isBotVBot
-            ? plannedOpponentBoardShot
-            : undefined,
-          activeHeatExplanation,
-        },
-        missionLog: {
-          entries: logEntries,
-          heightClassName: 'h-11 sm:h-32',
-        },
-        actions: {
-          onQuit: () => navigate('/home'),
-          showEncryptedChannel: true,
-          encryptedChannelValue: '77.2',
-          encryptedChannelMaskable: false,
-          isBotVBotPaused: isBotVBot ? isBotVBotPaused : undefined,
-          canApplyBotVBotStep: isBotVBot
-            ? Boolean(plannedOwnBoardShot || plannedOpponentBoardShot)
-            : undefined,
-          onToggleBotVBotPause: isBotVBot ? toggleBotVBotPause : undefined,
-          onStepBotVBotTurn: isBotVBot ? stepBotVBotTurn : undefined,
-        },
-        state: {
-          phase: localPhase,
-          result: localResult,
-          onPlayAgain: () =>
-            navigate(
-              localMode === 'botvbot' ? '/game/bot-setup' : '/game/setup',
-              { state: { mode: localMode } },
-            ),
-        },
+        header: localHeader,
+        battlefield: localBattlefield,
+        missionLog: { entries: logEntries, heightClassName: 'h-11 sm:h-32' },
+        actions: localActions,
+        state: localState_,
       }}
     />
   );

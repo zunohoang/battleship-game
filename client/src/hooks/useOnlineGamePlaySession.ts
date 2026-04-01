@@ -415,12 +415,6 @@ export function useOnlineGamePlaySession({
     turnTimerSecondsLeft === null
       ? '--:--'
       : formatTurnTimer(turnTimerSecondsLeft);
-  const turnTimerTone =
-    turnTimerSecondsLeft === null
-      ? 'muted'
-      : turnTimerSecondsLeft <= 10
-        ? 'warning'
-        : 'default';
 
   const loadingFallback = useMemo<GamePlayLoadingFallback | null>(() => {
     if (!enabled || (boardConfig && ships.length > 0)) {
@@ -446,7 +440,6 @@ export function useOnlineGamePlaySession({
         turnLabel,
         turnTone: canFire ? 'active' : 'alert',
         turnTimerValue,
-        turnTimerTone,
         leftContent: {
           avatarSrc: user.avatar?.trim() || null,
           label: 'COMMANDER',
@@ -504,7 +497,6 @@ export function useOnlineGamePlaySession({
     shipsById,
     t,
     turnLabel,
-    turnTimerTone,
     turnTimerValue,
     user.avatar,
     user.elo,

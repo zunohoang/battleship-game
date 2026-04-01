@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlacementBoard } from '@/components/game-setup/PlacementBoard';
 import { PlacementSidebar } from '@/components/game-setup/PlacementSidebar';
 import {
   buildOccupiedMap,
   buildRandomPlacements,
+  buildStrategicPlacements,
   buildShipInstances,
   canPlace,
   instanceKey,
@@ -27,6 +28,9 @@ interface ShipPlacementStageProps {
   onPrimaryAction?: () => void;
   aiDifficulty?: AiDifficulty;
   onAiDifficultyChange?: (d: AiDifficulty) => void;
+  botSwitcher?: ReactNode;
+  opponentReadyLabel?: string;
+  compact?: boolean;
 }
 
 export function ShipPlacementStage({
@@ -39,6 +43,9 @@ export function ShipPlacementStage({
   onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
+  botSwitcher,
+  opponentReadyLabel,
+  compact = false,
 }: ShipPlacementStageProps) {
   const { t } = useTranslation();
   const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(
@@ -193,22 +200,40 @@ export function ShipPlacementStage({
     onPlacementsChange(nextPlacements);
   };
 
-  const handleRotate = () => {
-    if (!effectiveSelectedInstanceKey) return;
+  const handleStrategicPlace = botSwitcher
+    ? () => {
+      setErrorText('');
+      const nextPlacements =
+        buildStrategicPlacements(shipInstances, boardConfig, shipsById) ??
+        buildRandomPlacements(shipInstances, boardConfig, shipsById);
+      if (!nextPlacements) {
+        setErrorText(t('gameSetup.placement.randomPlacementFailed'));
+        return;
+      }
+      onPlacementsChange(nextPlacements);
+    }
+    : undefined;
 
-    const placement = placementsByInstanceKey.get(effectiveSelectedInstanceKey);
+  const handleRotate = (targetKey?: string) => {
+    const keyToUse = targetKey ?? effectiveSelectedInstanceKey;
+    if (!keyToUse) return;
+
+    const placement = placementsByInstanceKey.get(keyToUse);
+    const instanceForKey = shipInstances.find(
+      (inst) => instanceKey(inst.definitionId, inst.instanceIndex) === keyToUse,
+    );
 
     if (placement) {
       // Ship is already placed — rotate it in-place
       const newOrientation: Orientation =
         placement.orientation === 'horizontal' ? 'vertical' : 'horizontal';
       const placementsWithoutCurrent = placements.filter(
-        (p) => instanceKey(p.definitionId, p.instanceIndex) !== effectiveSelectedInstanceKey,
+        (p) => instanceKey(p.definitionId, p.instanceIndex) !== keyToUse,
       );
       const occupiedWithoutCurrent = buildOccupiedMap(placementsWithoutCurrent, shipsById);
       const candidate: PlacedShip = { ...placement, orientation: newOrientation };
 
-      if (canPlace(candidate, selectedInstance!.size, boardConfig, occupiedWithoutCurrent)) {
+      if (canPlace(candidate, (instanceForKey ?? selectedInstance)!.size, boardConfig, occupiedWithoutCurrent)) {
         setErrorText('');
         onPlacementsChange([...placementsWithoutCurrent, candidate]);
       } else {
@@ -216,10 +241,10 @@ export function ShipPlacementStage({
       }
     } else {
       // Ship not yet placed — toggle its own pending orientation
-      const current = getInstanceOrientation(effectiveSelectedInstanceKey);
+      const current = getInstanceOrientation(keyToUse);
       setInstanceOrientations((prev) => {
         const next = new Map(prev);
-        next.set(effectiveSelectedInstanceKey, current === 'horizontal' ? 'vertical' : 'horizontal');
+        next.set(keyToUse, current === 'horizontal' ? 'vertical' : 'horizontal');
         return next;
       });
     }
@@ -233,7 +258,7 @@ export function ShipPlacementStage({
 
   return (
     <div className='flex flex-col gap-3 sm:h-full sm:min-h-0'>
-      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1.12fr)_28rem]'>
+      <div className={`grid gap-3 sm:min-h-0 sm:flex-1 ${compact ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]' : 'lg:grid-cols-[minmax(0,1.12fr)_28rem]'}`}>
         <PlacementBoard
           boardConfig={boardConfig}
           ships={ships}
@@ -265,6 +290,9 @@ export function ShipPlacementStage({
           hasError={Boolean(errorText)}
           aiDifficulty={aiDifficulty}
           onAiDifficultyChange={onAiDifficultyChange}
+          onStrategicPlace={handleStrategicPlace}
+          botSwitcher={botSwitcher}
+          opponentReadyLabel={opponentReadyLabel}
         />
       </div>
     </div>

@@ -436,9 +436,9 @@
             "mode": "Chế độ {{mode}}",
             "gameModeLabel": "CHẾ ĐỘ CHƠI",
             "modes": {
-                "bot": "Bot",
+                "bot": "Chơi với Bot",
                 "online": "Trực tuyến",
-                "botvbot": "Bot đấu bot"
+                "botvbot": "Bot vs bot"
             },
             "commanderName": "Chỉ huy Alpha",
             "deploymentSectorConfigured": "Khu vực triển khai được cấu hình cho lưới {{rows}} x {{cols}}",
@@ -492,6 +492,7 @@
             "removeTitle": "Xóa tàu",
             "removeButton": "Xóa",
             "resetButton": "Đặt lại mặc định",
+            "nextStep": "Bước tiếp theo",
             "invalidFleetError": "Tàu chiếm quá nhiều ô. Hãy giảm kích thước/số lượng hoặc tăng bàn cờ."
         },
         "step2": {
@@ -725,6 +726,7 @@
         "resumeFlow": "Tiếp tục luồng",
         "showHeatMap": "Hiện heat map",
         "hideHeatMap": "Ẩn heat map",
+        "heatMap": "Heat Map",
         "explainHeatMap": "Giải thích",
         "heatMapExplainTitle": "Giải thích Heat Map",
         "heatMapExplainUnsupported": "Bên đang tấn công hiện không dùng chế độ xác suất nên không có công thức heat map để giải thích.",

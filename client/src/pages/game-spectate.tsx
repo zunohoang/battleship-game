@@ -239,8 +239,7 @@ export function GameSpectatePage() {
         turnKey: `${match.version}-${match.turnPlayerId ?? 'spectate'}`,
         turnLabel: activeTurnName,
         turnTone: 'active',
-        turnTimerValue: formatTurnTimer(match.turnDeadlineAt, turnNowMs),
-        turnTimerTone: connectionState === 'connected' ? 'default' : 'muted',
+        turnTimerValue: connectionState === 'connected' ? formatTurnTimer(match.turnDeadlineAt, turnNowMs) : '--:--',
       },
       battlefield: {
         boardConfig: match.boardConfig,

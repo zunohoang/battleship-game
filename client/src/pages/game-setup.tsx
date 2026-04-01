@@ -8,7 +8,6 @@ import {
   DEFAULT_SETUP_TIMER_SECONDS,
 } from '@/constants/gameDefaults';
 import { Phase1SetupStage } from '@/components/game-setup/Phase1SetupStage';
-import { BotVsBotMenu } from '@/components/game-setup/BotVsBotMenu';
 import { Button } from '@/components/ui/Button';
 import { ShipPlacementStage } from '@/components/game-setup/ShipPlacementStage';
 import { useOnlineRoom } from '@/hooks/useOnlineRoom';
@@ -101,10 +100,8 @@ export function GameSetupPage() {
   const matchId = locationState?.matchId;
   const onlineSetupFlow = locationState?.onlineSetupFlow ?? 'placement';
   const isOnlinePhase1Flow = mode === 'online' && onlineSetupFlow === 'phase1';
-  const isOnlinePlacementFlow =
-    mode === 'online' && onlineSetupFlow === 'placement';
+  const isOnlinePlacementFlow = mode === 'online' && onlineSetupFlow === 'placement';
   const { user } = useGlobalContext();
-  const currentUserId = user?.id ?? null;
 
   const {
     state,
@@ -129,7 +126,6 @@ export function GameSetupPage() {
     lastError,
     leaveRoom,
   } = useOnlineRoom(roomId, mode === 'online');
-  const isRoomOwner = currentUserId !== null && currentUserId === room?.ownerId;
 
   useEffect(() => {
     if (mode !== 'online' || room?.status !== 'closed') {
@@ -151,12 +147,12 @@ export function GameSetupPage() {
     botA: {
       difficulty: 'random',
       placementStrategy: 'random',
-      placementMode: 'auto',
+      placementMode: 'manual',
     },
     botB: {
       difficulty: 'random',
       placementStrategy: 'random',
-      placementMode: 'auto',
+      placementMode: 'manual',
     },
   });
   const [botVBotEditTarget, setBotVBotEditTarget] = useState<'botA' | 'botB'>(
@@ -172,36 +168,6 @@ export function GameSetupPage() {
   const { boardConfig, ships, turnTimerSeconds } = state.config;
   const currentConfig = state.config;
   const currentPlacements = state.placements;
-  const hasManualBotA = (botVBotSettings.botA.placementMode ?? 'auto') === 'manual';
-  const hasManualBotB = (botVBotSettings.botB.placementMode ?? 'auto') === 'manual';
-  const hasAnyManualBot = hasManualBotA || hasManualBotB;
-  const resolvedBotVBotEditTarget = useMemo<'botA' | 'botB'>(() => {
-    if (mode !== 'botvbot') {
-      return botVBotEditTarget;
-    }
-
-    if (
-      (botVBotSettings[botVBotEditTarget].placementMode ?? 'auto') === 'manual'
-    ) {
-      return botVBotEditTarget;
-    }
-
-    if (hasManualBotA) {
-      return 'botA';
-    }
-
-    if (hasManualBotB) {
-      return 'botB';
-    }
-
-    return botVBotEditTarget;
-  }, [
-    botVBotEditTarget,
-    botVBotSettings,
-    hasManualBotA,
-    hasManualBotB,
-    mode,
-  ]);
 
   const buildPlacementsByStrategy = useCallback(
     (strategy: BotPlacementStrategy) => {
@@ -316,8 +282,7 @@ export function GameSetupPage() {
   );
   const boardCells = boardConfig.rows * boardConfig.cols;
   const isConfigValid = ships.length > 0 && totalCells <= boardCells * 0.5;
-  const isPhase1SavePending =
-    isSavingPhase1 && !lastError && !room?.currentMatchId;
+  const isPhase1SavePending = isSavingPhase1 && !lastError && !room?.currentMatchId;
   const requiredShipCount = useMemo(
     () => ships.reduce((total, ship) => total + ship.count, 0),
     [ships],
@@ -325,10 +290,8 @@ export function GameSetupPage() {
   const allShipsPlaced =
     requiredShipCount > 0 && state.placements.length === requiredShipCount;
   const botVBotPlacementReady =
-    (!hasManualBotA ||
-      botVBotManualPlacements.botA.length === requiredShipCount) &&
-    (!hasManualBotB ||
-      botVBotManualPlacements.botB.length === requiredShipCount);
+    botVBotManualPlacements.botA.length === requiredShipCount &&
+    botVBotManualPlacements.botB.length === requiredShipCount;
 
   useEffect(() => {
     setReady(mode === 'botvbot' ? botVBotPlacementReady : allShipsPlaced);
@@ -411,9 +374,9 @@ export function GameSetupPage() {
 
     if (room.status === 'in_game' && match.status === 'in_progress') {
       const onlinePlacements =
-        currentUserId === match.player1Id
+        user.id === match.player1Id
           ? match.player1Placements
-          : currentUserId === match.player2Id
+          : user.id === match.player2Id
             ? match.player2Placements
             : state.placements;
 
@@ -431,7 +394,7 @@ export function GameSetupPage() {
         },
       });
     }
-  }, [currentUserId, match, mode, navigate, room, roomId, state.placements]);
+  }, [match, mode, navigate, room, roomId, state.placements, user.id]);
 
   useEffect(() => {
     if (mode !== 'online' || !match?.setupDeadlineAt) {
@@ -484,25 +447,10 @@ export function GameSetupPage() {
         : t('gameSetup.step1.setupTimerValue', {
           seconds: DEFAULT_SETUP_TIMER_SECONDS,
         });
-  const canAdjustTurnTimer =
-    step === 1 &&
-    (mode !== 'online' ||
-      (isOnlinePhase1Flow &&
-        isRoomOwner &&
-        !room?.currentMatchId &&
-        !isPhase1SavePending));
+  const canAdjustTurnTimer = isOnlinePhase1Flow && !isPhase1SavePending;
   const phase1ContinueDisabled = isOnlinePhase1Flow
-    ? !isConfigValid ||
-      !roomId ||
-      !isRoomOwner ||
-      !!room?.currentMatchId ||
-      isPhase1SavePending
+    ? !isConfigValid || isPhase1SavePending
     : !isConfigValid;
-  const phase1ContinueLabel = isOnlinePhase1Flow
-    ? isPhase1SavePending
-      ? 'Saving Phase 1...'
-      : 'Save Phase 1'
-    : t('gameSetup.header.nextStep');
   const headerFlow: HeaderFlow = isOnlinePhase1Flow
     ? 'onlinePhase1'
     : isOnlinePlacementFlow
@@ -537,7 +485,6 @@ export function GameSetupPage() {
         },
       ];
   const showSetupTimer = step === 2 && mode === 'online';
-  const showHeaderBackButton = headerFlow !== 'onlinePlacement';
   const primaryActionDisabled =
     mode === 'online'
       ? !allShipsPlaced || !roomId || room?.status !== 'setup'
@@ -546,18 +493,26 @@ export function GameSetupPage() {
         : !allShipsPlaced;
   const isOpponentReady =
     mode === 'online'
-      ? currentUserId === room?.ownerId
+      ? user.id === room?.ownerId
         ? Boolean(room?.guestReady)
         : Boolean(room?.ownerReady)
       : true;
 
   const handleHeaderBack = () => {
-    if (isOnlinePhase1Flow && roomId) {
+    if (isOnlinePhase1Flow) {
       navigate('/game/waiting', {
         state: {
           roomId,
           matchId: match?.id ?? matchId,
         },
+      });
+      return;
+    }
+
+    if (isOnlinePlacementFlow) {
+      leaveRoom();
+      navigate('/game/rooms', {
+        state: { roomLeft: 'left_during_setup' },
       });
       return;
     }
@@ -570,7 +525,7 @@ export function GameSetupPage() {
     navigate('/home');
   };
 
-  const handleHeaderPrimaryAction = () => {
+  const handlePrimaryAction = () => {
     if (mode === 'online') {
       if (!roomId) return;
 
@@ -654,14 +609,12 @@ export function GameSetupPage() {
             ) : (
               <StepPill {...headerStepPills[0]} />
             )}
-            {showHeaderBackButton ? (
-              <Button
-                onClick={handleHeaderBack}
-                className='h-10 w-full px-4 sm:w-auto'
-              >
-                {t('gameSetup.header.back')}
-              </Button>
-            ) : null}
+            <Button
+              onClick={handleHeaderBack}
+              className='h-10 w-full px-4 sm:w-auto'
+            >
+              {t('gameSetup.header.back')}
+            </Button>
           </div>
         </div>
         <div className='mt-3 flex-1 overflow-visible sm:min-h-0 sm:overflow-hidden'>
@@ -682,7 +635,6 @@ export function GameSetupPage() {
                   isConfigValid={isConfigValid}
                   canAdjustTurnTimer={canAdjustTurnTimer}
                   continueDisabled={phase1ContinueDisabled}
-                  continueLabel={phase1ContinueLabel}
                   onBoardPreset={(rows, cols) => setBoardConfig({ rows, cols })}
                   onTurnTimerChange={setTurnTimerSeconds}
                   onShipAdd={addShipDefinition}
@@ -701,101 +653,72 @@ export function GameSetupPage() {
                 transition={{ duration: 0.14 }}
                 className='grid gap-3 overflow-visible sm:h-full sm:min-h-0 sm:overflow-hidden'
               >
+                {/* BotVsBot placement — both bots placed manually in a shared stage */}
                 {mode === 'botvbot' ? (
-                  <BotVsBotMenu
-                    settings={botVBotSettings}
-                    onChange={setBotVBotSettings}
-                    editTargetBot={resolvedBotVBotEditTarget}
-                    onEditTargetBotChange={setBotVBotEditTarget}
-                  />
-                ) : null}
-                {/* Nút bắt đầu game khi ở bot vs bot */}
-                {mode === 'botvbot' && !hasAnyManualBot ? (
-                  <div className='flex justify-end'>
-                    <Button
-                      variant='primary'
-                      disabled={primaryActionDisabled}
-                      onClick={handleHeaderPrimaryAction}
-                      className='h-10 px-6'
-                    >
-                      {t('gameSetup.header.startGame')}
-                    </Button>
-                  </div>
-                ) : null}
-                {/* Cả 2 bot đều manual: layout 2 cột song song */}
-                {mode === 'botvbot' && hasManualBotA && hasManualBotB ? (
-                  <>
-                    <div className='grid gap-3 sm:min-h-0 sm:flex-1 xl:grid-cols-2'>
-                      {(['botA', 'botB'] as const).map((botKey) => (
-                        <section
-                          key={botKey}
-                          className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'
-                        >
-                          <p className='ui-panel-title mb-2'>
-                            {botKey === 'botA' ? 'BOT A' : 'BOT B'}
-                          </p>
-                          <div className='flex-1 sm:min-h-0'>
-                            <ShipPlacementStage
-                              boardConfig={boardConfig}
-                              ships={ships}
-                              placements={botVBotManualPlacements[botKey]}
-                              onPlacementsChange={(placements) =>
-                                setBotVBotManualPlacements((current) => ({
-                                  ...current,
-                                  [botKey]: placements,
-                                }))
-                              }
-                              isOpponentReady={
-                                botVBotManualPlacements[
-                                  botKey === 'botA' ? 'botB' : 'botA'
-                                ].length === requiredShipCount
-                              }
-                              primaryActionDisabled={true}
-                            />
-                          </div>
-                        </section>
-                      ))}
-                    </div>
-                    <div className='flex justify-end'>
-                      <Button
-                        variant='primary'
-                        disabled={primaryActionDisabled}
-                        onClick={handleHeaderPrimaryAction}
-                        className='h-10 px-6'
-                      >
-                        {t('gameSetup.header.startGame')}
-                      </Button>
-                    </div>
-                  </>
-                ) : null}
-                {/* 1 bot manual hoặc không phải botvbot: layout đơn */}
-                {mode !== 'botvbot' || (hasAnyManualBot && !(hasManualBotA && hasManualBotB)) ? (
                   <section className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'>
                     <div className='flex-1 sm:min-h-0'>
                       <ShipPlacementStage
                         boardConfig={boardConfig}
                         ships={ships}
-                        placements={
-                          mode === 'botvbot'
-                            ? botVBotManualPlacements[resolvedBotVBotEditTarget]
-                            : state.placements
+                        placements={botVBotManualPlacements[botVBotEditTarget]}
+                        onPlacementsChange={(placements) =>
+                          setBotVBotManualPlacements((curr) => ({
+                            ...curr,
+                            [botVBotEditTarget]: placements,
+                          }))
                         }
-                        onPlacementsChange={
-                          mode === 'botvbot'
-                            ? (placements) =>
-                              setBotVBotManualPlacements((current) => ({
-                                ...current,
-                                [resolvedBotVBotEditTarget]: placements,
-                              }))
-                            : setPlacements
+                        aiDifficulty={botVBotSettings[botVBotEditTarget].difficulty}
+                        onAiDifficultyChange={(difficulty) =>
+                          setBotVBotSettings((curr) => ({
+                            ...curr,
+                            [botVBotEditTarget]: { ...curr[botVBotEditTarget], difficulty },
+                          }))
                         }
+                        isOpponentReady={
+                          botVBotManualPlacements.botA.length === requiredShipCount &&
+                          botVBotManualPlacements.botB.length === requiredShipCount
+                        }
+                        opponentReadyLabel='BOT A & BOT B đã hoàn thành'
+                        primaryActionDisabled={primaryActionDisabled}
+                        onPrimaryAction={handlePrimaryAction}
+                        botSwitcher={
+                          <div className='grid grid-cols-2 gap-1'>
+                            {(['botA', 'botB'] as const).map((botKey) => (
+                              <button
+                                key={`switcher-${botKey}`}
+                                type='button'
+                                onClick={() => setBotVBotEditTarget(botKey)}
+                                className={`cursor-pointer ui-button-shell rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
+                                  botVBotEditTarget === botKey
+                                    ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
+                                    : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
+                                }`}
+                              >
+                                {botKey === 'botA' ? 'BOT A' : 'BOT B'}
+                              </button>
+                            ))}
+                          </div>
+                        }
+                      />
+                    </div>
+                  </section>
+                ) : null}
+                {/* Non-botvbot placement (bot / online) */}
+                {mode !== 'botvbot' ? (
+                  <section className='ui-panel ui-panel-strong themed-scrollbar flex flex-col rounded-md p-3 sm:min-h-0 sm:p-4'>
+                    <div className='flex-1 sm:min-h-0'>
+                      <ShipPlacementStage
+                        boardConfig={boardConfig}
+                        ships={ships}
+                        placements={state.placements}
+                        onPlacementsChange={setPlacements}
                         aiDifficulty={mode === 'bot' ? aiDifficulty : undefined}
                         onAiDifficultyChange={
                           mode === 'bot' ? setAiDifficulty : undefined
                         }
                         isOpponentReady={isOpponentReady}
                         primaryActionDisabled={primaryActionDisabled}
-                        onPrimaryAction={handleHeaderPrimaryAction}
+                        onPrimaryAction={handlePrimaryAction}
                       />
                     </div>
                   </section>
