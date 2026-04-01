@@ -7,6 +7,7 @@ import { images } from '@/assets';
 import { ProfileShowcaseModal } from '@/components/modal/ProfileShowcaseModal';
 import { SettingsModal } from '@/components/modal/SettingsModal';
 import { BattleBoardPanel } from '@/components/game-play/GamePlayBattlefield';
+import { HeatMapExplainWidget } from '@/components/game-play/HeatMapExplainWidget';
 import {
   GameOverOverlay,
   StatsOverlay,
@@ -23,10 +24,13 @@ import { useLocalGamePlaySession } from '@/hooks/useLocalGamePlaySession';
 import { useOnlineGamePlaySession } from '@/hooks/useOnlineGamePlaySession';
 import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
 import {
+  buildBotHeatMapExplanation,
   calculateFleetShipStatuses,
   type FleetShipStatus,
+  type HeatMapExplanationEntry,
 } from '@/utils/gamePlayUtils';
 import type {
+  AiDifficulty,
   BoardConfig,
   GameConfig,
   GameMode,
@@ -101,6 +105,13 @@ export interface GamePlayScreenModel {
     opponentBoardHeatMap?: Map<string, number>;
     plannedOwnBoardShot?: { x: number; y: number } | null;
     plannedOpponentBoardShot?: { x: number; y: number } | null;
+    activeHeatExplanation?: {
+      attackerLabel: string;
+      targetLabel: string;
+      difficulty: AiDifficulty;
+      targetBoard: 'own' | 'opponent';
+      entries: HeatMapExplanationEntry[];
+    };
   };
   missionLog: {
     entries: MissionLogEntry[];
@@ -224,6 +235,7 @@ export function GamePlayScreen({
   const [chatDraft, setChatDraft] = useState('');
   const [chatJumpSignal, setChatJumpSignal] = useState(0);
   const [isHeatMapVisible, setIsHeatMapVisible] = useState(false);
+  const [isHeatExplanationActive, setHeatExplanationActive] = useState(false);
   const [showcaseSide, setShowcaseSide] = useState<'left' | 'right' | null>(null);
   const [isEncryptedChannelMasked, setEncryptedChannelMasked] = useState(() =>
     Boolean(model?.actions.encryptedChannelMaskable),
@@ -291,6 +303,9 @@ export function GamePlayScreen({
       ? (actions.encryptedChannelMaskedValue ?? '***')
       : encryptedChannelValue;
   const canSendChat = typeof missionLog.onSendChatMessage === 'function';
+  const activeTargetBoard = battlefield.activeHeatExplanation?.targetBoard;
+  const ownBoardFocused = isHeatExplanationActive && activeTargetBoard === 'own';
+  const opponentBoardFocused = isHeatExplanationActive && activeTargetBoard === 'opponent';
 
   const handleQuit = () => {
     stopBackgroundMusic();
@@ -355,7 +370,13 @@ export function GamePlayScreen({
                   ships={battlefield.ownFleetStatus}
                 />
               }
-              rootClassName='h-full gap-1.5 sm:gap-2'
+              rootClassName={`h-full gap-1.5 sm:gap-2 transition-all duration-200 ${
+                isHeatExplanationActive
+                  ? ownBoardFocused
+                    ? ''
+                    : 'opacity-40 grayscale-[0.55]'
+                  : ''
+              }`}
               panelClassName='p-1.5 sm:p-3'
               boardProps={{
                 boardConfig: battlefield.boardConfig,
@@ -412,7 +433,13 @@ export function GamePlayScreen({
                   ships={battlefield.opponentFleetStatus}
                 />
               }
-              rootClassName='h-full gap-1.5 sm:gap-2'
+              rootClassName={`h-full gap-1.5 sm:gap-2 transition-all duration-200 ${
+                isHeatExplanationActive
+                  ? opponentBoardFocused
+                    ? ''
+                    : 'opacity-40 grayscale-[0.55]'
+                  : ''
+              }`}
               panelClassName='p-1.5 sm:p-3'
               mobileHeaderPosition='bottom'
               desktopHeaderAlign='right'
@@ -562,11 +589,17 @@ export function GamePlayScreen({
                   <Button
                     onClick={actions.onStepBotVBotTurn}
                     disabled={!actions.canApplyBotVBotStep}
-                    className='h-8 px-3 text-[10px] md:w-auto disabled:opacity-50'
+                    className='h-8 px-3 text-[10px] md:w-auto'
                   >
                     {t('gameBattle.nextShot')}
                   </Button>
                 ) : null}
+                <HeatMapExplainWidget
+                  explanation={battlefield.activeHeatExplanation}
+                  boardConfig={battlefield.boardConfig}
+                  onOpenChange={setHeatExplanationActive}
+                  dimOthers={isHeatExplanationActive}
+                />
               </>
             ) : null}
 
@@ -775,6 +808,46 @@ export function GamePlayPage() {
       t,
     ],
   );
+  const activeHeatExplanation = useMemo(() => {
+    if (!localState || !isBotVBot) {
+      return undefined;
+    }
+
+    const isBotBTurn = turn === 'bot';
+    const difficulty = isBotBTurn
+      ? (localBotVBotSettings?.botB.difficulty ?? 'random')
+      : (localBotVBotSettings?.botA.difficulty ?? 'random');
+
+    return {
+      attackerLabel: isBotBTurn ? 'BOT B' : 'BOT A',
+      targetLabel: isBotBTurn
+        ? t('gameBattle.botAFleet')
+        : t('gameBattle.botBFleet'),
+      difficulty,
+      targetBoard: isBotBTurn ? ('own' as const) : ('opponent' as const),
+      entries: buildBotHeatMapExplanation(
+        boardConfig,
+        ships,
+        isBotBTurn ? botShots : playerShots,
+        difficulty,
+        isBotBTurn ? playerPlacements : botPlacements,
+        shipsById,
+      ),
+    };
+  }, [
+    boardConfig,
+    botPlacements,
+    botShots,
+    isBotVBot,
+    localBotVBotSettings,
+    localState,
+    playerPlacements,
+    playerShots,
+    ships,
+    shipsById,
+    t,
+    turn,
+  ]);
   const currentElo = currentPlayerProfile?.elo ?? 0;
   const opponentElo = opponentProfile?.elo ?? 0;
   const onlineLeftHeaderContent = createHeaderContent({
@@ -1004,6 +1077,7 @@ export function GamePlayPage() {
           plannedOpponentBoardShot: isBotVBot
             ? plannedOpponentBoardShot
             : undefined,
+          activeHeatExplanation,
         },
         missionLog: {
           entries: logEntries,

@@ -99,8 +99,7 @@ export function HomePage() {
     () => (location.state as HomeNavigationState | null) ?? null,
     [location.state],
   );
-  const isAnonymous = user?.isAnonymous ?? true;
-  const onlineEnabled = !isAnonymous;
+  const onlineEnabled = !user.isAnonymous;
   const { room: activeRoom, match: activeMatch, reconnect } = useOnlineRoom(
     undefined,
     onlineEnabled,
@@ -334,7 +333,7 @@ export function HomePage() {
       });
   };
 
-  const currentElo = !isAnonymous && typeof user?.elo === 'number' ? user.elo : 0;
+  const currentElo = !user?.isAnonymous && typeof user?.elo === 'number' ? user.elo : 0;
   const currentRankTierId = getRankTierId(currentElo);
   const currentBadgeImage = getBadgeImageForTier(currentRankTierId);
   const topRankEntries = leaderboardEntries;
@@ -353,7 +352,7 @@ export function HomePage() {
       id: 'playOnline',
       label: t('home.menu.playOnline'),
       icon: GlobeIcon,
-      disabled: isAnonymous,
+      disabled: user?.isAnonymous,
     },
     {
       id: 'playBot',
@@ -590,7 +589,7 @@ export function HomePage() {
                       <span className='ui-data-label text-right'>
                         {t('home.profile.username')}
                       </span>
-                      {isAnonymous ? (
+                      {user.isAnonymous ? (
                         <span className='font-mono text-sm font-semibold text-(--accent-secondary)'>
                           {user?.username?.trim() || t('home.playerStatus.anonymous')}
                         </span>
@@ -607,13 +606,13 @@ export function HomePage() {
                         {t('home.profile.signature')}
                       </span>
                       <span className='font-mono text-sm text-(--text-main)'>
-                        {!isAnonymous && user?.signature ? user.signature : '- - -'}
+                        {!user.isAnonymous && user?.signature ? user.signature : '- - -'}
                       </span>
                       <span className='ui-data-label text-right'>
                         {t('home.profile.rank')}
                       </span>
                       <span className='font-mono text-sm leading-snug text-(--text-main)'>
-                        {!isAnonymous && user && typeof user.elo === 'number'
+                        {!user.isAnonymous
                           ? t(`rank.tiers.${getRankTierId(user.elo)}.name`)
                           : '- - -'}
                       </span>
@@ -621,11 +620,11 @@ export function HomePage() {
                         {t('home.profile.elo')}
                       </span>
                       <span className='font-mono text-sm text-(--text-main)'>
-                        {!isAnonymous && user && typeof user.elo === 'number'
+                        {!user.isAnonymous
                           ? user.elo
                           : '- - -'}
                       </span>
-                      {!isAnonymous && user ? (
+                      {!user.isAnonymous ? (
                         <>
                           <span className='ui-data-label text-right'>
                             {t('home.gameHistory.label')}
@@ -641,7 +640,7 @@ export function HomePage() {
                       ) : null}
                     </div>
                     <p className='mt-2 text-xs font-semibold text-(--text-subtle)'>
-                      {isAnonymous
+                      {user.isAnonymous
                         ? t('home.accessRules.anonymous')
                         : t('home.accessRules.registered')}
                     </p>
@@ -781,7 +780,7 @@ export function HomePage() {
                 ))}
               </div>
 
-              {user && !isAnonymous ? (
+              {!user.isAnonymous ? (
                 <Button
                   variant='danger'
                   onClick={() => {

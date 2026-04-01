@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import type {
   AiDifficulty,
-  BoardConfig,
   Orientation,
   PlacedShip,
 } from '@/types/game';
@@ -13,17 +14,20 @@ interface PlacementSidebarProps {
   shipInstances: ShipInstance[];
   placementsByInstanceKey: Map<string, PlacedShip>;
   selectedInstanceKey: string | null;
-  boardConfig: BoardConfig;
-  orientation: Orientation;
   placedShipsCount: number;
   totalRequiredShips: number;
+  isOpponentReady: boolean;
   statusText: string;
   hasError: boolean;
   onSelectInstance: (key: string) => void;
   onRemovePlaced: (definitionId: string, instanceIndex: number) => void;
   onRandomPlace: () => void;
+  orientation: Orientation;
   onRotate: () => void;
   onClearBoard: () => void;
+  primaryActionLabel?: string;
+  primaryActionDisabled: boolean;
+  onPrimaryAction?: () => void;
   aiDifficulty?: AiDifficulty;
   onAiDifficultyChange?: (d: AiDifficulty) => void;
 }
@@ -32,61 +36,46 @@ export function PlacementSidebar({
   shipInstances,
   placementsByInstanceKey,
   selectedInstanceKey,
-  boardConfig,
-  orientation,
   placedShipsCount,
   totalRequiredShips,
+  isOpponentReady,
   statusText,
   hasError,
+  orientation,
   onSelectInstance,
   onRemovePlaced,
   onRandomPlace,
   onRotate,
   onClearBoard,
+  primaryActionDisabled,
+  onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
 }: PlacementSidebarProps) {
   const { t } = useTranslation();
+  const [isGuideModalOpen, setGuideModalOpen] = useState(false);
+  const [isAiGuideModalOpen, setAiGuideModalOpen] = useState(false);
+  const allShipsPlaced = totalRequiredShips > 0 && placedShipsCount === totalRequiredShips;
 
   return (
-    <div className='ui-panel flex flex-col gap-2 rounded-md p-3 sm:min-h-0'>
-      <div className='relative z-10 space-y-1'>
-        <p className='ui-panel-title'>{t('gameSetup.header.step2Label')}</p>
-        <p className='text-sm text-(--text-muted)'>
-          {t('gameSetup.step2.boardInfo', {
-            rows: boardConfig.rows,
-            cols: boardConfig.cols,
-          })}
-        </p>
-      </div>
-
-      <div className='relative z-10 grid gap-2'>
-        <p
-          className={`text-xs ${hasError ? 'text-[#ffb4b4]' : 'text-(--text-muted)'}`}
-        >
-          {statusText}
-        </p>
-        <div className='grid gap-2 sm:grid-cols-2'>
-          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
-            <p className='ui-data-label'>{t('gameSetup.step2.deployment')}</p>
-            <p className='mt-1 font-mono text-lg text-(--accent-secondary)'>
-              {placedShipsCount}/{totalRequiredShips}
-            </p>
-          </div>
-          <div className='ui-subpanel flex-1 rounded-sm px-3 py-2'>
-            <p className='ui-data-label'>
-              {t('gameSetup.placement.orientation')}
-            </p>
-            <p className='mt-1 font-mono text-sm uppercase text-(--accent-secondary)'>
-              {orientation}
-            </p>
-          </div>
-        </div>
-        {aiDifficulty && onAiDifficultyChange && (
+    <div className='ui-panel flex flex-col justify-between rounded-md p-3 sm:min-h-0'>
+      {/* AI Difficulty Selector - only show when in bot mode */}
+      {aiDifficulty && onAiDifficultyChange && (
+        <div className='relative z-10 grid gap-2'>
           <div className='ui-subpanel rounded-sm px-3 py-2'>
-            <p className='ui-data-label mb-2'>
-              {t('gameSetup.aiDifficulty.label')}
-            </p>
+            <div className='flex items-center justify-between gap-2 relative z-10 mb-2'>
+              <p className='ui-panel-title'>
+                {t('gameSetup.aiDifficulty.label')}
+              </p>
+              <Button
+                onClick={() => setAiGuideModalOpen(true)}
+                className='h-8! w-8! shrink-0 rounded-full px-0 text-base font-black normal-case tracking-normal'
+                aria-label={t('gameSetup.aiDifficulty.openGuide')}
+                title={t('gameSetup.aiDifficulty.openGuide')}
+              >
+                ?
+              </Button>
+            </div>
             <div className='grid grid-cols-1 gap-1 sm:grid-cols-3'>
               {(['random', 'learning', 'probability'] as AiDifficulty[]).map(
                 (d) => (
@@ -94,7 +83,7 @@ export function PlacementSidebar({
                     key={d}
                     type='button'
                     onClick={() => onAiDifficultyChange(d)}
-                    className={`ui-button-shell flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
+                    className={`cursor-pointer ui-button-shell flex-1 rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors ${
                       aiDifficulty === d
                         ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.16)] text-(--text-main)'
                         : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
@@ -106,55 +95,75 @@ export function PlacementSidebar({
               )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className='relative z-10'>
-        <p className='ui-panel-title'>
-          {t('gameSetup.placement.shipInstances')}
-        </p>
-        <p className='mt-1 text-[11px] uppercase tracking-[0.16em] text-(--text-subtle)'>
-          {t('gameSetup.placement.hullDeployHint')}
-        </p>
-      </div>
-
-      <div className='themed-scrollbar space-y-2 overflow-visible pr-1 sm:min-h-0 sm:flex-1 sm:overflow-y-auto'>
-        {shipInstances.map((instance) => {
-          const key = instanceKey(
-            instance.definitionId,
-            instance.instanceIndex,
-          );
-          const placement = placementsByInstanceKey.get(key);
-          const selected = selectedInstanceKey === key;
-
-          return (
-            <div
-              key={key}
-              className={`rounded-sm border p-2.5 text-xs ${
-                selected
-                  ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)]'
-                  : 'ui-state-idle'
-              }`}
+      <div className='relative z-10 grid gap-2'>
+        <div className='ui-subpanel rounded-sm p-3'>
+          <div className='flex items-center justify-between gap-2 relative z-10 mb-2'>
+            <p className='ui-panel-title'>
+              {t('gameSetup.placement.shipInstances')}
+            </p>
+            <Button
+              onClick={() => setGuideModalOpen(true)}
+              className='h-8! w-8! shrink-0 rounded-full px-0 text-base font-black normal-case tracking-normal'
+              aria-label={t('gameSetup.placement.openGuide')}
+              title={t('gameSetup.placement.openGuide')}
             >
-              <button
-                type='button'
-                onClick={() => onSelectInstance(key)}
-                className='w-full text-left'
-              >
-                <div className='flex items-start justify-between gap-3'>
-                  <div>
-                    <p className='text-(--text-main) font-mono text-sm font-bold uppercase tracking-[0.08em]'>
-                      {instance.name} #{instance.instanceIndex + 1}
-                    </p>
-                    <p className='mt-1 text-[11px] uppercase tracking-[0.18em] text-(--text-subtle)'>
-                      {t('gameSetup.placement.size')} {instance.size}
-                      {' · '}
-                      {placement
-                        ? t('gameSetup.placement.placed')
-                        : t('gameSetup.placement.notPlaced')}
-                    </p>
+              ?
+            </Button>
+          </div>
+
+          {/* Ship Instances List */}
+          <div className='themed-scrollbar max-h-60 space-y-2 overflow-y-auto pr-1 pb-1'>
+            {shipInstances.map((instance) => {
+              const key = instanceKey(
+                instance.definitionId,
+                instance.instanceIndex,
+              );
+              const placement = placementsByInstanceKey.get(key);
+              const selected = selectedInstanceKey === key;
+
+              return (
+                <div
+                  key={key}
+                  className={`rounded-sm border p-2.5 text-xs ${
+                    selected
+                      ? 'border-[rgba(117,235,255,0.95)] bg-[rgba(34,211,238,0.12)]'
+                      : 'ui-state-idle'
+                  }`}
+                >
+                  <div className='flex items-start justify-between gap-2'>
+                    <button
+                      type='button'
+                      onClick={() => onSelectInstance(key)}
+                      className='min-w-0 flex-1 text-left'
+                    >
+                      <p className='truncate text-(--text-main) font-mono text-sm font-bold uppercase tracking-[0.08em]'>
+                        {instance.name} #{instance.instanceIndex + 1}
+                      </p>
+                    </button>
+
+                    <Button
+                      variant='danger'
+                      disabled={!placement}
+                      onClick={() =>
+                        onRemovePlaced(
+                          instance.definitionId,
+                          instance.instanceIndex,
+                        )
+                      }
+                      className='h-7! w-16! shrink-0 rounded-sm px-2 text-[10px] tracking-[0.08em]'
+                    >
+                      {t('gameSetup.placement.remove')}
+                    </Button>
                   </div>
-                  <div className='flex gap-1 pt-0.5'>
+
+                  <button
+                    type='button'
+                    onClick={() => onSelectInstance(key)}
+                    className='mt-1 flex w-full items-center gap-1 text-left'
+                  >
                     {Array.from({ length: instance.size }).map((_, index) => (
                       <span
                         key={`${key}-${index}`}
@@ -165,50 +174,111 @@ export function PlacementSidebar({
                         }`}
                       />
                     ))}
-                  </div>
+                    <span className='ml-1 flex items-center gap-1'>
+                      {placement && (
+                        <span className='text-[rgba(34,211,238,0.9)] text-xs leading-none'>✓</span>
+                      )}
+                      <span className='font-mono text-[9px] uppercase tracking-widest text-(--text-muted)'>
+                        {placement
+                          ? placement.orientation === 'horizontal'
+                            ? t('gameSetup.placement.horizontal')
+                            : t('gameSetup.placement.vertical')
+                          : orientation === 'horizontal'
+                            ? t('gameSetup.placement.horizontal')
+                            : t('gameSetup.placement.vertical')}
+                      </span>
+                    </span>
+                  </button>
                 </div>
-              </button>
+              );
+            })}
+          </div>
 
-              {placement && (
-                <Button
-                  variant='danger'
-                  onClick={() =>
-                    onRemovePlaced(
-                      instance.definitionId,
-                      instance.instanceIndex,
-                    )
-                  }
-                  className='mt-2 h-8 text-[10px] tracking-[0.12em]'
-                >
-                  {t('gameSetup.placement.remove')}
-                </Button>
-              )}
-            </div>
-          );
-        })}
+          <div className='grid gap-2 sm:grid-cols-3'>
+            <Button
+              onClick={onRandomPlace}
+              className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
+            >
+              {t('gameSetup.placement.random')}
+            </Button>
+            <Button
+              onClick={onRotate}
+              className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
+            >
+              {t('gameSetup.placement.rotate')}
+            </Button>
+            <Button
+              variant='danger'
+              onClick={onClearBoard}
+              className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
+            >
+              {t('gameSetup.placement.clear')}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className='grid gap-2 sm:grid-cols-3'>
-        <Button
-          onClick={onRandomPlace}
-          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
-        >
-          {t('gameSetup.placement.random')}
-        </Button>
-        <Button
-          onClick={onRotate}
-          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
-        >
-          ROTATE
-        </Button>
-        <Button
-          variant='danger'
-          onClick={onClearBoard}
-          className='h-9 rounded-sm text-[10px] tracking-[0.12em]'
-        >
-          {t('gameSetup.placement.clear')}
-        </Button>
+      {/* Start Checklist */}
+      <div className='ui-subpanel rounded-sm px-3 py-3'>
+        <p className='ui-data-label mb-2'>
+          {t('gameSetup.placement.startChecklistTitle')}
+        </p>
+        <div className='space-y-1.5'>
+          <p
+            className={`text-xs ${allShipsPlaced ? 'text-(--accent-secondary)' : 'text-(--text-muted)'}`}
+          >
+            {allShipsPlaced ? '✓' : '○'}{' '}
+            {t('gameSetup.placement.startChecklistShips', {
+              placed: placedShipsCount,
+              total: totalRequiredShips,
+            })}
+          </p>
+          <p
+            className={`text-xs ${isOpponentReady ? 'text-(--accent-secondary)' : 'text-(--text-muted)'}`}
+          >
+            {isOpponentReady ? '✓' : '○'}{' '}
+            {t('gameSetup.placement.startChecklistOpponentReady')}
+          </p>
+          <p className={`text-xs ${hasError ? 'text-[#ffb4b4]' : 'text-(--text-muted)'}`}>
+            {statusText}
+          </p>
+        </div>
       </div>
+
+      {onPrimaryAction ? (
+        <Button
+          variant='primary'
+          disabled={primaryActionDisabled}
+          onClick={onPrimaryAction}
+          className='h-10 rounded-sm text-[10px] tracking-[0.12em]'
+        >
+          {t('gameSetup.placement.primaryAction')}
+        </Button>
+      ) : null}
+
+      <Modal
+        isOpen={isGuideModalOpen}
+        title={t('gameSetup.placement.guideTitle')}
+        onClose={() => setGuideModalOpen(false)}
+      >
+        <div className='space-y-2 text-sm text-(--text-muted)'>
+          <p>{t('gameSetup.placement.guideStep1')}</p>
+          <p>{t('gameSetup.placement.guideStep2')}</p>
+          <p>{t('gameSetup.placement.guideStep3')}</p>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isAiGuideModalOpen}
+        title={t('gameSetup.aiDifficulty.guideTitle')}
+        onClose={() => setAiGuideModalOpen(false)}
+      >
+        <div className='space-y-2 text-sm text-(--text-muted)'>
+          <p>{t('gameSetup.aiDifficulty.guideRandom')}</p>
+          <p>{t('gameSetup.aiDifficulty.guideLearning')}</p>
+          <p>{t('gameSetup.aiDifficulty.guideProbability')}</p>
+        </div>
+      </Modal>
     </div>
   );
 }

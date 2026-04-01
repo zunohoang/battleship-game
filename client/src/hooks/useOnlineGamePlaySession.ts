@@ -121,7 +121,6 @@ export function useOnlineGamePlaySession({
   useEffect(() => {
     if (
       !enabled ||
-      !user ||
       !user.id ||
       user.isAnonymous ||
       match?.status !== 'finished' ||
@@ -138,13 +137,13 @@ export function useOnlineGamePlaySession({
 
     void getUserProfile(user.id).then((profile) => {
       setUser((prev) =>
-        prev && !prev.isAnonymous && prev.id === user.id
+        !prev.isAnonymous && prev.id === user.id
           ? { ...prev, elo: profile.elo }
           : prev,
       );
     });
   }, [
-    user?.id,
+    user.id,
     enabled,
     match?.id,
     match?.status,
@@ -182,64 +181,64 @@ export function useOnlineGamePlaySession({
       return fallbackPlacements ?? [];
     }
 
-    if (user?.id === match.player1Id) {
+    if (user.id === match.player1Id) {
       return match.player1Placements ?? [];
     }
 
-    if (user?.id === match.player2Id) {
+    if (user.id === match.player2Id) {
       return match.player2Placements ?? [];
     }
 
     return fallbackPlacements ?? [];
-  }, [user?.id, fallbackPlacements, match]);
+  }, [user.id, fallbackPlacements, match]);
 
   const opponentPlacements = useMemo(() => {
     if (!match) {
       return [];
     }
 
-    if (user?.id === match.player1Id) {
+    if (user.id === match.player1Id) {
       return match.player2Placements ?? [];
     }
 
-    if (user?.id === match.player2Id) {
+    if (user.id === match.player2Id) {
       return match.player1Placements ?? [];
     }
 
     return [];
-  }, [user?.id, match]);
+  }, [user.id, match]);
 
   const ownShots = useMemo<Shot[]>(() => {
     if (!match) {
       return [];
     }
 
-    if (user?.id === match.player1Id) {
+    if (user.id === match.player1Id) {
       return toBattleShots(match.player1Shots);
     }
 
-    if (user?.id === match.player2Id) {
+    if (user.id === match.player2Id) {
       return toBattleShots(match.player2Shots);
     }
 
     return [];
-  }, [user?.id, match]);
+  }, [user.id, match]);
 
   const incomingShots = useMemo<Shot[]>(() => {
     if (!match) {
       return [];
     }
 
-    if (user?.id === match.player1Id) {
+    if (user.id === match.player1Id) {
       return toBattleShots(match.player2Shots);
     }
 
-    if (user?.id === match.player2Id) {
+    if (user.id === match.player2Id) {
       return toBattleShots(match.player1Shots);
     }
 
     return [];
-  }, [user?.id, match]);
+  }, [user.id, match]);
 
   const ownFleetStatus = useMemo(
     () => calculateFleetShipStatuses(ownPlacements, shipsById, incomingShots),
@@ -254,7 +253,7 @@ export function useOnlineGamePlaySession({
     enabled && match?.status === 'finished' ? 'gameover' : 'playing';
   const result: GameResult | null =
     enabled && match?.status === 'finished' && match.winnerId
-      ? match.winnerId === user?.id
+      ? match.winnerId === user.id
         ? 'player_wins'
         : 'bot_wins'
       : null;
@@ -264,7 +263,7 @@ export function useOnlineGamePlaySession({
     !!match &&
     phase === 'playing' &&
     connectionState === 'connected' &&
-    match.turnPlayerId === user?.id;
+    match.turnPlayerId === user.id;
 
   const handlePlayerFire = useCallback(
     (x: number, y: number) => {
@@ -300,12 +299,12 @@ export function useOnlineGamePlaySession({
       (left, right) => left.sequence - right.sequence,
     );
     const finalLogEntry =
-      match.status === 'finished' && match.winnerId && user?.id
+      match.status === 'finished' && match.winnerId && user.id
         ? {
           id: -(match.version ?? history.length + 1),
           timestamp: formatLogTime(match.updatedAt),
           message: t(
-            match.winnerId === user?.id
+            match.winnerId === user.id
               ? 'gameBattle.logEnemyFleetSunk'
               : 'gameBattle.logYourFleetSunk',
           ),
@@ -316,7 +315,7 @@ export function useOnlineGamePlaySession({
     return [
       initialLogEntry,
       ...history.map((shot) => {
-        const isOwnShot = shot.by === user?.id;
+        const isOwnShot = shot.by === user.id;
         const highlight: MissionLogEntry['highlight'] = isOwnShot
           ? shot.isHit
             ? 'friendly'
@@ -342,7 +341,7 @@ export function useOnlineGamePlaySession({
       }),
       ...(finalLogEntry ? [finalLogEntry] : []),
     ];
-  }, [user?.id, initialLogEntry, match, t]);
+  }, [user.id, initialLogEntry, match, t]);
 
   const turnLabel =
     phase === 'gameover'
@@ -449,12 +448,12 @@ export function useOnlineGamePlaySession({
         turnTimerValue,
         turnTimerTone,
         leftContent: {
-          avatarSrc: user?.avatar?.trim() || null,
+          avatarSrc: user.avatar?.trim() || null,
           label: 'COMMANDER',
-          name: user?.username?.trim() || 'Bạn',
-          signature: user?.signature?.trim() || '- - -',
+          name: user.username?.trim() || 'Bạn',
+          signature: user.signature?.trim() || '- - -',
           align: 'left',
-          elo: user?.elo ?? 0,
+          elo: user.elo ?? 0,
         },
         rightContent: {
           avatarSrc: null,
@@ -507,16 +506,16 @@ export function useOnlineGamePlaySession({
     turnLabel,
     turnTimerTone,
     turnTimerValue,
-    user?.avatar,
-    user?.elo,
-    user?.signature,
-    user?.username,
+    user.avatar,
+    user.elo,
+    user.signature,
+    user.username,
   ]);
 
   return {
     room,
     match,
-    currentUserId: user?.id ?? null,
+    currentUserId: user.id ?? null,
     latencyMs,
     chat: {
       messages: chatMessages,

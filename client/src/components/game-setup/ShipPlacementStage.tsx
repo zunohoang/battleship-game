@@ -21,9 +21,10 @@ interface ShipPlacementStageProps {
   boardConfig: BoardConfig;
   ships: ShipDefinition[];
   placements: PlacedShip[];
-  orientation: Orientation;
-  onOrientationChange: (next: Orientation) => void;
   onPlacementsChange: (placements: PlacedShip[]) => void;
+  isOpponentReady: boolean;
+  primaryActionDisabled: boolean;
+  onPrimaryAction?: () => void;
   aiDifficulty?: AiDifficulty;
   onAiDifficultyChange?: (d: AiDifficulty) => void;
 }
@@ -32,9 +33,10 @@ export function ShipPlacementStage({
   boardConfig,
   ships,
   placements,
-  orientation,
-  onOrientationChange,
   onPlacementsChange,
+  isOpponentReady,
+  primaryActionDisabled,
+  onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
 }: ShipPlacementStageProps) {
@@ -42,7 +44,13 @@ export function ShipPlacementStage({
   const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(
     null,
   );
+  const [instanceOrientations, setInstanceOrientations] = useState<Map<string, Orientation>>(
+    new Map(),
+  );
   const [errorText, setErrorText] = useState('');
+
+  const getInstanceOrientation = (key: string): Orientation =>
+    instanceOrientations.get(key) ?? 'horizontal';
 
   const shipsById = useMemo(
     () => new Map(ships.map((ship) => [ship.id, ship])),
@@ -77,16 +85,11 @@ export function ShipPlacementStage({
       return selectedInstanceKey;
     }
 
-    const firstUnplaced = shipInstances.find(
-      (instance) =>
-        !placementsByInstanceKey.has(
-          instanceKey(instance.definitionId, instance.instanceIndex),
-        ),
+    return instanceKey(
+      shipInstances[0].definitionId,
+      shipInstances[0].instanceIndex,
     );
-
-    const fallback = firstUnplaced ?? shipInstances[0];
-    return instanceKey(fallback.definitionId, fallback.instanceIndex);
-  }, [placementsByInstanceKey, selectedInstanceKey, shipInstances]);
+  }, [selectedInstanceKey, shipInstances]);
 
   const selectedInstance = useMemo(() => {
     if (!effectiveSelectedInstanceKey) return null;
@@ -126,12 +129,17 @@ export function ShipPlacementStage({
       shipsById,
     );
 
+    const existingPlacement = placementsByInstanceKey.get(currentKey);
+    const effectiveOrientation = existingPlacement
+      ? existingPlacement.orientation
+      : getInstanceOrientation(currentKey);
+
     const candidate: PlacedShip = {
       definitionId: selectedInstance.definitionId,
       instanceIndex: selectedInstance.instanceIndex,
       x,
       y,
-      orientation,
+      orientation: effectiveOrientation,
     };
 
     if (
@@ -148,21 +156,6 @@ export function ShipPlacementStage({
 
     const nextPlacements = [...placementsWithoutCurrent, candidate];
     onPlacementsChange(nextPlacements);
-
-    const nextUnplaced = shipInstances.find(
-      (instance) =>
-        !nextPlacements.some(
-          (placement) =>
-            placement.definitionId === instance.definitionId &&
-            placement.instanceIndex === instance.instanceIndex,
-        ),
-    );
-
-    if (nextUnplaced) {
-      setSelectedInstanceKey(
-        instanceKey(nextUnplaced.definitionId, nextUnplaced.instanceIndex),
-      );
-    }
   };
 
   const handleRemovePlaced = (definitionId: string, instanceIndex: number) => {
@@ -201,9 +194,35 @@ export function ShipPlacementStage({
   };
 
   const handleRotate = () => {
-    onOrientationChange(
-      orientation === 'horizontal' ? 'vertical' : 'horizontal',
-    );
+    if (!effectiveSelectedInstanceKey) return;
+
+    const placement = placementsByInstanceKey.get(effectiveSelectedInstanceKey);
+
+    if (placement) {
+      // Ship is already placed — rotate it in-place
+      const newOrientation: Orientation =
+        placement.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+      const placementsWithoutCurrent = placements.filter(
+        (p) => instanceKey(p.definitionId, p.instanceIndex) !== effectiveSelectedInstanceKey,
+      );
+      const occupiedWithoutCurrent = buildOccupiedMap(placementsWithoutCurrent, shipsById);
+      const candidate: PlacedShip = { ...placement, orientation: newOrientation };
+
+      if (canPlace(candidate, selectedInstance!.size, boardConfig, occupiedWithoutCurrent)) {
+        setErrorText('');
+        onPlacementsChange([...placementsWithoutCurrent, candidate]);
+      } else {
+        setErrorText(t('gameSetup.placement.cannotPlaceHere'));
+      }
+    } else {
+      // Ship not yet placed — toggle its own pending orientation
+      const current = getInstanceOrientation(effectiveSelectedInstanceKey);
+      setInstanceOrientations((prev) => {
+        const next = new Map(prev);
+        next.set(effectiveSelectedInstanceKey, current === 'horizontal' ? 'vertical' : 'horizontal');
+        return next;
+      });
+    }
   };
 
   const statusText =
@@ -214,7 +233,7 @@ export function ShipPlacementStage({
 
   return (
     <div className='flex flex-col gap-3 sm:h-full sm:min-h-0'>
-      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1.12fr)_26rem]'>
+      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1.12fr)_28rem]'>
         <PlacementBoard
           boardConfig={boardConfig}
           ships={ships}
@@ -229,12 +248,19 @@ export function ShipPlacementStage({
           onSelectInstance={setSelectedInstanceKey}
           onRemovePlaced={handleRemovePlaced}
           onRandomPlace={handleRandomPlace}
+          orientation={
+            effectiveSelectedInstanceKey
+              ? (placementsByInstanceKey.get(effectiveSelectedInstanceKey)?.orientation
+                ?? getInstanceOrientation(effectiveSelectedInstanceKey))
+              : 'horizontal'
+          }
           onRotate={handleRotate}
           onClearBoard={handleClearBoard}
-          boardConfig={boardConfig}
-          orientation={orientation}
+          primaryActionDisabled={primaryActionDisabled}
+          onPrimaryAction={onPrimaryAction}
           placedShipsCount={placedShipsCount}
           totalRequiredShips={totalRequiredShips}
+          isOpponentReady={isOpponentReady}
           statusText={statusText}
           hasError={Boolean(errorText)}
           aiDifficulty={aiDifficulty}
