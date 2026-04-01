@@ -30,7 +30,6 @@ interface ShipPlacementStageProps {
   onAiDifficultyChange?: (d: AiDifficulty) => void;
   botSwitcher?: ReactNode;
   opponentReadyLabel?: string;
-  compact?: boolean;
 }
 
 export function ShipPlacementStage({
@@ -45,7 +44,6 @@ export function ShipPlacementStage({
   onAiDifficultyChange,
   botSwitcher,
   opponentReadyLabel,
-  compact = false,
 }: ShipPlacementStageProps) {
   const { t } = useTranslation();
   const [selectedInstanceKey, setSelectedInstanceKey] = useState<string | null>(
@@ -258,7 +256,7 @@ export function ShipPlacementStage({
 
   return (
     <div className='flex flex-col gap-3 sm:h-full sm:min-h-0'>
-      <div className={`grid gap-3 sm:min-h-0 sm:flex-1 ${compact ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]' : 'lg:grid-cols-[minmax(0,1.12fr)_28rem]'}`}>
+      <div className='grid gap-3 sm:min-h-0 sm:flex-1 lg:grid-cols-[minmax(0,1.12fr)_28rem]'>
         <PlacementBoard
           boardConfig={boardConfig}
           ships={ships}

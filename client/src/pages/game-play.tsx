@@ -103,6 +103,7 @@ export interface GamePlayScreenModel {
     opponentBoardHeatMap?: Map<string, number>;
     plannedOwnBoardShot?: { x: number; y: number } | null;
     plannedOpponentBoardShot?: { x: number; y: number } | null;
+    heatMapSupported?: boolean;
     activeHeatExplanation?: {
       attackerLabel: string;
       targetLabel: string;
@@ -573,16 +574,19 @@ export function GamePlayScreen({
                     ? t('gameBattle.resumeFlow')
                     : t('gameBattle.pauseFlow')}
                 </Button>
-                <Button
-                  onClick={() => setIsHeatMapVisible((current) => !current)}
-                  className={`h-8 px-3 text-[10px] md:w-auto ${
-                    isHeatMapVisible
-                      ? 'border-[rgba(117,235,255,0.7)] text-(--accent-secondary)'
-                      : ''
-                  }`}
-                >
-                  {t('gameBattle.heatMap')}
-                </Button>
+                {battlefield.heatMapSupported ? (
+                  <Button
+                    onClick={() => setIsHeatMapVisible((current) => !current)}
+                    disabled={!battlefield.heatMapSupported}
+                    className={`h-8 px-3 text-[10px] md:w-auto ${
+                      isHeatMapVisible && battlefield.heatMapSupported
+                        ? 'border-[rgba(117,235,255,0.7)] text-(--accent-secondary)'
+                        : ''
+                    }`}
+                  >
+                    {t('gameBattle.heatMap')}
+                  </Button>
+                ) : null}
                 {actions.isBotVBotPaused ? (
                   <Button
                     onClick={actions.onStepBotVBotTurn}
@@ -592,12 +596,14 @@ export function GamePlayScreen({
                     {t('gameBattle.nextShot')}
                   </Button>
                 ) : null}
-                <HeatMapExplainWidget
-                  explanation={battlefield.activeHeatExplanation}
-                  boardConfig={battlefield.boardConfig}
-                  onOpenChange={setHeatExplanationActive}
-                  dimOthers={isHeatExplanationActive}
-                />
+                {battlefield.heatMapSupported ? (
+                  <HeatMapExplainWidget
+                    explanation={battlefield.activeHeatExplanation}
+                    boardConfig={battlefield.boardConfig}
+                    onOpenChange={setHeatExplanationActive}
+                    dimOthers={isHeatExplanationActive}
+                  />
+                ) : null}
               </>
             ) : null}
 
@@ -1060,6 +1066,10 @@ export function GamePlayPage() {
     opponentBoardHeatMap: isBotVBot ? opponentBoardHeatMap : undefined,
     plannedOwnBoardShot: isBotVBot ? plannedOwnBoardShot : undefined,
     plannedOpponentBoardShot: isBotVBot ? plannedOpponentBoardShot : undefined,
+    heatMapSupported: isBotVBot
+      ? localBotVBotSettings?.botA.difficulty === 'probability' ||
+        localBotVBotSettings?.botB.difficulty === 'probability'
+      : undefined,
     activeHeatExplanation,
   };
 
