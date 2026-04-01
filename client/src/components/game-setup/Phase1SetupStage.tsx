@@ -16,7 +16,6 @@ interface Phase1SetupStageProps {
   isConfigValid: boolean;
   canAdjustTurnTimer: boolean;
   continueDisabled: boolean;
-  continueLabel: string;
   onBoardPreset: (rows: number, cols: number) => void;
   onTurnTimerChange: (seconds: number) => void;
   onShipAdd: (ship: ShipDefinition) => void;
@@ -40,7 +39,6 @@ export function Phase1SetupStage({
   isConfigValid,
   canAdjustTurnTimer,
   continueDisabled,
-  continueLabel,
   onBoardPreset,
   onTurnTimerChange,
   onShipAdd,
@@ -424,7 +422,7 @@ export function Phase1SetupStage({
               onClick={onContinue}
               className='h-8 px-4 sm:w-auto'
             >
-              {continueLabel}
+              {t('gameSetup.step1.nextStep')}
             </Button>
           </div>
         </div>

@@ -27,8 +27,7 @@ interface GamePlayTurnStatusProps {
   turnKey: string | number;
   turnLabel: string;
   turnTone: TurnTone;
-  turnTimerValue: string;
-  turnTimerTone?: TurnTimerTone;
+  turnTimerValue?: string;
   className?: string;
 }
 
@@ -51,6 +50,13 @@ function getTurnToneClasses(turnTone: TurnTone) {
       'border-[rgba(117,235,255,0.7)] bg-[rgba(34,211,238,0.12)] text-(--text-main)',
     dot: 'bg-[rgba(34,211,238,0.9)] shadow-[0_0_6px_rgba(34,211,238,0.6)]',
   };
+}
+
+function deriveTurnTimerTone(value: string): TurnTimerTone {
+  if (value === '--:--') return 'muted';
+  const [min = '0', sec = '0'] = value.split(':');
+  const totalSeconds = parseInt(min, 10) * 60 + parseInt(sec, 10);
+  return totalSeconds <= 10 ? 'warning' : 'default';
 }
 
 function getTurnTimerClasses(turnTimerTone: TurnTimerTone) {
@@ -195,7 +201,6 @@ export function GamePlayTurnStatus({
   turnLabel,
   turnTone,
   turnTimerValue,
-  turnTimerTone = 'default',
   className = '',
 }: GamePlayTurnStatusProps) {
   const toneClasses = getTurnToneClasses(turnTone);
@@ -213,13 +218,15 @@ export function GamePlayTurnStatus({
         <span className='font-mono text-sm font-black uppercase tracking-[0.16em]'>
           {turnLabel}
         </span>
-        <span
-          className={`rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-black tracking-[0.18em] sm:py-1 ${getTurnTimerClasses(
-            turnTimerTone,
-          )}`}
-        >
-          {turnTimerValue}
-        </span>
+        {turnTimerValue !== undefined ? (
+          <span
+            className={`rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-black tracking-[0.18em] sm:py-1 ${getTurnTimerClasses(
+              deriveTurnTimerTone(turnTimerValue),
+            )}`}
+          >
+            {turnTimerValue}
+          </span>
+        ) : null}
       </div>
     </motion.div>
   );
@@ -259,7 +266,6 @@ export function GamePlayHeader({
   turnLabel,
   turnTone,
   turnTimerValue,
-  turnTimerTone = 'default',
 }: GamePlayHeaderProps) {
   return (
     <div className='grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center lg:gap-3'>
@@ -273,7 +279,6 @@ export function GamePlayHeader({
           turnLabel={turnLabel}
           turnTone={turnTone}
           turnTimerValue={turnTimerValue}
-          turnTimerTone={turnTimerTone}
         />
       </div>
 

@@ -492,6 +492,7 @@
             "removeTitle": "Remove ship",
             "removeButton": "Remove",
             "resetButton": "Reset to Default",
+            "nextStep": "Next Step",
             "invalidFleetError": "Ships take up too many cells. Reduce sizes/counts or increase the board."
         },
         "step2": {
@@ -725,6 +726,7 @@
         "resumeFlow": "Resume Flow",
         "showHeatMap": "Show Heat Map",
         "hideHeatMap": "Hide Heat Map",
+        "heatMap": "Heat Map",
         "explainHeatMap": "Explain",
         "heatMapExplainTitle": "Heat Map Explanation",
         "heatMapExplainUnsupported": "The current attacker is not using probability mode, so there is no heat-map score formula to explain.",
