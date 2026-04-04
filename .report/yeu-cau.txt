@@ -1,0 +1,58 @@
+0. Khảo sát thực tế:
+• Xác định bài toán (sinh viên tự chọn một đề tài thực tế)
+o Quản lý quán cà phê
+o Quản lý thư viện
+o Quản lý phòng gym
+o Quản lý đặt phòng khách sạn
+o …
+• Khảo sát yêu cầu và viết đặc tả yêu cầu phần mềm (SRS)
+o Tổng quan hệ thống
+o Phạm vi hệ thống
+o Các yêu cầu chức năng và phi chức năng
+1. Hồ sơ Phân tích (Analysis Models)
+• Biểu đồ Use Case: Tổng thể hệ thống. Yêu cầu hệ thống có ít nhất 4 Use Case (UC).
+Ví dụ: Order món, Đặt chỗ (Booking), Thanh toán, Quản lý thành viên.
+• Đặc tả Use Case: Yêu cầu chọn ít nhất 3 UC quan trọng nhất/phức tạp nhất để viết
+đặc tả chi tiết (Luồng chính, luồng phụ, ngoại lệ).
+• Mô hình miền (Domain Model): Biểu đồ lớp ở mức khái niệm (Conceptual Class
+Diagram) để thể hiện các thực thể trong thế giới thực và mối quan hệ giữa chúng. Yêu
+cầu có ít nhất 5 domain class. Ví dụ: Sản phẩm, Đơn hàng, Bàn, Khách hàng, Thẻ thành
+viên.
+• Áp dụng kỹ thuật CRC (Sản phẩm: Thẻ CRC): Xác định trách nhiệm và sự cộng tác
+giữa các lớp.
+2. Hồ sơ Thiết kế (Design Models)
+• Thiết kế kiến trúc BCE: Giải thích cách phân chia các lớp thành Boundary, Control,
+Entity cho các chức năng chính.
+o Boundary: OrderForm, BookingUI.
+o Control: OrderController, BookingController.
+o Entity: Product, Table, Order, Member.
+• Biểu đồ Trình tự (Sequence Diagrams): Xác định hành vi của các đối tượng cho các
+Use Case đã đặc tả ở trên. Yêu cầu: Vẽ cho ít nhất 3 UC và phải thể hiện được sự tương
+tác giữa các đối tượng, không được vẽ theo kiểu lập trình thủ tục (kiểu một lớp làm hết).
+• Biểu đồ Lớp chi tiết (Detailed Class Diagram):
+o Đầy đủ thuộc tính, phương thức, kiểu dữ liệu.
+o Thể hiện rõ các quan hệ: Association, Aggregation, Composition, Inheritance,
+Interface.
+• Biểu đồ Trạng thái (State Machine Diagram): Áp dụng cho ít nhất 1 đối tượng có
+vòng đời phức tạp (ví dụ: Đơn hàng, Chỗ ngồi, Phòng khách sạn).
+• Áp dụng nguyên lý SOLID: Ít nhất là Single Responsibility (Mỗi lớp một trách nhiệm)
+và Encapsulation (Che giấu thông tin tốt).
+3. Sản phẩm cài đặt (Implementation)
+• Mã nguồn (Source Code): Sử dụng một ngôn ngữ hướng đối tượng (Java, C#, C++,
+Python...).
+Tài liệu báo cáo gồm các nội dung chính sau:
+1. Introduction
+2. Problem Description
+3. System Scope
+4. Functional Requirements
+5. Non-Functional Requirements
+6. Use Case Model
+7. Use Case Specification
+8. Domain Model
+9. CRC Cards
+10. BCE Architecture
+11. Sequence Diagrams
+12. Design Class Diagram
+13. State Machine Diagram
+14. Implementation
+15. Conclusion
