@@ -1,0 +1,41 @@
+@startuml State_UC10
+title UC10 — State machine: Thực hiện nước đi (bắn)
+
+skinparam state {
+  BackgroundColor #FDECEA
+  BorderColor #C0392B
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> TrongTran : match.in_progress
+
+state TrongTran : turnPlayerId\nluân phiên
+
+TrongTran --> ChonO : Đến lượt user
+
+ChonO --> Validate : match:move (x,y)
+
+Validate --> ChonO : NOT_YOUR_TURN /\nCELL_ALREADY_SHOT
+
+Validate --> TinhKetQua : Hợp lệ
+
+state TinhKetQua : trúng / trượt / chìm
+
+TinhKetQua --> LuuMove : Lưu MoveEntity
+
+LuuMove --> KiemTraThang : Cập nhật shots
+
+KiemTraThang --> TrongTran : Chưa thắng\n→ đổi lượt
+
+KiemTraThang --> KetThucThang : Tất cả tàu đối thủ chìm\n+ Elo (online)
+
+TrongTran --> TuDongDoiLuot : turnDeadline\nhết hạn
+
+TuDongDoiLuot --> TrongTran : Đổi lượt tự động
+
+KetThucThang --> [*]
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml ST09_SettingsClient
+title ST09 — Trạng thái cài đặt giao diện & âm thanh (client)\nTham chiếu: Mục 8 — Cài đặt Hệ thống (localStorage)
+
+skinparam state {
+  BackgroundColor #F2F3F4
+  BorderColor #95A5A6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> DocCauHinh : Mở app / vào màn Settings
+
+state DocCauHinh : Đọc localStorage\n(hoặc giá trị mặc định)
+
+state SanSang : i18n, theme, nhạc nền, SFX\nđang áp dụng trên UI
+
+DocCauHinh --> SanSang : Load xong
+
+SanSang --> SanSang : Đổi ngôn ngữ / chủ đề /\nâm lượng / mute\n→ ghi localStorage tức thì
+
+note right of SanSang
+  Không có vòng đời server —
+  không đồng bộ API.
+  Mọi UC Settings «include» Lưu cấu hình.
+end note
+
+@enduml

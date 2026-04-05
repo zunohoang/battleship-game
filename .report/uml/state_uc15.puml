@@ -1,0 +1,33 @@
+@startuml State_UC15
+title UC15 — State machine: Chat kênh khán giả
+
+skinparam state {
+  BackgroundColor #FEF9E7
+  BorderColor #E67E22
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> TrongKenh : Đã join\nspectator channel
+
+TrongKenh --> NhapTin : Gõ nội dung
+
+NhapTin --> Validate : spectator:sendMessage
+
+Validate --> NhapTin : Rỗng / quá dài
+
+Validate --> LuuRedis : ChatService\nlist + TTL
+
+LuuRedis --> PhatBroadcast : server:spectatorChatMessage
+
+PhatBroadcast --> TrongKenh : Mọi spectator\nnhận tin
+
+TrongKenh --> XemHistory : spectator:chatHistory\n(optional)
+
+XemHistory --> TrongKenh
+
+TrongKenh --> [*] : Rời kênh UC14
+
+@enduml

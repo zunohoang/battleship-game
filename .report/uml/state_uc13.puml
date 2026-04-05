@@ -1,0 +1,38 @@
+@startuml State_UC13
+title UC13 — State machine: Kết nối lại (reconnect)
+
+skinparam state {
+  BackgroundColor #EAFAF1
+  BorderColor #27AE60
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> MatKetNoi : WebSocket drop /\nreload
+
+MatKetNoi --> KetNoiLaiWS : Client mở lại
+
+KetNoiLaiWS --> GuiReconnect : match:reconnect\n{ roomId, matchId }
+
+GuiReconnect --> LaySnapshot : Server hợp lệ
+
+LaySnapshot --> JoinLaiPhong : RoomSnapshot +\nMatchSnapshot
+
+JoinLaiPhong --> DongBoUI : join room:roomId
+
+DongBoUI --> DangChoiTiep : UI đồng bộ\n(in_progress hoặc finished)
+
+GuiReconnect --> LoiPhong : ROOM_NOT_FOUND /\ntrận đã hủy
+
+LoiPhong --> [*]
+
+DangChoiTiep --> [*]
+
+note bottom of DangChoiTiep
+  Server **không** thêm state mới:
+  trận vẫn chạy trên server
+end note
+
+@enduml

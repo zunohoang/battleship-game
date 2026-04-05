@@ -1,0 +1,26 @@
+@startuml seq_uc16
+title UC16 — Sequence: Bảng xếp hạng Elo
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Guest / User" as U
+participant "Client" as CL
+participant "Leaderboard\nAPI" as LB
+database "PostgreSQL" as DB
+
+U -> CL: Vào /leaderboard
+CL -> LB: **GET** /api/leaderboard?limit=N
+
+LB -> DB: **SELECT** users\nORDER BY elo **DESC**\nLIMIT N
+DB --> LB: rows (username, avatar, elo)
+
+alt Không có ai (rỗng)
+  LB --> CL: **200** []
+else Có dữ liệu
+  LB --> CL: **200** [ ... ]
+end
+
+CL --> U: Hiển thị bảng
+
+@enduml

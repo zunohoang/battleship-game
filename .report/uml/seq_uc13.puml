@@ -1,0 +1,35 @@
+@startuml seq_uc13
+title UC13 — Sequence: Kết nối lại (reconnect)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Player" as P
+participant "Client" as CL
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+P -> CL: Mở lại app / WS reconnect
+CL -> GW: Kết nối Socket.IO\n+ auth (JWT)
+
+CL -> GW: **match:reconnect**\n{ roomId, matchId }
+
+GW -> DB: Load Room + Match\nhiện tại
+DB --> GW: snapshot
+
+alt Phòng đóng / không tồn tại
+  GW --> CL: **ROOM_NOT_FOUND** / lỗi
+else Trận đã kết thúc khi offline
+  GW --> CL: MatchSnapshot\nstatus = **finished**
+else OK — tiếp tục chơi
+  GW --> CL: **RoomSnapshot +\nMatchSnapshot** đầy đủ
+  CL -> GW: **join** room:roomId
+  GW -> CL: Có thể bắn **server:matchUpdated**\ntiếp theo như bình thường
+  CL --> P: Đồng bộ UI (lưới, lượt, timer)
+end
+
+note right of GW
+  Server không tạo state mới:\ntrận vẫn **in_progress** trên DB
+end note
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml seq_settings
+title Sequence bổ sung: Cài đặt giao diện & âm thanh (client)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người chơi" as U
+participant "Client\n(SPA)" as CL
+participant "localStorage" as LS
+
+U -> CL: Mở Settings /\nthay đổi ngôn ngữ, theme,\nnhạc nền, SFX, mute
+
+CL -> CL: Áp dụng ngay lên UI\n(i18n / CSS vars / Audio)
+
+CL -> LS: **setItem**(key, value)\ncho từng preference
+
+LS --> CL: OK
+
+CL --> U: Không cần reload trang
+
+note over CL, LS
+  Không có HTTP request tới server\n(trừ khi sau này đồng bộ cloud —\nngoài phạm vi mục 8 hiện tại)
+end note
+
+@enduml

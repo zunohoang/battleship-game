@@ -1,0 +1,108 @@
+@startuml cd_persistence_entities
+title CD-01 — Tầng lưu trữ: thực thể dữ liệu (CSDL quan hệ)\nThiết kế — báo cáo phân tích
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+package "auth" {
+  class UserEntity <<Entity>> {
+    +id: UUID
+    +email, username: string
+    +passwordHash: string
+    +avatar, signature: string?
+    +elo: int
+    +refreshTokenHash: string?
+    +refreshTokenAbsoluteExpiry: bigint?
+    +createdAt, updatedAt: timestamptz
+  }
+}
+
+package "game" {
+  class RoomEntity <<Entity>> {
+    +id: UUID
+    +code: string(6)
+    +status: waiting|setup|in_game|finished|closed
+    +visibility: public|private
+    +ownerId: UUID
+    +guestId: UUID?
+    +currentMatchId: UUID?
+    +ownerReady, guestReady: bool
+    +expiresAt: timestamptz?
+  }
+
+  class MatchEntity <<Entity>> {
+    +id: UUID
+    +roomId: UUID
+    +status: setup|in_progress|finished
+    +boardConfig, ships: jsonb
+    +player1Id, player2Id: UUID
+    +player1Placements, player2Placements: jsonb?
+    +player1Shots, player2Shots: jsonb
+    +turnPlayerId, winnerId: UUID?
+    +setupDeadlineAt, turnDeadlineAt: timestamptz?
+    +version: int
+    +rematchVotes: jsonb
+    +eloSettled: bool
+  }
+
+  class MoveEntity <<Entity>> {
+    +id: UUID
+    +matchId: UUID
+    +playerId: UUID
+    +x, y: int
+    +isHit: bool
+    +sequence: int
+    +clientMoveId: string
+    +createdAt: timestamptz
+  }
+}
+
+package "forum" {
+  class ForumPostEntity <<Entity>> {
+    +id: UUID
+    +authorId: UUID
+    +title: string
+    +content: text
+    +voteScore, commentCount: int
+    +status: published|archived
+  }
+
+  class ForumCommentEntity <<Entity>> {
+    +id: UUID
+    +postId: UUID
+    +authorId: UUID
+    +content: text
+    +voteScore: int
+  }
+
+  class ForumPostVoteEntity <<Entity>> {
+    +postId: UUID <<PK>>
+    +userId: UUID <<PK>>
+    +value: smallint (±1)
+  }
+
+  class ForumCommentVoteEntity <<Entity>> {
+    +commentId: UUID <<PK>>
+    +userId: UUID <<PK>>
+    +value: smallint (±1)
+  }
+}
+
+UserEntity "1" <-- "n" RoomEntity : ownerId\n<<FK logic>>
+UserEntity "1" <-- "0..1" RoomEntity : guestId\n<<FK logic>>
+RoomEntity "1" *-- "n" MatchEntity : roomId\n<<FK logic>>
+MatchEntity "1" *-- "n" MoveEntity : matchId\n<<FK logic>>
+UserEntity "1" <-- "n" ForumPostEntity : authorId
+UserEntity "1" <-- "n" ForumCommentEntity : authorId
+ForumPostEntity "1" *-- "n" ForumCommentEntity : postId
+ForumPostEntity "1" *-- "n" ForumPostVoteEntity : postId
+UserEntity "1" *-- "n" ForumPostVoteEntity : userId
+ForumCommentEntity "1" *-- "n" ForumCommentVoteEntity : commentId
+UserEntity "1" *-- "n" ForumCommentVoteEntity : userId
+
+note bottom of MatchEntity
+  Thiết kế: quan hệ thể hiện chủ yếu qua\ncột định danh (UUID) + truy vấn.
+end note
+
+@enduml

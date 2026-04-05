@@ -1,0 +1,38 @@
+@startuml State_UC04
+title UC04 — State machine: Đăng xuất
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> DaDangNhap : Đang có phiên
+
+state DaDangNhap : Access + refresh cookie
+
+DaDangNhap --> NhanLogout : Nhấn Đăng xuất
+
+NhanLogout --> GoiAPI : POST /api/auth/logout
+
+GoiAPI --> DocCookie : Server nhận request
+
+DocCookie --> VoHieuRefresh : refreshTokenHash := null\n(kể cả không có cookie)
+
+VoHieuRefresh --> XoaCookie : Xóa HTTP-only cookie
+
+XoaCookie --> XoaAccessClient : Client xóa access\nkhỏi memory
+
+XoaAccessClient --> Khach : Phiên kết thúc
+
+Khach --> [*]
+
+note right of VoHieuRefresh
+  Ngoại lệ: không có refresh
+  vẫn 200 + xóa cookie
+end note
+
+@enduml

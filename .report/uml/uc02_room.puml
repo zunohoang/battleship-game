@@ -1,0 +1,51 @@
+@startuml UC-06-RoomLifecycle
+title Bieu do Use Case - Quan ly Phong Choi (Room Lifecycle)
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #27AE60
+skinparam usecaseBackgroundColor #EAFAF1
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Chu phong (Owner)"   as Owner
+actor "Nguoi vao (Guest)"   as GuestP
+actor "He thong (Timer)"    as SYS
+
+rectangle "Online Room System" {
+
+    usecase "Tao phong\n(public / private)"    as UC1
+    usecase "Xem danh sach phong mo"           as UC2
+    usecase "Tham gia phong\n(ID hoac code)"   as UC3
+    usecase "Danh dau san sang\n(Mark Ready)"  as UC4
+    usecase "Bat dau tran\n(Start Room)"       as UC5
+    usecase "Dong phong\n(Close Room)"         as UC6
+    usecase "Phong tu dong het han"            as UC7
+    usecase "Chat trong phong"                 as UC8
+    usecase "Ket noi lai vao phong"            as UC9
+
+    UC3 .> UC2   : <<include>>
+    UC5 .> UC4   : <<include>>
+    UC7 .> UC6   : <<extend>>
+    UC8 .> UC3   : <<extend>>
+}
+
+Owner  --> UC1
+Owner  --> UC4
+Owner  --> UC5
+Owner  --> UC6
+Owner  --> UC8
+Owner  --> UC9
+
+GuestP --> UC2
+GuestP --> UC3
+GuestP --> UC4
+GuestP --> UC8
+GuestP --> UC9
+
+SYS    --> UC7
+
+@enduml

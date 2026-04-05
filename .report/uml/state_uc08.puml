@@ -1,0 +1,31 @@
+@startuml State_UC08
+title UC08 — State machine: Tham gia phòng chơi
+
+skinparam state {
+  BackgroundColor #EAFAF1
+  BorderColor #27AE60
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> TimPhong : Danh sách /\nnhập mã 6 ký tự
+
+TimPhong --> GuiJoin : room:join
+
+GuiJoin --> KiemTraSlot : Server nhận
+
+KiemTraSlot --> TimPhong : ROOM_FULL /\nROOM_NOT_FOUND
+
+KiemTraSlot --> GanGuest : Slot OK,\nstatus = waiting
+
+state GanGuest : guestId := userId
+
+GanGuest --> PhatCapNhat : UPDATE RoomEntity
+
+PhatCapNhat --> TrongPhong : server:roomUpdated\ncả phòng
+
+TrongPhong --> [*] : Chờ UC09
+
+@enduml

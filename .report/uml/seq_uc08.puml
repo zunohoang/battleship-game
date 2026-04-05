@@ -1,0 +1,31 @@
+@startuml seq_uc08
+title UC08 — Sequence: Tham gia phòng
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Guest" as G
+participant "Client" as CL
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+G -> CL: Nhập mã / chọn từ danh sách
+CL -> GW: **emit** room:join\n{ code hoặc roomId }
+
+GW -> DB: Load RoomEntity\n+ kiểm tra waiting + guest trống
+
+alt ROOM_NOT_FOUND
+  GW --> CL: ack lỗi
+  CL --> G: Không tìm thấy phòng
+else ROOM_FULL
+  GW --> CL: ack lỗi
+  CL --> G: Phòng đầy
+else Thành công
+  GW -> DB: UPDATE guestId
+  DB --> GW: OK
+  GW -> CL: **server:roomUpdated**\n(tới cả Owner + Guest)
+  note over GW, CL: Cả hai client đều nhận
+  CL --> G: Vào phòng, chờ cấu hình
+end
+
+@enduml

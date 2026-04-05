@@ -1,0 +1,49 @@
+@startuml UC-08-Community
+title Bieu do Use Case - Xep hang & Cong dong
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #2C7BB6
+skinparam usecaseBackgroundColor #EEF6FF
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Khach vang lai (Guest)" as Guest
+actor "Nguoi dung (User)"      as User
+
+rectangle "Community & Ranking System" {
+
+    package "Xep hang" {
+        usecase "Xem bang xep hang Elo\n(cong khai)" as UC16
+        usecase "Xem lich su tran dau\n(ca nhan)"    as UC17
+    }
+
+    package "Dien dan" {
+        usecase "Xem bai viet\n& binh luan"           as UC_READ
+        usecase "Dang bai viet moi"                   as UC18a
+        usecase "Binh luan duoi bai"                  as UC18b
+        usecase "Chinh sua / Xoa\nbai cua minh"        as UC18c
+        usecase "Upvote / Downvote"                   as UC19
+    }
+
+    UC19 .> UC_READ  : <<include>>
+    UC18a .> UC_READ : <<extend>>
+    UC18b .> UC_READ : <<extend>>
+    UC18c .> UC_READ : <<extend>>
+}
+
+Guest --> UC16
+Guest --> UC_READ
+
+User  --> UC16
+User  --> UC17
+User  --> UC_READ
+User  --> UC18a
+User  --> UC18b
+User  --> UC18c
+User  --> UC19
+
+@enduml

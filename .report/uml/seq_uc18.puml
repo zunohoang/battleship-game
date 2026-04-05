@@ -1,0 +1,50 @@
+@startuml seq_uc18
+title UC18 — Sequence: Diễn đàn — đăng bài / bình luận / sửa / archive
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "User" as U
+participant "Client" as CL
+participant "Forum API" as F
+database "PostgreSQL" as DB
+
+U -> CL: Soạn bài hoặc comment +\nSubmit
+
+alt Tạo bài mới
+  CL -> F: **POST** /api/forum/posts\n{ title, body }
+else Tạo comment
+  CL -> F: **POST** /api/forum/posts/:postId/comments\n{ body }
+end
+
+F -> F: **Sanitize** (XSS)
+F -> F: JwtAuthGuard
+
+alt Nội dung rỗng / invalid
+  F --> CL: **400**
+else Comment vào bài archived
+  F --> CL: **400** BadRequest
+else Thành công tạo mới
+  F -> DB: INSERT post/comment\nstatus = published
+  DB --> F: id
+  F --> CL: **201** DTO
+  CL --> U: Hiển thị trên UI
+end
+
+U -> CL: Sửa bài của mình
+CL -> F: **PATCH** /api/forum/posts/:id
+F -> DB: Kiểm tra authorId
+alt Không phải tác giả
+  F --> CL: **403** Forbidden
+else OK
+  F -> F: Sanitize
+  F -> DB: UPDATE
+  F --> CL: **200**
+end
+
+U -> CL: Xóa (archive) bài
+CL -> F: **DELETE** /api/forum/posts/:id
+F -> DB: soft delete → **archived**
+F --> CL: **200** / **204**
+
+@enduml

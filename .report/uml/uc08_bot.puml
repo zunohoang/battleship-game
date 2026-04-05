@@ -1,0 +1,47 @@
+@startuml UC-05-BotGameplay
+title Bieu do Use Case - Choi voi Bot (Offline Mode)
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #E67E22
+skinparam usecaseBackgroundColor #FEF9E7
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Nguoi choi" as Player
+actor "Bot AI"     as Bot
+
+rectangle "Bot Gameplay System (Client only)" {
+
+    usecase "Chon muc do bot\n(Easy / Hard)"       as UC1
+    usecase "Bat dau tran offline"                 as UC2
+    usecase "Xep tau (bot-setup)"                  as UC3
+    usecase "Thuc hien nuoc ban\nvao bot"          as UC4
+    usecase "Bot tu dong ban lai\n(Hunt & Target)" as UC5
+    usecase "Xem trang thai ham doi"               as UC6
+    usecase "Xem log cac lan ban"                  as UC7
+    usecase "Choi lai (Restart)"                   as UC8
+
+    UC2 .> UC1  : <<include>>
+    UC3 .> UC2  : <<include>>
+    UC4 .> UC3  : <<include>>
+    UC5 .> UC4  : <<include>>
+    UC6 .> UC4  : <<extend>>
+    UC7 .> UC4  : <<extend>>
+    UC8 .> UC2  : <<extend>>
+}
+
+Player --> UC1
+Player --> UC2
+Player --> UC3
+Player --> UC4
+Player --> UC6
+Player --> UC7
+Player --> UC8
+
+Bot    --> UC5
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml seq_uc09
+title UC09 — Sequence: Xếp tàu & bắt đầu trận
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Owner" as O
+actor "Guest" as G
+participant "Client O" as CLO
+participant "Client G" as CLG
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+O -> CLO: Cấu hình bảng + Bắt đầu setup
+CLO -> GW: **room:configureSetup**\n{ board options }
+GW -> DB: **INSERT** MatchEntity\nstatus = **setup**
+DB --> GW: matchId
+GW -> CLO: server:roomUpdated /\nserver:matchUpdated
+GW -> CLG: (broadcast)
+
+par Mỗi player xếp tàu
+  O -> CLO: Kéo thả / random
+  G -> CLG: Kéo thả / random
+end
+
+O -> CLO: Xác nhận ready + placements
+CLO -> GW: **room:ready**\n{ placements }
+G -> CLG: Xác nhận ready
+CLG -> GW: **room:ready**\n{ placements }
+
+GW -> GW: Validate placement\n(không chồng, trong bảng)
+
+alt Placement sai
+  GW --> CLO: **400** / lỗi socket
+  GW --> CLG: tương tự
+else Hết giờ setupDeadlineAt
+  GW -> GW: Xử lý timeout\n(người chưa ready thua)
+  GW -> DB: UPDATE match finished
+else Cả hai ready hợp lệ
+  GW -> DB: Lưu placements,\nstatus = **in_progress**,\nset turnPlayerId
+  DB --> GW: OK
+  GW -> CLO: **server:matchUpdated**
+  GW -> CLG: **server:matchUpdated**
+end
+
+@enduml

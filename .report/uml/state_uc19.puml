@@ -1,0 +1,41 @@
+@startuml State_UC19
+title UC19 — State machine: Bình chọn (vote) post/comment
+
+skinparam state {
+  BackgroundColor #F4ECF7
+  BorderColor #7D3C98
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChuaVote : User chưa vote\nhoặc đã hủy
+
+state ChuaVote
+
+state DaUpvote : value = +1
+
+state DaDownvote : value = -1
+
+ChuaVote --> DaUpvote : POST +1
+
+ChuaVote --> DaDownvote : POST -1
+
+DaUpvote --> ChuaVote : POST +1 lại\n(hủy vote)
+
+DaDownvote --> ChuaVote : POST -1 lại\n(hủy vote)
+
+DaUpvote --> DaDownvote : POST -1\n(đổi chiều)
+
+DaDownvote --> DaUpvote : POST +1\n(đổi chiều)
+
+ChuaVote --> Loi : NotFound /\nkhông published
+
+Loi --> [*]
+
+note bottom of ChuaVote
+  Mỗi lần chuyển: upsert\nVoteEntity + voteScore
+end note
+
+@enduml

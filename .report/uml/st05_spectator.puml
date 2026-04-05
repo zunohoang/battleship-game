@@ -1,0 +1,36 @@
+@startuml ST05_SpectatorConnection
+title ST05 — Kết nối khán giả (Spectator)\nTham chiếu: UC14, UC15
+
+skinparam state {
+  BackgroundColor #FEF9E7
+  BorderColor #E67E22
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> NgoaiPhong : Đã đăng nhập,\nchưa spectate
+
+state NgoaiPhong
+
+state DangXem : Join room:roomId:spectators\n+ nhận snapshot ẩn tàu
+
+state RoiKenh : Đã spectateLeave\nhoặc đóng trang
+
+NgoaiPhong --> DangXem : UC14 match:spectateJoin\n+ snapshot hợp lệ
+
+NgoaiPhong --> NgoaiPhong : UC14 phòng không tồn tại /\nchưa in_game → lỗi
+
+DangXem --> DangXem : UC15 gửi / nhận chat\nspectator channel
+
+DangXem --> RoiKenh : spectateLeave /\nmatch kết thúc (UI rời)
+
+RoiKenh --> [*]
+
+note right of DangXem
+  Chỉ thấy kết quả bắn,
+  không thấy vị trí tàu
+end note
+
+@enduml

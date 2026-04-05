@@ -1,0 +1,31 @@
+@startuml State_UC12
+title UC12 — State machine: Tái đấu (rematch vote)
+
+skinparam state {
+  BackgroundColor #FDECEA
+  BorderColor #C0392B
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> TranKetThuc : match.finished
+
+TranKetThuc --> ChoPhieu : rematchVote\naccept true/false
+
+state ChoPhieu : Ghi nhận từng\nplayer
+
+ChoPhieu --> TuChoi : Một người false\n/ rời phòng
+
+TuChoi --> DongPhong : Đóng phòng
+
+DongPhong --> [*]
+
+ChoPhieu --> CaHaiDongY : Cả hai true
+
+CaHaiDongY --> TaoMatchMoi : MatchEntity mới\ntrong cùng room
+
+TaoMatchMoi --> [*] : Sang UC09\n(setup lại)
+
+@enduml

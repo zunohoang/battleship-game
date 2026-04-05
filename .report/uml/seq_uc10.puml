@@ -1,0 +1,44 @@
+@startuml seq_uc10
+title UC10 — Sequence: Thực hiện nước đi (bắn)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Player A" as PA
+actor "Player B" as PB
+participant "Client A" as CA
+participant "Client B" as CB
+participant "Game\nGateway" as GW
+participant "Elo\nService" as ELO
+database "PostgreSQL" as DB
+
+PA -> CA: Chọn ô (x,y) + Bắn
+CA -> GW: **match:move**\n{ x, y }
+
+GW -> GW: Kiểm tra lượt + ô chưa bắn
+
+alt NOT_YOUR_TURN / CELL_ALREADY_SHOT
+  GW --> CA: Lỗi / reject
+else Hợp lệ
+  GW -> DB: **INSERT** MoveEntity,\ncập nhật shots, kết quả ô
+  DB --> GW: hit/miss/sunk
+  GW -> GW: Kiểm tra thắng\n(tất cả tàu đối thủ chìm?)
+
+  alt Chưa thắng
+    GW -> DB: Đổi turnPlayerId
+    GW -> CA: **server:matchUpdated**
+    GW -> CB: **server:matchUpdated**
+  else Thắng
+    GW -> DB: match status = finished,\nwinnerId
+    GW -> ELO: **settleMatchElo()**
+    ELO -> DB: Cập nhật Elo hai bên
+    GW -> CA: **server:matchUpdated**
+    GW -> CB: **server:matchUpdated**
+  end
+end
+
+note over GW
+  Timer: hết turnDeadline\n→ tự đổi lượt (cùng luồng validate)
+end note
+
+@enduml

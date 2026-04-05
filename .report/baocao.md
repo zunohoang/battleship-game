@@ -291,67 +291,103 @@ Hệ thống xác định **13 Use Case** phân bổ cho ba Actor:
 
 ### 6.2. Biểu đồ Use Case — Nhóm Xác thực
 
-```
-+-----------------------------------------------------------+
-|                    <<system>>                              |
-|                Hệ thống Battleship Online                  |
-|                                                            |
-|   [UC01: Đăng ký tài khoản]                               |
-|   [UC02: Đăng nhập         ]                               |
-|   [UC03: Làm mới token     ]  <<include>> UC02             |
-|   [UC04: Đăng xuất         ]                               |
-|   [UC05: Đổi mật khẩu      ]  <<extend>>  UC09             |
-|   [UC06: Cập nhật hồ sơ    ]  <<extend>>  UC09             |
-+-----------------------------------------------------------+
-         |                          |
-   [Guest Actor]           [Registered User Actor]
+```mermaid
+graph LR
+    Guest(["👤 Guest"])
+    User(["👤 Registered User"])
+
+    subgraph sys["Hệ thống Battleship Online — Module Xác thực"]
+        UC01(["UC01\nĐăng ký tài khoản"])
+        UC02(["UC02\nĐăng nhập"])
+        UC03(["UC03\nLàm mới token"])
+        UC04(["UC04\nĐăng xuất"])
+        UC05(["UC05\nĐổi mật khẩu"])
+        UC06(["UC06\nCập nhật hồ sơ"])
+
+        UC03 -. "«extend»" .-> UC02
+    end
+
+    Guest --> UC01
+    Guest --> UC02
+    User  --> UC02
+    User  --> UC03
+    User  --> UC04
+    User  --> UC05
+    User  --> UC06
 ```
 
 **Quan hệ giữa các Use Case:**
-- `UC02 Đăng nhập` là **tiên quyết** cho mọi UC yêu cầu xác thực.
-- `UC03 Làm mới token` là mở rộng (`<<extend>>`) tự động của `UC02`, xảy ra khi access token hết hạn.
+- `UC02 Đăng nhập` là tiên quyết cho mọi UC yêu cầu xác thực.
+- `UC03 Làm mới token` là mở rộng (`«extend»`) tự động của `UC02`, xảy ra khi access token hết hạn.
 
 ### 6.3. Biểu đồ Use Case — Nhóm Game
 
-```
-+---------------------------------------------------------------+
-|                    <<system>>                                  |
-|              Module Quản lý Phòng và Trận đấu                  |
-|                                                                |
-|  [UC03: Tạo/Tham gia Phòng]                                   |
-|  [UC04: Xếp tàu & Bắt đầu]  <<include>> UC03                  |
-|  [UC05: Thực hiện nước đi ]  <<include>> UC04                  |
-|  [UC06: Đầu hàng / Tái đấu]  <<extend>> UC05                  |
-|  [UC07: Xem trận (Spectate)]                                   |
-|  [UC08: Chat trong phòng  ]  <<extend>> UC03, UC07             |
-+---------------------------------------------------------------+
-         |                    |                    |
-   [User Actor]        [Spectator Actor]    [System (Timer)]
+```mermaid
+graph LR
+    User(["👤 Registered User"])
+    Spectator(["👁 Spectator"])
+    System(["⚙ System\n(Timer)"])
+
+    subgraph sys["Hệ thống Battleship Online — Module Game"]
+        UC07(["UC07\nTạo / Tham gia\nPhòng chơi"])
+        UC08(["UC08\nXếp tàu &\nBắt đầu trận"])
+        UC09(["UC09\nThực hiện\nnước đi (Bắn)"])
+        UC10(["UC10\nĐầu hàng /\nTái đấu"])
+        UC11(["UC11\nXem trận\n(Spectate)"])
+        UC12(["UC12\nChat trong\nphòng"])
+
+        UC08 -- "«include»" --> UC07
+        UC09 -- "«include»" --> UC08
+        UC10 -. "«extend»" .-> UC09
+        UC12 -. "«extend»" .-> UC07
+        UC12 -. "«extend»" .-> UC11
+    end
+
+    User      --> UC07
+    User      --> UC08
+    User      --> UC09
+    User      --> UC10
+    User      --> UC12
+    Spectator --> UC11
+    Spectator --> UC12
+    System    --> UC09
+    System    --> UC08
 ```
 
 **Ghi chú quan hệ:**
-- `UC04` `<<include>>` `UC03`: không thể xếp tàu nếu chưa ở trong phòng.
-- `UC05` `<<include>>` `UC04`: không thể bắn nếu chưa xếp tàu xong.
-- `UC06` `<<extend>>` `UC05`: đầu hàng hoặc tái đấu là hành vi tùy chọn sau khi trận diễn ra.
-- Timer (Actor hệ thống): kích hoạt hành động hết giờ ở `UC04` và `UC05`.
+- `UC08` `«include»` `UC07`: không thể xếp tàu nếu chưa ở trong phòng.
+- `UC09` `«include»` `UC08`: không thể bắn nếu chưa xếp tàu xong.
+- `UC10` `«extend»` `UC09`: đầu hàng hoặc tái đấu là hành vi tùy chọn sau khi trận diễn ra.
+- System Actor kích hoạt hành động hết giờ tại `UC08` (xếp tàu) và `UC09` (lượt bắn).
 
 ### 6.4. Biểu đồ Use Case — Nhóm Cộng đồng
 
+```mermaid
+graph LR
+    Guest(["👤 Guest"])
+    User(["👤 Registered User"])
+
+    subgraph sys["Hệ thống Battleship Online — Module Cộng đồng"]
+        UC13(["UC13\nXem & cập nhật\nhồ sơ cá nhân"])
+        UC14(["UC14\nXem bảng\nxếp hạng Elo"])
+        UC15(["UC15\nĐăng bài &\nBình luận"])
+        UC16(["UC16\nBình chọn\nbài / bình luận"])
+        UC17(["UC17\nXem lịch sử\ntrận đấu"])
+
+        UC16 -- "«include»" --> UC15
+    end
+
+    Guest --> UC14
+    User  --> UC13
+    User  --> UC14
+    User  --> UC15
+    User  --> UC16
+    User  --> UC17
 ```
-+---------------------------------------------------------------+
-|                    <<system>>                                  |
-|           Module Cộng đồng & Thông tin                         |
-|                                                                |
-|  [UC09: Xem/Cập nhật hồ sơ  ]                                 |
-|  [UC10: Xem bảng xếp hạng   ]                                 |
-|  [UC11: Đăng bài/Bình luận  ]                                 |
-|  [UC12: Bình chọn nội dung  ]  <<include>> UC11               |
-|  [UC13: Xem lịch sử trận đấu]                                 |
-+---------------------------------------------------------------+
-         |                          |
-   [Guest Actor]           [Registered User Actor]
-   (chỉ UC10)              (tất cả UC09–UC13)
-```
+
+**Ghi chú quan hệ:**
+- `UC16 Bình chọn` `«include»` `UC15`: người dùng phải xem bài viết/bình luận trước khi có thể bình chọn.
+- Guest chỉ truy cập `UC14` (bảng xếp hạng) — toàn bộ UC còn lại yêu cầu đăng nhập.
 
 ---
 

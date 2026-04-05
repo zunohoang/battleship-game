@@ -1,0 +1,40 @@
+@startuml ST01_RoomLifecycle
+title ST01 — Vòng đời phòng (RoomEntity)\nTham chiếu: UC07, UC08, UC09, UC12, đóng phòng
+
+skinparam state {
+  BackgroundColor #EAFAF1
+  BorderColor #27AE60
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChoNguoiChoi : UC07 room:create\n(status=waiting)
+
+state ChoNguoiChoi : Chỉ có Owner hoặc\nchờ Guest tham gia
+state ChoCauHinh : Đủ 2 người,\nchờ Owner cấu hình bảng
+state GiaiDoanXepTau : MatchEntity\nstatus = setup
+state DangDau : MatchEntity\nstatus = in_progress
+state SauTran : MatchEntity\nstatus = finished\n(chờ rematch vote)
+
+ChoNguoiChoi --> ChoCauHinh : UC08 room:join\n(guestId được gán)
+ChoNguoiChoi --> DongPhong : Owner đóng /\nphòng hết hạn (timer)
+
+ChoCauHinh --> GiaiDoanXepTau : UC09 room:configureSetup\n(tạo Match setup)
+
+GiaiDoanXepTau --> DangDau : UC09 cả hai room:ready\nhợp lệ
+GiaiDoanXepTau --> SauTran : UC09 hết giờ xếp tàu\n(setupDeadlineAt)
+
+DangDau --> SauTran : UC10 thắng (chìm hết tàu)\n/ UC11 match:forfeit
+
+SauTran --> GiaiDoanXepTau : UC12 cả hai accept rematch\n(Match mới, setup)
+SauTran --> DongPhong : UC12 có người từ chối\n/ rời phòng coi như từ chối
+
+DongPhong --> [*]
+
+note right of ChoNguoiChoi
+  Ngoại lệ: USER_ALREADY_IN_ACTIVE_ROOM
+end note
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml State_UC03
+title UC03 — State machine: Làm mới token (interceptor + AuthService)
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChoRequestGoc : Đang gọi API\nvới access token
+
+ChoRequestGoc --> BatLoi401 : HTTP 401\n(access hết hạn)
+
+BatLoi401 --> GoiRefresh : POST /api/auth/refresh
+
+GoiRefresh --> DocCookie : Đọc cookie
+
+DocCookie --> XacMinhRefresh : Có / không cookie
+
+XacMinhRefresh --> BuocPhaiDangXuat : Token invalid /\nhết hạn tuyệt đối /\nreplay
+
+BuocPhaiDangXuat --> [*] : Force logout\n(UC04)
+
+XacMinhRefresh --> XoayVongToken : Xác minh OK
+
+state XoayVongToken : Rotate refresh
+
+XoayVongToken --> RetryRequest : Access mới +\ncập nhật cookie
+
+RetryRequest --> ChoRequestGoc : Gọi lại request gốc
+
+note right of BuocPhaiDangXuat
+  Spec diagram.md:
+  refresh thất bại
+end note
+
+@enduml

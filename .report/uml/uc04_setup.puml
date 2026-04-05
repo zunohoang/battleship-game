@@ -1,0 +1,53 @@
+@startuml UC-04-GameSetup
+title Bieu do Use Case - Xep tau & Cau hinh (Setup & Placement)
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #8E44AD
+skinparam usecaseBackgroundColor #F5EEF8
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Chu phong (Owner)"   as Owner
+actor "Nguoi choi (Player)" as Player
+actor "He thong (Timer)"    as SYS
+
+rectangle "Game Setup & Placement System" {
+
+    usecase "Cau hinh bang\n(kich thuoc, so tau, timer)"   as UC1
+    usecase "Chon preset bang mac dinh"                     as UC1b
+    usecase "Xep tau thu cong\n(keo tha)"                  as UC2
+    usecase "Xep tau ngau nhien\n(auto-random)"            as UC3
+    usecase "Xoay tau\n(ngang / doc)"                      as UC4
+    usecase "Dat lai toan bo\n(Reset board)"               as UC5
+    usecase "Xac nhan san sang\n(room:ready)"              as UC6
+    usecase "Het thoi gian xep tau\n(Setup Timeout)"       as UC7
+
+    UC1b .> UC1 : <<extend>>
+    UC2  .> UC6 : <<include>>
+    UC3  .> UC6 : <<include>>
+    UC4  .> UC2 : <<include>>
+    UC5  .> UC2 : <<extend>>
+    UC7  .> UC6 : <<extend>>
+}
+
+Owner  --> UC1
+Owner  --> UC1b
+Owner  --> UC2
+Owner  --> UC3
+Owner  --> UC4
+Owner  --> UC5
+Owner  --> UC6
+
+Player --> UC2
+Player --> UC3
+Player --> UC4
+Player --> UC5
+Player --> UC6
+
+SYS    --> UC7
+
+@enduml

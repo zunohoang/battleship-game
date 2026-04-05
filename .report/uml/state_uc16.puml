@@ -1,0 +1,37 @@
+@startuml State_UC16
+title UC16 — State machine: Xem bảng xếp hạng Elo
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> TrangLeaderboard : Vào /leaderboard
+
+TrangLeaderboard --> DangTai : GET /api/leaderboard?limit=N
+
+state DangTai : Đang query
+
+DangTai --> LoiMang : Lỗi mạng /\n5xx (ngoài spec,\nUI xử lý)
+
+LoiMang --> TrangLeaderboard : Retry
+
+DangTai --> CoDuLieu : 200 + JSON
+
+CoDuLieu --> HienThiBang : ORDER BY elo DESC
+
+state HienThiBang : Render danh sách\n(username, avatar, elo)
+
+HienThiBang --> TrangLeaderboard : Đổi limit /\nrefresh
+
+HienThiBang --> [*] : Rời trang
+
+note right of CoDuLieu
+  Mảng rỗng: vẫn state\nHiển thị bảng (empty)
+end note
+
+@enduml

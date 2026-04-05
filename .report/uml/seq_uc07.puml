@@ -1,0 +1,30 @@
+@startuml seq_uc07
+title UC07 — Sequence: Tạo phòng (Socket.IO)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Owner" as O
+participant "Client" as CL
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+O -> CL: Chọn public/private +\nTạo phòng
+CL -> GW: **emit** room:create\n{ visibility }
+
+GW -> GW: Kiểm tra USER_ALREADY_IN_ACTIVE_ROOM
+
+alt Đang ở phòng khác
+  GW --> CL: **ack** lỗi + roomId cũ
+  CL --> O: Gợi ý quay lại phòng cũ
+else OK
+  GW -> GW: Sinh mã 6 ký tự duy nhất
+  GW -> DB: **INSERT** RoomEntity\nstatus=waiting, ownerId
+  DB --> GW: roomId
+  GW --> CL: **ack** { roomId, code, ... }
+  CL -> GW: **join** socket room:roomId
+  GW -> CL: **server:roomUpdated**
+  CL --> O: Hiển thị phòng, chờ khách
+end
+
+@enduml

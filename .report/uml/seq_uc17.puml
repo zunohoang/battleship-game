@@ -1,0 +1,29 @@
+@startuml seq_uc17
+title UC17 — Sequence: Lịch sử trận đấu cá nhân
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "User" as U
+participant "Client" as CL
+participant "Game History\nAPI" as GH
+database "PostgreSQL" as DB
+
+U -> CL: Mở modal lịch sử
+CL -> GH: **GET** /api/game/matches/history?limit=N\nAuthorization: Bearer
+
+GH -> GH: JwtAuthGuard → userId
+GH -> DB: Query MatchEntity\nWHERE player1Id = :uid\nOR player2Id = :uid\nORDER BY endedAt DESC
+DB --> GH: matches[]
+
+GH -> GH: Tính stats\n(shots, accuracy, elo delta)
+
+alt Chưa có trận
+  GH --> CL: **200** []
+else Có dữ liệu
+  GH --> CL: **200** DTO + stats
+end
+
+CL --> U: Danh sách + phân trang
+
+@enduml

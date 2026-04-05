@@ -1,0 +1,31 @@
+@startuml State_UC11
+title UC11 — State machine: Đầu hàng (forfeit)
+
+skinparam state {
+  BackgroundColor #FDECEA
+  BorderColor #C0392B
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> DangDau : in_progress
+
+DangDau --> NhanForfeit : match:forfeit
+
+NhanForfeit --> BoQua : Đã finished\n(trận kết thúc rồi)
+
+BoQua --> [*]
+
+NhanForfeit --> SetWinner : winnerId := đối thủ
+
+SetWinner --> Finished : status = finished
+
+Finished --> SettleElo : settleMatchElo()
+
+SettleElo --> PhatSuKien : server:matchUpdated
+
+PhatSuKien --> [*]
+
+@enduml

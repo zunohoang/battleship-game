@@ -1,0 +1,33 @@
+@startuml State_UC07
+title UC07 — State machine: Tạo phòng chơi
+
+skinparam state {
+  BackgroundColor #EAFAF1
+  BorderColor #27AE60
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChonCheDo : Nhấn Tạo phòng
+
+ChonCheDo --> KiemTraPhongCu : public / private
+
+KiemTraPhongCu --> BaoLoiPhongCu : USER_ALREADY_IN_ACTIVE_ROOM
+
+BaoLoiPhongCu --> [*] : Hiện roomId cũ\n(ngoại lệ)
+
+KiemTraPhongCu --> SinhMa : Không còn phòng active
+
+state SinhMa : Mã 6 ký tự\nduy nhất
+
+SinhMa --> LuuRoom : INSERT RoomEntity\nstatus = waiting
+
+LuuRoom --> JoinSocket : room:create OK
+
+JoinSocket --> ChoDoiKhach : join room:roomId +\nserver:roomUpdated
+
+ChoDoiKhach --> [*] : Chờ UC08
+
+@enduml

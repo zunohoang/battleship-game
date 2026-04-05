@@ -1,0 +1,40 @@
+@startuml ST08_ForumVoteUser
+title ST08 — Trạng thái bình chọn của user trên một bài / comment\nTham chiếu: UC19
+
+skinparam state {
+  BackgroundColor #F4ECF7
+  BorderColor #7D3C98
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+' Trạng thái theo bản ghi vote hiện tại của user (post hoặc comment)
+
+[*] --> ChuaVote : Chưa có vote\nhoặc score = 0 sau hủy
+
+state ChuaVote
+
+state DaUpvote : VoteEntity value = +1
+
+state DaDownvote : VoteEntity value = -1
+
+ChuaVote --> DaUpvote : POST vote +1
+
+ChuaVote --> DaDownvote : POST vote -1
+
+DaUpvote --> ChuaVote : POST +1 lại\n(trùng chiều → hủy, UC19)
+
+DaDownvote --> ChuaVote : POST -1 lại\n(trùng chiều → hủy)
+
+DaUpvote --> DaDownvote : POST -1\n(đổi chiều)
+
+DaDownvote --> DaUpvote : POST +1\n(đổi chiều)
+
+note bottom of ChuaVote
+  Điều kiện: bài/comment **published**
+  Server: upsert VoteEntity +\ncập nhật voteScore
+end note
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml seq_uc01
+title UC01 — Sequence: Đăng ký tài khoản
+
+autonumber
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as U
+participant "Client\n(SPA)" as CL
+participant "Auth API" as AUTH
+database "PostgreSQL" as DB
+
+U -> CL: Điền form + Submit
+CL -> AUTH: **POST** /api/auth/register\n{ email, username, password }
+
+AUTH -> DB: Kiểm tra trùng email/username
+DB --> AUTH: Kết quả
+
+alt EMAIL_ALREADY_EXISTS
+  AUTH --> CL: **409** + mã lỗi
+  CL --> U: Thông báo email đã dùng
+else USERNAME_ALREADY_EXISTS
+  AUTH --> CL: **409** + mã lỗi
+  CL --> U: Thông báo username đã dùng
+else Thành công
+  AUTH -> AUTH: bcrypt.hash(password)
+  AUTH -> DB: **INSERT** UserEntity (elo = 800)
+  DB --> AUTH: userId
+  AUTH -> AUTH: Ký JWT access + refresh
+  AUTH -> DB: Lưu refreshTokenHash
+  AUTH --> CL: **201** { accessToken, user }\n**Set-Cookie** refresh (HTTP-only)
+  CL -> CL: Lưu accessToken (memory)
+  CL --> U: Vào trang chủ (đã đăng nhập)
+end
+
+@enduml

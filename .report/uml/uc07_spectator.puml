@@ -1,0 +1,40 @@
+@startuml UC-Spectator
+title Bieu do Use Case - Khan gia (Spectator)
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #E67E22
+skinparam usecaseBackgroundColor #FEF9E7
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Khan gia\n(Registered User)" as SP
+actor "GameService"                  as S
+
+rectangle "Spectator System" {
+
+    usecase "Truy cap /game/spectate/:roomId"          as A
+    usecase "Gui match:spectateJoin"                    as B
+    usecase "Nhan SpectatorMatchSnapshot\n(tau bi an)" as C
+    usecase "Join spectator\nSocket.IO channel"        as D
+    usecase "Nhan cap nhat\nrealtime"                  as E
+    usecase "Chat kenh khan gia\n(spectator:sendMessage)" as F
+    usecase "Roi kenh khan gia\n(spectateLeave)"        as G
+
+    B .> A : <<include>>
+    C .> B : <<include>>
+    D .> C : <<include>>
+    E .> D : <<include>>
+    F .> D : <<extend>>
+    G .> D : <<extend>>
+}
+
+SP --> A
+SP --> F
+SP --> G
+S  --> C
+
+@enduml

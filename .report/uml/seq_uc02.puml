@@ -1,0 +1,30 @@
+@startuml seq_uc02
+title UC02 — Sequence: Đăng nhập
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người dùng" as U
+participant "Client" as CL
+participant "Auth API" as AUTH
+database "PostgreSQL" as DB
+
+U -> CL: Nhập email + password + Submit
+CL -> AUTH: **POST** /api/auth/login\n{ email, password }
+
+AUTH -> DB: Tìm user theo email
+DB --> AUTH: UserEntity hoặc null
+
+alt INVALID_CREDENTIALS\n(không có user / sai MK)
+  AUTH --> CL: **401** INVALID_CREDENTIALS
+  CL --> U: Thông báo sai thông tin
+else Thành công
+  AUTH -> AUTH: bcrypt.compare(password, hash)
+  AUTH -> AUTH: Ký access + refresh JWT
+  AUTH -> DB: Cập nhật refreshTokenHash
+  AUTH --> CL: **200** { accessToken, user }\n**Set-Cookie** refresh
+  CL -> CL: Lưu accessToken
+  CL --> U: Vào ứng dụng
+end
+
+@enduml

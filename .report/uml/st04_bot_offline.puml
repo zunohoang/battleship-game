@@ -1,0 +1,40 @@
+@startuml ST04_BotOfflineGame
+title ST04 — Trạng thái trận offline với Bot (client)\nTham chiếu: UC20 — chọn độ, xếp tàu, bắn, restart
+
+skinparam state {
+  BackgroundColor #FEF9E7
+  BorderColor #E67E22
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChonMucDo : Vào chế độ Bot
+
+state ChonMucDo : Easy / Hard\n(UC chọn mức)
+
+state XepTauBot : Người + bot\nbố trí hạm đội
+
+state DangDauBot : Lượt người / lượt bot\n(Hunt & Target)
+
+state KetThucBot : Thắng hoặc thua
+
+ChonMucDo --> XepTauBot : Bắt đầu trận offline
+
+XepTauBot --> DangDauBot : Cả hai sẵn sàng\n(bản client)
+
+DangDauBot --> DangDauBot : Người bắn → bot bắn lại
+
+DangDauBot --> KetThucBot : Một bên chìm hết tàu
+
+KetThucBot --> ChonMucDo : UC Chơi lại (Restart)
+
+KetThucBot --> [*] : Thoát chế độ Bot
+
+note bottom of DangDauBot
+  Không có Socket.IO / Elo server —
+  logic chạy trên client
+end note
+
+@enduml

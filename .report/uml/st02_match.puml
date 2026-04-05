@@ -1,0 +1,34 @@
+@startuml ST02_MatchLifecycle
+title ST02 — Vòng đời trận (MatchEntity)\nTham chiếu: UC09, UC10, UC11, UC13
+
+skinparam state {
+  BackgroundColor #FDECEA
+  BorderColor #C0392B
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> setup : UC09 tạo MatchEntity\nsau configureSetup
+
+state setup : Xếp tàu & chờ\nroom:ready
+state in_progress : Lượt bắn,\nturnPlayerId luân phiên
+state finished : Đã có winnerId /\nkết quả Elo (nếu online)
+
+setup --> in_progress : Cả hai đã gửi\nplacement hợp lệ
+
+setup --> finished : UC09 hết giờ xếp tàu\n(người chưa xong thua)
+
+in_progress --> in_progress : UC10 match:move\n(chưa ai thắng)
+in_progress --> finished : UC10 tất cả tàu\nđối thủ đã chìm
+in_progress --> finished : UC11 match:forfeit
+
+finished --> [*] : Entity kết thúc\n(rematch = Match mới)
+
+note bottom of in_progress
+  UC13: client reconnect nhận snapshot
+  Timer: hết lượt → chuyển lượt (UC10)
+end note
+
+@enduml

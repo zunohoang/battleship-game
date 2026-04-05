@@ -1,0 +1,35 @@
+@startuml ST03_AuthSession
+title ST03 — Phiên người dùng (Client + AuthService)\nTham chiếu: UC01–UC04 (UC05/UC06 không đổi trạng thái phiên — xem ST06)
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> Khach : Mở app / chưa đăng nhập
+
+state Khach : Không có refresh cookie\nhoặc đã bị xóa
+
+state DaDangNhap : Access token trên client\n+ refresh trong HTTP-only cookie
+
+Khach --> DaDangNhap : UC01 đăng ký thành công\n/ UC02 đăng nhập thành công
+
+DaDangNhap --> Khach : UC04 POST /api/auth/logout\n(refresh vô hiệu + xóa cookie)
+
+DaDangNhap --> Khach : UC03 refresh thất bại\n(cookie hết hạn / replay / invalid)
+
+DaDangNhap --> DaDangNhap : UC03 POST /auth/refresh\nthành công (rotate token)
+
+note right of DaDangNhap
+  UC05 đổi MK / UC06 cập nhật hồ sơ:
+  vẫn ở **Đã đăng nhập** (luồng chi tiết: ST06)
+  --
+  Access JWT có thể còn TTL ngắn
+  sau logout (stateless) — không thu hồi từ server
+end note
+
+@enduml

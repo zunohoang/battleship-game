@@ -1,0 +1,30 @@
+@startuml ST07_ForumPostLifecycle
+title ST07 — Vòng đời bài viết diễn đàn (ForumPostEntity)\nTham chiếu: UC18
+
+skinparam state {
+  BackgroundColor #F4ECF7
+  BorderColor #7D3C98
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> published : UC18 POST\nsanitize + lưu\n(status=published)
+
+state published : Hiển thị công khai\ncho đọc / comment / vote
+
+state archived : Đã archive (soft delete)\nkhông cho comment mới
+
+published --> published : UC18 chỉnh sửa\n(tác giả, sanitize)
+
+published --> archived : UC18 xóa bài\n(archive — chủ sở hữu)
+
+archived --> [*]
+
+note right of published
+  Bình luận: chỉ khi bài **published**
+  Sửa/xóa bài người khác: Forbidden
+end note
+
+@enduml

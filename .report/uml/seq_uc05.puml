@@ -1,0 +1,33 @@
+@startuml seq_uc05
+title UC05 — Sequence: Đổi mật khẩu
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người dùng" as U
+participant "Client" as CL
+participant "Profile API\n(JwtAuthGuard)" as PR
+database "PostgreSQL" as DB
+
+U -> CL: Nhập MK cũ + MK mới + Submit
+CL -> PR: **PATCH** /api/users/me/password\nAuthorization: Bearer\n{ currentPassword, newPassword }
+
+PR -> PR: Validate DTO (độ dài MK mới)
+
+alt Validation fail
+  PR --> CL: **400** Bad Request
+  CL --> U: Gợi ý độ dài / format
+else INVALID_CURRENT_PASSWORD
+  PR -> DB: Load user + bcrypt.compare(current)
+  DB --> PR: hash
+  PR --> CL: **401** hoặc **400** mã INVALID_CURRENT_PASSWORD
+  CL --> U: MK hiện tại sai
+else Thành công
+  PR -> PR: bcrypt.hash(newPassword)
+  PR -> DB: UPDATE passwordHash
+  DB --> PR: OK
+  PR --> CL: **200** hoặc **204**
+  CL --> U: Thông báo đổi MK thành công
+end
+
+@enduml

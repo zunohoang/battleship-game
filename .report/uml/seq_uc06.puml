@@ -1,0 +1,39 @@
+@startuml seq_uc06
+title UC06 — Sequence: Cập nhật hồ sơ
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người dùng" as U
+participant "Client" as CL
+participant "Users API" as USR
+participant "Storage\n(/uploads)" as FS
+database "PostgreSQL" as DB
+
+U -> CL: Mở modal, sửa username / signature /\nchọn avatar + Lưu
+
+alt Chỉ metadata (JSON)
+  CL -> USR: **PATCH** /api/users/me\n{ username?, signature? }
+else Có avatar (multipart)
+  CL -> USR: **PATCH** /api/users/me\nmultipart (fields + file)
+  USR -> FS: Ghi file avatar mới
+  FS --> USR: path
+end
+
+USR -> DB: Kiểm tra username unique\n(nếu đổi)
+DB --> USR: conflict?
+
+alt USERNAME_ALREADY_EXISTS
+  USR --> CL: **409**
+  CL --> U: Username đã có
+else File quá lớn / sai định dạng
+  USR --> CL: **400** upload error
+  CL --> U: Thông báo file
+else Thành công
+  USR -> DB: UPDATE UserEntity
+  DB --> USR: OK
+  USR --> CL: **200** UserDto mới
+  CL --> U: UI cập nhật
+end
+
+@enduml

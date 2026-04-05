@@ -1,0 +1,42 @@
+@startuml cd_domain_auth
+title CD-02 — Miền người dùng (auth) & cổng kho lưu\nThiết kế — báo cáo phân tích
+
+skinparam classAttributeIconSize 0
+hide empty members
+
+class User <<Domain>> {
+  +id: UUID
+  +email, username: string
+  +passwordHash: string
+  +avatar, signature: string?
+  +elo: int
+  +refreshTokenHash: string?
+  +updateUsername()
+  +updatePasswordHash()
+  +setRefreshToken() / clearRefreshToken()
+  +toPlainObject()
+}
+
+interface IUserRepository <<port>> {
+  +findByEmail(email): User?
+  +findByUsername(username): User?
+  +findById(id): User?
+  +save(user): User
+}
+
+class PostgresUserRepository <<adapter>> {
+  +truy vấn / ghi UserEntity
+}
+
+class UserEntity <<ORM>> {
+  (cột DB)
+}
+
+PostgresUserRepository ..|> IUserRepository
+PostgresUserRepository ..> UserEntity : map ↔\nUser domain
+
+note right of User
+  AuthService thao tác **User** domain,\nkhông dùng trực tiếp UserEntity.
+end note
+
+@enduml

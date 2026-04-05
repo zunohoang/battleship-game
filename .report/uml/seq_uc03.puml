@@ -1,0 +1,31 @@
+@startuml seq_uc03
+title UC03 — Sequence: Làm mới token (interceptor)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+participant "Client" as CL
+participant "HTTP API\n(khác)" as API
+participant "Auth API" as AUTH
+database "PostgreSQL" as DB
+
+CL -> API: Request kèm **Authorization: Bearer** (access)
+API --> CL: **401** Unauthorized\n(access hết hạn)
+
+CL -> CL: Interceptor bắt 401
+CL -> AUTH: **POST** /api/auth/refresh\n(Cookie: refresh tự gửi)
+
+AUTH -> AUTH: Đọc + xác minh refresh\n+ kiểm tra expiry tuyệt đối
+
+alt Refresh không hợp lệ / hết hạn
+  AUTH --> CL: **401** (hoặc 403)
+  CL -> CL: Xóa token, force logout (UC04)
+else Rotate thành công
+  AUTH -> DB: Lưu refresh hash mới,\nvô hiệu cũ
+  AUTH --> CL: **200** { accessToken }\n**Set-Cookie** refresh mới
+  CL -> CL: Cập nhật access
+  CL -> API: **Lặp lại** request gốc\nBearer mới
+  API --> CL: **200** + payload
+end
+
+@enduml

@@ -1,0 +1,38 @@
+@startuml State_UC20
+title UC20 — State machine: Chơi với Bot (offline, client)
+
+skinparam state {
+  BackgroundColor #FEF9E7
+  BorderColor #E67E22
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChonDo : Easy / Hard
+
+ChonDo --> BatDauTran : Bắt đầu offline
+
+BatDauTran --> XepTau : Bot + người\nđặt tàu
+
+XepTau --> LuotChoi : Cả hai sẵn sàng
+
+state LuotChoi : Người bắn\n→ bot bắn
+
+LuotChoi --> KetThuc : Một bên\nchìm hết tàu
+
+KetThuc --> XemLog : (extend) xem log /\ntrạng thái hạm đội
+
+XemLog --> KetThuc
+
+KetThuc --> ChonDo : Chơi lại (Restart)
+
+KetThuc --> [*] : Thoát chế độ bot
+
+note right of LuotChoi
+  Không Elo server —
+  logic client
+end note
+
+@enduml

@@ -1,0 +1,100 @@
+@startuml UC-00-TongQuan
+title Bieu do Use Case Tong quan - He thong Battleship Online
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #2C7BB6
+skinparam usecaseBackgroundColor #EEF6FF
+skinparam rectangleBorderColor #555
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam packageBackgroundColor #F8F8F8
+skinparam packageBorderColor #999
+
+top to bottom direction
+
+actor "Guest"      as Guest
+actor "User"       as User
+actor "Spectator"  as Spectator
+actor "System"     as System
+
+rectangle "He thong Battleship Online" {
+
+    package "Xac thuc" #EEF6FF {
+        usecase "Dang ky"      as UC01
+        usecase "Dang nhap"    as UC02
+        usecase "Dang xuat"    as UC04
+        usecase "Lam moi token" as UC03
+    }
+
+    package "Ho so" #E8F8F5 {
+        usecase "Cap nhat ho so"  as UC06
+        usecase "Doi mat khau"    as UC05
+    }
+
+    package "Phong choi" #EAFAF1 {
+        usecase "Tao phong"       as UC07
+        usecase "Tham gia phong"  as UC08
+        usecase "Roi phong"       as UC_LEAVE
+    }
+
+    package "Tran dau" #FDECEA {
+        usecase "Xep tau"         as UC09
+        usecase "Thuc hien ban"   as UC10
+        usecase "Dau hang"        as UC11
+        usecase "Tai dau"         as UC12
+        usecase "Ket noi lai"     as UC13
+    }
+
+    package "Khan gia" #FEF9E7 {
+        usecase "Xem tran truc tiep" as UC14
+        usecase "Chat khan gia"      as UC15
+    }
+
+    package "Cong dong" #F5EEF8 {
+        usecase "Bang xep hang Elo" as UC16
+        usecase "Lich su tran"      as UC17
+        usecase "Dien dan"          as UC18
+        usecase "Binh chon"         as UC19
+    }
+
+    package "Bot Offline" #FEF9E7 {
+        usecase "Choi voi Bot" as UC20
+    }
+
+    UC03 .> UC02 : <<extend>>
+    UC09 .> UC07 : <<include>>
+    UC10 .> UC09 : <<include>>
+    UC11 .> UC10 : <<extend>>
+    UC12 .> UC10 : <<extend>>
+    UC19 .> UC18 : <<include>>
+}
+
+Guest --> UC01
+Guest --> UC02
+Guest --> UC16
+
+User --> UC02 : (*)
+User --> UC04
+User --> UC05
+User --> UC06
+User --> UC07
+User --> UC08
+User --> UC09
+User --> UC10
+User --> UC11
+User --> UC12
+User --> UC13
+User --> UC16
+User --> UC17
+User --> UC18
+User --> UC19
+User --> UC20
+
+Spectator --> UC14
+Spectator --> UC15
+
+System --> UC10 : tu dong
+System --> UC09 : het gio
+
+@enduml

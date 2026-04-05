@@ -1,0 +1,48 @@
+@startuml UC-07-OnlineMatch
+title Bieu do Use Case - Tran dau Online (Match Lifecycle)
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #C0392B
+skinparam usecaseBackgroundColor #FDECEA
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Player A"         as PA
+actor "Player B"         as PB
+actor "He thong (Timer)" as SYS
+
+rectangle "Online Match System" {
+
+    usecase "Thuc hien nuoc di\n(Ban vao toa do)"  as UC1
+    usecase "Nhan ket qua ban\n(trung / truot / chim)" as UC1b
+    usecase "Dau hang (Forfeit)"                    as UC2
+    usecase "Ket noi lai\n(Reconnect)"              as UC3
+    usecase "Binh chon tai dau\n(Rematch Vote)"     as UC4
+    usecase "Tu dong chuyen luot\n(Timeout)"        as UC5
+    usecase "Xac dinh thang / thua"                 as UC6
+    usecase "Cap nhat diem Elo"                     as UC7
+
+    UC1b .> UC1  : <<include>>
+    UC5  .> UC1  : <<extend>>
+    UC6  .> UC1  : <<include>>
+    UC7  .> UC6  : <<include>>
+    UC4  .> UC6  : <<extend>>
+}
+
+PA  --> UC1
+PB  --> UC1
+PA  --> UC2
+PB  --> UC2
+PA  --> UC3
+PB  --> UC3
+PA  --> UC4
+PB  --> UC4
+SYS --> UC5
+SYS --> UC6
+SYS --> UC7
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml State_UC02
+title UC02 — State machine: Đăng nhập
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> NhapCredential : Mở form đăng nhập
+
+state NhapCredential : email + password
+
+NhapCredential --> TimUserTheoEmail : Submit
+
+TimUserTheoEmail --> NhapCredential : INVALID_CREDENTIALS\n(user không tồn tại)
+
+TimUserTheoEmail --> SoSanhBcrypt : User tồn tại
+
+SoSanhBcrypt --> NhapCredential : INVALID_CREDENTIALS\n(mật khẩu sai)
+
+SoSanhBcrypt --> KyJWT : bcrypt.compare OK
+
+state KyJWT : Ký access + refresh
+
+KyJWT --> LuuRefreshHash : JWT đã ký
+
+state LuuRefreshHash : Lưu hash refresh\nvào DB
+
+LuuRefreshHash --> SetCookie : UPDATE OK
+
+state SetCookie : HTTP-only cookie
+
+SetCookie --> PhienHoatDong : Trả accessToken + user
+
+PhienHoatDong --> [*]
+
+@enduml

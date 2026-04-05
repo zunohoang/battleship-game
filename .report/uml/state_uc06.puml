@@ -1,0 +1,33 @@
+@startuml State_UC06
+title UC06 — State machine: Cập nhật hồ sơ cá nhân
+
+skinparam state {
+  BackgroundColor #E8F4FC
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ModalDong : Ngoài modal
+
+ModalDong --> ChinhSua : Mở modal hồ sơ
+
+state ChinhSua : Sửa username /\nsignature /\navatar
+
+ChinhSua --> DangGui : PATCH /api/users/me
+
+state DangGui : Đang xử lý
+
+DangGui --> ChinhSua : USERNAME_ALREADY_EXISTS\n/ lỗi upload file
+
+DangGui --> HienThiMoi : UserEntity đã cập nhật
+
+HienThiMoi --> ChinhSua : Tiếp tục sửa
+
+HienThiMoi --> ModalDong : Đóng modal
+
+ModalDong --> [*]
+
+@enduml

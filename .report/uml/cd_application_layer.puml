@@ -1,0 +1,76 @@
+@startuml cd_application_layer
+title CD-03 — Lớp ứng dụng: REST, WebSocket, nghiệp vụ\nThiết kế — báo cáo phân tích
+
+skinparam packageStyle rectangle
+hide empty members
+
+package "HTTP (REST)" {
+  class AuthController
+  class ProfileController
+  class ForumController
+  class LeaderboardController
+  class GameHistoryController
+}
+
+package "WebSocket" {
+  class GameGateway <<namespace /game>> {
+    +handleConnection (JWT)
+    +room:*, match:*, spectate:*, chat
+  }
+}
+
+package "Services" {
+  class AuthService
+  class ProfileService
+  class ForumService
+  class LeaderboardService
+  class GameService
+  class ChatService
+  class EloMatchService
+}
+
+package "Hạ tầng chung" {
+  class RedisService
+}
+
+package "Ports / infra (Auth)" {
+  interface IUserRepository
+  interface ITokenRepository
+  interface IPasswordHasherRepository
+}
+
+AuthController --> AuthService : inject
+ProfileController --> ProfileService
+ForumController --> ForumService
+LeaderboardController --> LeaderboardService
+GameHistoryController --> GameService
+
+GameGateway --> GameService
+GameGateway --> ChatService
+GameGateway ..> ITokenRepository : validate\naccess token
+
+AuthService --> IUserRepository
+AuthService --> ITokenRepository
+AuthService --> IPasswordHasherRepository
+
+ProfileService --> IUserRepository
+ProfileService --> ITokenRepository
+ProfileService --> IPasswordHasherRepository
+
+GameService ..> IUserRepository
+GameService --> EloMatchService : settle Elo\nkhi trận xong
+
+ChatService --> RedisService
+note right of ForumService
+  Truy cập dữ liệu forum\n(Post/Comment/Vote)\nvà thông tin tác giả User
+end note
+
+note right of LeaderboardService
+  Truy vấn người chơi\ntheo Elo (bảng xếp hạng)
+end note
+
+note bottom of GameService
+  Truy cập phòng, trận,\nnước đi qua lớp\nánh xạ dữ liệu
+end note
+
+@enduml

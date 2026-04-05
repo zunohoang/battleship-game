@@ -1,0 +1,37 @@
+@startuml UC-01-Auth
+title Bieu do Use Case - Xac thuc & Phien dang nhap
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #2C7BB6
+skinparam usecaseBackgroundColor #EEF6FF
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Khach vang lai (Guest)"     as Guest
+actor "Nguoi dung da dang ky"      as User
+actor "Client App\n(interceptor)"  as Client
+
+rectangle "Auth & Session System" {
+
+    usecase "Dang ky tai khoan\n(email + username + password)" as UC1
+    usecase "Dang nhap\n(tra ve access token + refresh cookie)" as UC2
+    usecase "Dang xuat\n(revoke refresh token)"                 as UC3
+    usecase "Lam moi token\n(rotate refresh token)"             as UC4
+    usecase "Ep dang xuat\n(khi refresh token loi)"            as UC5
+
+    UC4 .> UC2  : <<extend>>
+    UC5 .> UC4  : <<extend>>
+}
+
+Guest  --> UC1
+Guest  --> UC2
+User   --> UC2
+User   --> UC3
+Client --> UC4
+Client --> UC5
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml State_UC14
+title UC14 — State machine: Xem trận đấu (spectate)
+
+skinparam state {
+  BackgroundColor #FEF9E7
+  BorderColor #E67E22
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChuaVao : Đã đăng nhập
+
+ChuaVao --> TruyCapURL : /game/spectate/:roomId
+
+TruyCapURL --> GuiSpectateJoin : match:spectateJoin
+
+GuiSpectateJoin --> LoiPhong : ROOM_NOT_FOUND /\nchưa in_game
+
+LoiPhong --> [*]
+
+GuiSpectateJoin --> NhanSnapshot : SpectatorMatchSnapshot\n(tàu ẩn)
+
+NhanSnapshot --> JoinKenh : room:...:spectators
+
+JoinKenh --> DangXem : server:matchUpdated\nrealtime
+
+DangXem --> RoiKenh : spectateLeave /\nđóng tab
+
+RoiKenh --> [*]
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml seq_uc19
+title UC19 — Sequence: Vote bài / bình luận
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "User" as U
+participant "Client" as CL
+participant "Forum API" as F
+database "PostgreSQL" as DB
+
+U -> CL: Nhấn upvote/downvote
+CL -> F: **POST** /api/forum/posts/:id/vote\n{ value: 1 | -1 }\n(hoặc endpoint tương tự cho comment)
+
+F -> F: JwtAuthGuard
+F -> DB: Load post/comment\nphải **published**
+
+alt Not found
+  F --> CL: **404**
+else OK
+  F -> DB: **Upsert** VoteEntity\n(userId, target, value)
+  note over F, DB: Cùng giá trị vote lại → hủy (0)\nKhác giá trị → đổi chiều
+  F -> DB: Tính lại **voteScore**
+  DB --> F: score mới
+  F --> CL: **200** { voteScore, myVote }
+  CL --> U: Cập nhật UI
+end
+
+@enduml

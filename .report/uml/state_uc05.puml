@@ -1,0 +1,33 @@
+@startuml State_UC05
+title UC05 — State machine: Đổi mật khẩu
+
+skinparam state {
+  BackgroundColor #E8F4FC
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> FormDoiMK : Mở form\nMK cũ + MK mới
+
+FormDoiMK --> ValidateDTO : Submit
+
+ValidateDTO --> FormDoiMK : MK mới quá ngắn\n(validation client/DTO)
+
+ValidateDTO --> XacMinhCu : DTO hợp lệ
+
+XacMinhCu --> FormDoiMK : INVALID_CURRENT_PASSWORD
+
+XacMinhCu --> BamMKMoi : bcrypt.compare OK
+
+state BamMKMoi : bcrypt.hash(MK mới)
+
+BamMKMoi --> CapNhatDB : Hash xong
+
+CapNhatDB --> ThanhCong : passwordHash\nđã UPDATE
+
+ThanhCong --> [*] : (Tuỳ policy:\nvô hiệu phiên khác)
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml seq_uc12
+title UC12 — Sequence: Tái đấu (rematch vote)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Player A" as PA
+actor "Player B" as PB
+participant "Client A" as CA
+participant "Client B" as CB
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+PA -> CA: Bỏ phiếu accept/reject
+CA -> GW: **match:rematchVote**\n{ accept: true/false }
+PB -> CB: Bỏ phiếu
+CB -> GW: **match:rematchVote**
+
+GW -> GW: Ghi nhận vote từng người
+
+alt Có người từ chối /\nrời phòng (coi reject)
+  GW -> DB: Đóng phòng / cleanup
+  GW -> CA: **server:roomUpdated** /\nmatchUpdated
+  GW -> CB: (broadcast)
+else Cả hai accept
+  GW -> DB: **INSERT** MatchEntity mới\n(status setup) trong cùng room
+  DB --> GW: matchId mới
+  GW -> CA: **server:matchUpdated**\n→ quay UC09 setup
+  GW -> CB: (broadcast)
+end
+
+@enduml

@@ -1,0 +1,42 @@
+@startuml seq_uc20
+title UC20 — Sequence: Chơi với Bot (offline, client-only)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người chơi" as U
+participant "Client\n(SPA)" as CL
+participant "BotEngine\n(Easy/Hard)" as BOT
+
+U -> CL: Chọn độ khó +\nBắt đầu trận
+CL -> CL: Khởi tạo 2 bảng cục bộ\n(người + bot)
+
+par Xếp tàu
+  U -> CL: Đặt hạm đội người
+  CL -> BOT: Bot auto-place\n(theo rule)
+  BOT --> CL: placements bot
+end
+
+CL -> CL: Cả hai ready →\n**in_progress** local
+
+loop Cho đến khi thắng/thua
+  U -> CL: Bắn (x,y)
+  CL -> CL: Tính hit/miss/sunk\n(trên bảng bot)
+  CL -> BOT: **bot:nextShot**\n(trạng thái hiện tại)
+  BOT --> CL: (x,y) theo thuật toán
+  CL -> CL: Áp dụng lên bảng người
+  CL --> U: Cập nhật UI cả hai bên
+end
+
+U -> CL: Chơi lại / Thoát
+alt Restart
+  CL -> CL: Reset state →\nchọn độ lại (optional)
+else Thoát
+  CL --> U: Về menu
+end
+
+note over CL
+  **Không** gọi API game server,\n**không** cập nhật Elo server
+end note
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml State_UC01
+title UC01 — State machine: Đăng ký tài khoản
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> DienForm : Mở form đăng ký
+
+state DienForm : Nhập email, username, password
+
+DienForm --> KiemTraTrungLap : Submit
+
+KiemTraTrungLap --> DienForm : EMAIL_ALREADY_EXISTS\n/ USERNAME_ALREADY_EXISTS
+
+KiemTraTrungLap --> BamMatKhau : Email & username hợp lệ
+
+state BamMatKhau : bcrypt.hash(password)
+
+BamMatKhau --> LuuUser : Hash xong
+
+state LuuUser : UserEntity\nelo = 800
+
+LuuUser --> PhatHanhToken : INSERT DB thành công
+
+state PhatHanhToken : access + refresh\n(JWT + cookie)
+
+PhatHanhToken --> DaDangNhapThanhCong : Phát hành xong
+
+DaDangNhapThanhCong --> [*] : Redirect trang chủ
+
+note right of KiemTraTrungLap
+  Luồng chính spec diagram.md
+end note
+
+@enduml

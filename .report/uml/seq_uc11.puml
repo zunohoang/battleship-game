@@ -1,0 +1,31 @@
+@startuml seq_uc11
+title UC11 — Sequence: Đầu hàng (forfeit)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Player A" as PA
+actor "Player B" as PB
+participant "Client A" as CA
+participant "Client B" as CB
+participant "Game\nGateway" as GW
+participant "Elo\nService" as ELO
+database "PostgreSQL" as DB
+
+PA -> CA: Nhấn Đầu hàng
+CA -> GW: **match:forfeit**
+
+GW -> DB: Load match\n(in_progress?)
+
+alt Đã finished
+  GW --> CA: Bỏ qua / noop
+else OK
+  GW -> DB: winnerId := đối thủ,\nstatus = finished
+  DB --> GW: OK
+  GW -> ELO: **settleMatchElo()**
+  ELO -> DB: Cập nhật Elo
+  GW -> CA: **server:matchUpdated**
+  GW -> CB: **server:matchUpdated**
+end
+
+@enduml

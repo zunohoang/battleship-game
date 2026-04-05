@@ -1,0 +1,32 @@
+@startuml seq_uc15
+title UC15 — Sequence: Chat kênh khán giả
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Spectator" as S
+participant "Client" as CL
+participant "Game\nGateway" as GW
+database "Redis\n(ChatService)" as R
+
+S -> CL: Nhập tin + Gửi
+CL -> GW: **spectator:sendMessage**\n{ text }
+
+GW -> GW: Validate (không rỗng,\nđộ dài)
+
+alt Validation fail
+  GW --> CL: **400**
+else OK
+  GW -> R: Lưu tin (list + TTL)
+  R --> GW: OK
+  GW -> CL: **server:spectatorChatMessage**\n(broadcast tới\nroom:...:spectators)
+  note over GW, CL: Mọi spectator trong phòng nhận
+end
+
+S -> CL: (optional) Xem lịch sử
+CL -> GW: **spectator:chatHistory**
+GW -> R: Đọc list theo room
+R --> GW: messages[]
+GW --> CL: history
+
+@enduml

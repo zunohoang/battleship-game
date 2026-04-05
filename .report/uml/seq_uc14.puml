@@ -1,0 +1,30 @@
+@startuml seq_uc14
+title UC14 — Sequence: Xem trận (Spectate)
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Spectator" as S
+participant "Client" as CL
+participant "Game\nGateway" as GW
+database "PostgreSQL" as DB
+
+S -> CL: Truy cập /game/spectate/:roomId
+CL -> GW: **match:spectateJoin**\n{ roomId }
+
+GW -> DB: Kiểm tra phòng + match\nđang **in_progress**
+
+alt Chưa có trận / phòng không tồn tại
+  GW --> CL: **ROOM_NOT_FOUND** / lỗi
+else OK
+  GW -> GW: Build **SpectatorMatchSnapshot**\n(ẩn vị trí tàu)
+  GW --> CL: ack + snapshot
+  CL -> GW: **join** room:roomId:spectators
+  loop Realtime
+    GW -> CL: **server:matchUpdated**\n(chỉ kết quả bắn công khai)
+  end
+  S -> CL: Rời trang / spectateLeave
+  CL -> GW: **spectateLeave**
+end
+
+@enduml

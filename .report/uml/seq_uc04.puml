@@ -1,0 +1,26 @@
+@startuml seq_uc04
+title UC04 — Sequence: Đăng xuất
+
+autonumber
+skinparam sequenceMessageAlign center
+
+actor "Người dùng" as U
+participant "Client" as CL
+participant "Auth API" as AUTH
+database "PostgreSQL" as DB
+
+U -> CL: Nhấn Đăng xuất
+CL -> AUTH: **POST** /api/auth/logout\n(Cookie refresh nếu có)
+
+AUTH -> DB: refreshTokenHash := **null**
+DB --> AUTH: OK
+AUTH --> CL: **200**\n**Set-Cookie** xóa refresh\n(max-age=0)
+
+CL -> CL: Xóa accessToken khỏi memory
+CL --> U: Trạng thái khách
+
+note right of AUTH
+  Không có cookie: vẫn 200\nvà xóa cookie phía response
+end note
+
+@enduml

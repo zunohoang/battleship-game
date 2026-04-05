@@ -1,0 +1,39 @@
+@startuml State_UC17
+title UC17 — State machine: Xem lịch sử trận đấu cá nhân
+
+skinparam state {
+  BackgroundColor #EEF6FF
+  BorderColor #2C7BB6
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> DongModal : Ngoài modal
+
+DongModal --> MoModal : Mở lịch sử
+
+MoModal --> DangTai : GET .../matches/history?limit=N
+
+DangTai --> Loi : JWT / lỗi server
+
+Loi --> MoModal : Thử lại
+
+DangTai --> TinhStats : Query MatchEntity\nplayer1Id | player2Id
+
+TinhStats --> HienThi : accuracy, shots,\nElo delta, kết quả
+
+state HienThi : Danh sách + phân trang
+
+HienThi --> MoModal : Load thêm / filter
+
+HienThi --> DongModal : Đóng
+
+DongModal --> [*]
+
+note right of TinhStats
+  Mảng rỗng: hiển thị\n"chưa có trận"
+end note
+
+@enduml

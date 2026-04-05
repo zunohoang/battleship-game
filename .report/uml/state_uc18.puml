@@ -1,0 +1,48 @@
+@startuml State_UC18
+title UC18 — State machine: Đăng bài & bình luận diễn đàn
+
+skinparam state {
+  BackgroundColor #F4ECF7
+  BorderColor #7D3C98
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> ChonHanhDong : Đã đăng nhập
+
+ChonHanhDong --> TaoBaiMoi : Form bài viết
+
+ChonHanhDong --> BinhLuan : Form comment\ntrên bài published
+
+TaoBaiMoi --> Sanitize : POST post
+
+BinhLuan --> Sanitize : POST comment
+
+Sanitize --> TuChoi : Nội dung rỗng /\nXSS fail
+
+TuChoi --> ChonHanhDong
+
+Sanitize --> LuuPublished : status = published
+
+LuuPublished --> HienThi : ForumPostDto /\nCommentDto
+
+HienThi --> SuaBai : Chỉ tác giả
+
+SuaBai --> Sanitize
+
+HienThi --> XoaArchive : Archive (soft delete)
+
+XoaArchive --> DaArchive : status archived
+
+DaArchive --> [*]
+
+HienThi --> ChonHanhDong : Xem tiếp
+
+note right of BinhLuan
+  Bài archived:
+  BadRequest (spec)
+end note
+
+@enduml

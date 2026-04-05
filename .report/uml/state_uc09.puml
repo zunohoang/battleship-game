@@ -1,0 +1,37 @@
+@startuml State_UC09
+title UC09 — State machine: Xếp tàu & bắt đầu trận
+
+skinparam state {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontName Arial
+  FontSize 11
+}
+skinparam ArrowColor #444
+skinparam noteBackgroundColor #FFFFEE
+
+[*] --> PhongDoiHaiNguoi : Đủ Owner + Guest\nstatus waiting
+
+PhongDoiHaiNguoi --> CauHinhBang : Owner:\nroom:configureSetup
+
+CauHinhBang --> MatchSetup : Tạo MatchEntity\nstatus = setup
+
+state MatchSetup : Mỗi player\nxếp tàu + random
+
+MatchSetup --> ChoReady : Gửi room:ready\nkèm placement
+
+ChoReady --> MatchSetup : BadRequest\n(chồng tàu / ngoài bảng)
+
+ChoReady --> HetGioXepTau : setupDeadlineAt\n(Timer)
+
+HetGioXepTau --> KetThucSom : Người chưa xong\nthua (spec)
+
+KetThucSom --> [*]
+
+ChoReady --> CaHaiReady : Cả hai ready hợp lệ
+
+CaHaiReady --> TranDangChay : status = in_progress\n+ server:matchUpdated
+
+TranDangChay --> [*] : Sang UC10
+
+@enduml

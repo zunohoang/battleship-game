@@ -1,0 +1,40 @@
+@startuml UC-02-Profile
+title Bieu do Use Case - Quan ly Ho so Ca nhan
+
+skinparam actorStyle awesome
+skinparam usecaseBorderColor #1ABC9C
+skinparam usecaseBackgroundColor #E8F8F5
+skinparam rectangleBorderColor #888
+skinparam ArrowColor #444
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+left to right direction
+
+actor "Nguoi dung da dang nhap" as User
+actor "Nguoi dung khac / Guest" as Viewer
+
+rectangle "Profile System" {
+
+    usecase "Xem ho so cong khai\n(theo userId)"    as UC1
+    usecase "Cap nhat username"                      as UC2
+    usecase "Cap nhat chu ky (signature)"            as UC3
+    usecase "Upload anh dai dien (avatar)"           as UC4
+    usecase "Doi mat khau\n(xac minh mat khau cu)"   as UC5
+    usecase "Xem lich su tran dau ca nhan"           as UC6
+
+    UC2 .> UC1 : <<extend>>
+    UC3 .> UC1 : <<extend>>
+    UC4 .> UC1 : <<extend>>
+}
+
+User   --> UC1
+User   --> UC2
+User   --> UC3
+User   --> UC4
+User   --> UC5
+User   --> UC6
+
+Viewer --> UC1
+
+@enduml
