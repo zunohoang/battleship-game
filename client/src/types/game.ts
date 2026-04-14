@@ -42,7 +42,7 @@ export interface GameSetupState {
 }
 
 // --- Battle / game-play types ---
-export type AiDifficulty = 'random' | 'learning' | 'probability';
+export type AiDifficulty = 'random' | 'learning' | 'probability' | 'llm';
 export type BotPlacementStrategy = 'random' | 'strategic';
 export type BotPlacementMode = 'auto' | 'manual';
 

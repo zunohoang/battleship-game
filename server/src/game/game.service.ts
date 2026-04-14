@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  InternalServerErrorException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, type Repository } from 'typeorm';
 import {
@@ -33,6 +35,7 @@ import {
   MoveDto,
   RoomReadyDto,
 } from './dto/game-events.dto';
+import { LlmBotShotRequestDto } from './dto/llm-bot.dto';
 
 const RANDOM_PLACEMENT_MAX_ATTEMPTS = 300;
 const DEFAULT_TURN_TIMER_SECONDS = 30;
@@ -45,6 +48,63 @@ const ACTIVE_ROOM_STATUSES: Array<RoomEntity['status']> = [
 
 function keyOf(x: number, y: number): string {
   return `${x},${y}`;
+}
+
+type LlmSuggestedTarget = {
+  x: number;
+  y: number;
+};
+
+function stripCodeFence(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith('```')) {
+    return trimmed;
+  }
+
+  const withoutStart = trimmed.replace(/^```[a-zA-Z]*\s*/, '');
+  return withoutStart.replace(/\s*```$/, '').trim();
+}
+
+function parseTargetFromText(raw: string): LlmSuggestedTarget | null {
+  const normalized = stripCodeFence(raw);
+
+  try {
+    const parsed = JSON.parse(normalized) as { x?: unknown; y?: unknown };
+    if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+      return {
+        x: Math.trunc(parsed.x),
+        y: Math.trunc(parsed.y),
+      };
+    }
+  } catch {
+    // Continue to regex fallback.
+  }
+
+  const objectMatch = normalized.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    try {
+      const parsed = JSON.parse(objectMatch[0]) as { x?: unknown; y?: unknown };
+      if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        return {
+          x: Math.trunc(parsed.x),
+          y: Math.trunc(parsed.y),
+        };
+      }
+    } catch {
+      // Ignore and fallback to key:value extraction.
+    }
+  }
+
+  const xMatch = normalized.match(/"?x"?\s*:\s*(-?\d+)/i);
+  const yMatch = normalized.match(/"?y"?\s*:\s*(-?\d+)/i);
+  if (!xMatch || !yMatch) {
+    return null;
+  }
+
+  return {
+    x: Number(xMatch[1]),
+    y: Number(yMatch[1]),
+  };
 }
 
 function makeRoomCode(): string {
@@ -96,7 +156,136 @@ export class GameService {
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
     private readonly eloMatchService: EloMatchService,
+    private readonly configService: ConfigService,
   ) {}
+
+  async getLlmBotShot(payload: LlmBotShotRequestDto): Promise<{
+    target: { x: number; y: number; source: 'llm' | 'fallback' } | null;
+  }> {
+    const rows = payload.boardConfig.rows;
+    const cols = payload.boardConfig.cols;
+    const attempted = new Set(payload.shots.map((shot) => keyOf(shot.x, shot.y)));
+
+
+    const availableTargets: Array<{ x: number; y: number }> = [];
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (!attempted.has(keyOf(x, y))) {
+          availableTargets.push({ x, y });
+        }
+      }
+    }
+
+    if (availableTargets.length === 0) {
+      return { target: null };
+    }
+
+    const apiKey = this.configService.get<string>('SHOPAIKEY_API_KEY');
+    const model =
+      this.configService.get<string>('SHOPAIKEY_GENAI_MODEL') ??
+      'gemini-2.5-flash';
+    const baseUrl =
+      this.configService.get<string>('SHOPAIKEY_GENAI_BASE_URL') ??
+      'https://api.shopaikey.com';
+
+    if (!apiKey) {
+      const fallback =
+        availableTargets[Math.floor(Math.random() * availableTargets.length)];
+      return {
+        target: {
+          ...fallback,
+          source: 'fallback',
+        },
+      };
+    }
+
+    const prompt = [
+      'You are a battleship targeting engine.',
+      'Choose ONE best next target.',
+      'You must return JSON only in this exact format: {"x":number,"y":number}.',
+      `Board size: rows=${rows}, cols=${cols}.`,
+      `Remaining ship sizes: [${payload.shipSizes.join(',')}].`,
+      `Past shots: ${JSON.stringify(payload.shots)}.`,
+      `Allowed targets ONLY: ${JSON.stringify(availableTargets)}.`,
+      'Never output markdown, prose, or explanation.',
+    ].join('\n');
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const response = await fetch(
+        `${baseUrl}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 120,
+            },
+          }),
+          signal: controller.signal,
+        },
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new InternalServerErrorException({
+          error: 'LLM_PROVIDER_ERROR',
+          message: `LLM provider responded with status ${response.status}`,
+        });
+      }
+
+      const data = (await response.json()) as {
+        candidates?: Array<{
+          content?: { parts?: Array<{ text?: string }> };
+        }>;
+      };
+
+      const text =
+        data.candidates?.[0]?.content?.parts?.find((part) => !!part.text)
+          ?.text ?? '';
+      const parsed = parseTargetFromText(text);
+
+      if (
+        parsed &&
+        parsed.x >= 0 &&
+        parsed.x < cols &&
+        parsed.y >= 0 &&
+        parsed.y < rows &&
+        !attempted.has(keyOf(parsed.x, parsed.y))
+      ) {
+        return {
+          target: {
+            x: parsed.x,
+            y: parsed.y,
+            source: 'llm',
+          },
+        };
+      }
+    } catch {
+      // Fall through to fallback target.
+    }
+
+    const fallback =
+      availableTargets[Math.floor(Math.random() * availableTargets.length)];
+    return {
+      target: {
+        ...fallback,
+        source: 'fallback',
+      },
+    };
+  }
 
   async createRoom(
     userId: string,

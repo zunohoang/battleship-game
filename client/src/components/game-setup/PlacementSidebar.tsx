@@ -30,6 +30,7 @@ interface PlacementSidebarProps {
   onPrimaryAction?: () => void;
   aiDifficulty?: AiDifficulty;
   onAiDifficultyChange?: (d: AiDifficulty) => void;
+  difficultyOptions?: AiDifficulty[];
   onStrategicPlace?: () => void;
   botSwitcher?: ReactNode;
   opponentReadyLabel?: string;
@@ -54,6 +55,7 @@ export function PlacementSidebar({
   onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
+  difficultyOptions = ['random', 'learning', 'probability', 'llm'],
   onStrategicPlace,
   botSwitcher,
   opponentReadyLabel,
@@ -86,7 +88,7 @@ export function PlacementSidebar({
               </Button>
             </div>
             <div className='grid grid-cols-1 gap-1 sm:grid-cols-3'>
-              {(['random', 'learning', 'probability'] as AiDifficulty[]).map(
+              {difficultyOptions.map(
                 (d) => (
                   <button
                     key={d}
@@ -287,6 +289,7 @@ export function PlacementSidebar({
           <p>{t('gameSetup.aiDifficulty.guideRandom')}</p>
           <p>{t('gameSetup.aiDifficulty.guideLearning')}</p>
           <p>{t('gameSetup.aiDifficulty.guideProbability')}</p>
+          <p>{t('gameSetup.aiDifficulty.guideLlm')}</p>
         </div>
       </Modal>
     </div>
