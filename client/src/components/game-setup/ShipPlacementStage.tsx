@@ -28,6 +28,7 @@ interface ShipPlacementStageProps {
   onPrimaryAction?: () => void;
   aiDifficulty?: AiDifficulty;
   onAiDifficultyChange?: (d: AiDifficulty) => void;
+  difficultyOptions?: AiDifficulty[];
   botSwitcher?: ReactNode;
   opponentReadyLabel?: string;
 }
@@ -42,6 +43,7 @@ export function ShipPlacementStage({
   onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
+  difficultyOptions,
   botSwitcher,
   opponentReadyLabel,
 }: ShipPlacementStageProps) {
@@ -288,6 +290,7 @@ export function ShipPlacementStage({
           hasError={Boolean(errorText)}
           aiDifficulty={aiDifficulty}
           onAiDifficultyChange={onAiDifficultyChange}
+          difficultyOptions={difficultyOptions}
           onStrategicPlace={handleStrategicPlace}
           botSwitcher={botSwitcher}
           opponentReadyLabel={opponentReadyLabel}

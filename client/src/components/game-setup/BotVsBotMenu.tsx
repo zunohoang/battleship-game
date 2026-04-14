@@ -12,7 +12,7 @@ interface BotVsBotMenuProps {
   onEditTargetBotChange: (bot: 'botA' | 'botB') => void;
 }
 
-const DIFFICULTIES: AiDifficulty[] = ['random', 'learning', 'probability'];
+const DIFFICULTIES: AiDifficulty[] = ['random', 'learning', 'probability', 'llm'];
 const PLACEMENT_STRATEGIES: BotPlacementStrategy[] = ['random', 'strategic'];
 const PLACEMENT_MODES: BotPlacementMode[] = ['auto', 'manual'];
 

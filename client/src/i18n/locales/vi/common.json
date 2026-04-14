@@ -460,11 +460,13 @@
             "random": "NGẪU NHIÊN",
             "learning": "HỌC HỎI",
             "probability": "XÁC SUẤT",
+            "llm": "LLM",
             "openGuide": "Hướng dẫn chế độ AI",
             "guideTitle": "Hướng dẫn chế độ AI",
             "guideRandom": "Ngẫu nhiên: AI đặt tàu và bắn theo logic ngẫu nhiên cơ bản.",
             "guideLearning": "Học hỏi: AI điều chỉnh ưu tiên mục tiêu dựa trên chuỗi bắn trúng/trượt trước đó.",
-            "guideProbability": "Xác suất: AI ước lượng vị trí tàu có khả năng cao nhất từ các ô còn lại để săn mục tiêu."
+            "guideProbability": "Xác suất: AI ước lượng vị trí tàu có khả năng cao nhất từ các ô còn lại để săn mục tiêu.",
+            "guideLlm": "LLM: AI gọi mô hình GenAI ở phía server để gợi ý phát bắn tiếp theo, có fallback an toàn khi nhà cung cấp lỗi."
         },
         "step1": {
             "boardSizeTitle": "Kích thước bàn cờ",
