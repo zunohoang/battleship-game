@@ -457,11 +457,13 @@
             "random": "RANDOM",
             "learning": "LEARNING",
             "probability": "PROBABILITY",
+            "llm": "LLM",
             "openGuide": "AI mode guide",
             "guideTitle": "AI Mode Guide",
             "guideRandom": "Random: AI places ships and chooses shots with simple random logic.",
             "guideLearning": "Learning: AI adjusts target priorities based on previous hit and miss patterns.",
-            "guideProbability": "Probability: AI estimates likely ship positions from remaining cells and hunts highest-probability targets."
+            "guideProbability": "Probability: AI estimates likely ship positions from remaining cells and hunts highest-probability targets.",
+            "guideLlm": "LLM: AI calls the server-side GenAI model to suggest the next shot, with safe fallback when the provider is unavailable."
         },
         "step1": {
             "boardSizeTitle": "Board Size",

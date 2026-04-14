@@ -28,6 +28,7 @@ import {
   makeLog,
   toCoordLabel,
 } from '@/utils/gamePlayUtils';
+import { requestLlmBotShot } from '@/services/bots/llmBotService';
 
 type LocalGameMode = Extract<GameMode, 'bot' | 'botvbot'>;
 type PlayerAttackActor = 'player' | 'botA';
@@ -341,6 +342,50 @@ export function useLocalGamePlaySession({
     setIsBotVBotPaused((current) => !current);
   }, [isBotVBot]);
 
+  const resolveBotTarget = useCallback(
+    async (
+      difficulty: AiDifficulty,
+      currentShots: Shot[],
+      targetPlacements: PlacedShip[],
+    ): Promise<{ x: number; y: number } | null> => {
+      console.log('Resolving bot target with difficulty:', difficulty);
+      if (difficulty === 'llm') {
+        try {
+          const llmTarget = await requestLlmBotShot({
+            boardConfig,
+            shots: currentShots,
+            shipSizes: ships.map((ship) => ship.size),
+          });
+
+          if (llmTarget) {
+            return llmTarget;
+          }
+        } catch {
+          // Fallback to deterministic bot if LLM API fails.
+        }
+
+        return getBotShot(
+          boardConfig,
+          ships,
+          currentShots,
+          'probability',
+          targetPlacements,
+          shipsById,
+        );
+      }
+
+      return getBotShot(
+        boardConfig,
+        ships,
+        currentShots,
+        difficulty,
+        targetPlacements,
+        shipsById,
+      );
+    },
+    [boardConfig, ships, shipsById],
+  );
+
   const plannedOwnBoardShot = useMemo(() => {
     if (
       !enabled ||
@@ -348,6 +393,10 @@ export function useLocalGamePlaySession({
       phase !== 'playing' ||
       turn !== 'bot'
     ) {
+      return null;
+    }
+
+    if (botBDifficulty === 'llm') {
       return null;
     }
 
@@ -379,6 +428,10 @@ export function useLocalGamePlaySession({
       phase !== 'playing' ||
       turn !== 'player'
     ) {
+      return null;
+    }
+
+    if (botADifficulty === 'llm') {
       return null;
     }
 
@@ -483,22 +536,26 @@ export function useLocalGamePlaySession({
       }
 
       const currentShots = botShotsRef.current;
-      const target = isBotVBot
-        ? plannedOwnBoardShot
-        : getBotShot(
-          boardConfig,
-          ships,
-          currentShots,
-          aiDifficulty,
-          playerPlacements,
-          shipsById,
-        );
+      if (isBotVBot && botBDifficulty !== 'llm') {
+        if (!plannedOwnBoardShot) {
+          return;
+        }
 
-      if (!target) {
+        processBotAttack(plannedOwnBoardShot.x, plannedOwnBoardShot.y);
         return;
       }
 
-      processBotAttack(target.x, target.y);
+      void resolveBotTarget(
+        isBotVBot ? botBDifficulty : aiDifficulty,
+        currentShots,
+        playerPlacements,
+      ).then((target) => {
+        if (!target || cancelled || phaseRef.current !== 'playing') {
+          return;
+        }
+
+        processBotAttack(target.x, target.y);
+      });
     }, delay);
 
     return () => {
@@ -517,6 +574,7 @@ export function useLocalGamePlaySession({
     plannedOwnBoardShot,
     playerPlacements,
     processBotAttack,
+    resolveBotTarget,
     ships,
     shipsById,
     turn,
@@ -537,12 +595,27 @@ export function useLocalGamePlaySession({
         return;
       }
 
-      const target = plannedOpponentBoardShot;
-      if (!target) {
+      if (botADifficulty !== 'llm') {
+        const target = plannedOpponentBoardShot;
+        if (!target) {
+          return;
+        }
+
+        processPlayerAttack(target.x, target.y, 'botA');
         return;
       }
 
-      processPlayerAttack(target.x, target.y, 'botA');
+      void resolveBotTarget(
+        botADifficulty,
+        playerShotsRef.current,
+        botPlacements,
+      ).then((target) => {
+        if (!target || cancelled || phaseRef.current !== 'playing') {
+          return;
+        }
+
+        processPlayerAttack(target.x, target.y, 'botA');
+      });
     }, 700);
 
     return () => {
@@ -560,6 +633,7 @@ export function useLocalGamePlaySession({
     plannedOpponentBoardShot,
     playerShots,
     processPlayerAttack,
+    resolveBotTarget,
     ships,
     shipsById,
     turn,
