@@ -12,6 +12,7 @@ export type ForumPostCardLabels = {
   comments: string;
   editPost: string;
   deletePost: string;
+  banUser: string;
   postOptionsAria: string;
 };
 
@@ -37,10 +38,10 @@ type ForumPostCardProps = {
   lineClampContent?: number;
   /** Smaller type and padding for dense feeds */
   compact?: boolean;
-  authorId: string;
-  viewerUserId: string | null;
+  canManagePost?: boolean;
   onEditPost?: () => void;
   onDeletePost?: () => void;
+  onBanAuthor?: () => void;
 };
 
 export function ForumPostCard({
@@ -56,16 +57,12 @@ export function ForumPostCard({
   onOpenPost,
   lineClampContent,
   compact = false,
-  authorId,
-  viewerUserId,
+  canManagePost = false,
   onEditPost,
   onDeletePost,
+  onBanAuthor,
 }: ForumPostCardProps) {
-  const canManage =
-    Boolean(viewerUserId) &&
-    viewerUserId === authorId &&
-    onEditPost &&
-    onDeletePost;
+  const canManage = canManagePost && onDeletePost;
 
   const meta = `${authorUsername} · ${createdAtLabel}`;
   const imageUrl = extractFirstImageUrlFromPostContent(content);
@@ -159,9 +156,11 @@ export function ForumPostCard({
           <ForumPostActionsMenu
             editLabel={labels.editPost}
             deleteLabel={labels.deletePost}
+            banUserLabel={labels.banUser}
             optionsAriaLabel={labels.postOptionsAria}
             onEdit={onEditPost}
             onDelete={onDeletePost}
+            onBanUser={onBanAuthor}
           />
         ) : null}
       </div>

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { User } from '../auth/domain/entities/user';
 import { UserEntity } from '../auth/infrastructure/persistence/relational/entities/user.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -146,7 +147,7 @@ export class ForumService {
   }
 
   async updatePost(
-    userId: string,
+    actor: User,
     postId: string,
     dto: UpdatePostDto,
   ): Promise<ForumPostDto> {
@@ -157,7 +158,7 @@ export class ForumService {
         message: 'Post not found',
       });
     }
-    this.assertAuthor(post.authorId, userId);
+    this.assertCanModerate(post.authorId, actor);
 
     if (typeof dto.title === 'string') {
       const title = sanitizeForumText(dto.title);
@@ -176,7 +177,7 @@ export class ForumService {
     return mapped[0];
   }
 
-  async archivePost(userId: string, postId: string): Promise<void> {
+  async archivePost(actor: User, postId: string): Promise<void> {
     const post = await this.postRepo.findOne({ where: { id: postId } });
     if (!post || post.status !== 'published') {
       throw new NotFoundException({
@@ -185,7 +186,7 @@ export class ForumService {
       });
     }
 
-    this.assertAuthor(post.authorId, userId);
+    this.assertCanModerate(post.authorId, actor);
     post.status = 'archived';
     await this.postRepo.save(post);
   }
@@ -226,7 +227,7 @@ export class ForumService {
   }
 
   async updateComment(
-    userId: string,
+    actor: User,
     commentId: string,
     dto: UpdateCommentDto,
   ): Promise<ForumCommentDto> {
@@ -238,7 +239,7 @@ export class ForumService {
       });
     }
 
-    this.assertAuthor(comment.authorId, userId);
+    this.assertCanModerate(comment.authorId, actor);
 
     if (typeof dto.content === 'string') {
       const content = sanitizeForumText(dto.content);
@@ -251,7 +252,7 @@ export class ForumService {
     return mapped[0];
   }
 
-  async deleteComment(userId: string, commentId: string): Promise<void> {
+  async deleteComment(actor: User, commentId: string): Promise<void> {
     const comment = await this.commentRepo.findOne({ where: { id: commentId } });
     if (!comment) {
       throw new NotFoundException({
@@ -260,7 +261,7 @@ export class ForumService {
       });
     }
 
-    this.assertAuthor(comment.authorId, userId);
+    this.assertCanModerate(comment.authorId, actor);
     await this.commentRepo.delete({ id: comment.id });
     await this.commentVoteRepo.delete({ commentId: comment.id });
     await this.postRepo.decrement({ id: comment.postId }, 'commentCount', 1);
@@ -456,8 +457,9 @@ export class ForumService {
     }
   }
 
-  private assertAuthor(authorId: string, userId: string): void {
-    if (authorId !== userId) {
+  private assertCanModerate(authorId: string, actor: User): void {
+    const isAdmin = actor.role?.toUpperCase() === 'ADMIN';
+    if (authorId !== actor.id && !isAdmin) {
       throw new BadRequestException({
         error: 'FORUM_FORBIDDEN',
         message: 'Only author can modify this resource',

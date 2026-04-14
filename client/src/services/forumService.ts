@@ -42,6 +42,10 @@ export async function archivePost(postId: string): Promise<void> {
   await apiClient.delete(`/forum/posts/${postId}`);
 }
 
+export async function archiveComment(commentId: string): Promise<void> {
+  await apiClient.delete(`/forum/comments/${commentId}`);
+}
+
 export async function listComments(postId: string): Promise<ForumComment[]> {
   const response = await apiClient.get<ForumComment[]>(
     `/forum/posts/${postId}/comments`,
@@ -80,4 +84,15 @@ export async function voteComment(
     { value },
   );
   return response.data;
+}
+
+export type BanUserPayload =
+  | { type: 'temporary'; days: number; reason?: string }
+  | { type: 'permanent'; reason?: string };
+
+export async function banUser(
+  userId: string,
+  payload: BanUserPayload,
+): Promise<void> {
+  await apiClient.post(`/admin/users/${userId}/ban`, payload);
 }

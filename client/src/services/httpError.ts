@@ -26,3 +26,19 @@ export function getApiErrorCode(error: unknown): string {
 export function isGloballyHandledApiError(error: unknown): boolean {
   return GLOBALLY_HANDLED_ERROR_CODES.has(getApiErrorCode(error))
 }
+
+export function getApiErrorMessage(error: unknown): string | null {
+  if (!isAxiosError(error)) {
+    return null
+  }
+
+  const message = error.response?.data?.message
+  if (typeof message === 'string' && message.trim().length > 0) {
+    return message
+  }
+  if (Array.isArray(message)) {
+    return message.filter((item) => typeof item === 'string').join(', ') || null
+  }
+
+  return null
+}

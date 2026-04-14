@@ -29,6 +29,21 @@ export class UserEntity {
   @Column({ type: 'integer', default: 800 })
   elo!: number;
 
+  @Column({ type: 'varchar', length: 20, default: 'USER' })
+  role!: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  bannedUntil!: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  bannedPermanent!: boolean;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  banReason!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  bannedAt!: Date | null;
+
   @Column({ type: 'text', nullable: true })
   refreshTokenHash!: string | null;
 

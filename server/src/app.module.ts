@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 import { ForumModule } from './forum/forum.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import { AdminModule } from './admin/admin.module';
 import { getDatabaseConfig } from './database/database.config';
 
 @Module({
@@ -28,6 +29,7 @@ import { getDatabaseConfig } from './database/database.config';
     GameModule,
     ForumModule,
     LeaderboardModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

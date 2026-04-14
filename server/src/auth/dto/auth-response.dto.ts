@@ -5,6 +5,7 @@ export interface AuthUser {
   avatar: string | null;
   signature: string | null;
   elo: number;
+  role: string;
 }
 
 export interface AuthResponse {

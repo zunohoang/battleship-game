@@ -11,12 +11,17 @@ export class RelationalUserMapper {
         avatar: entity.avatar,
         signature: entity.signature,
         elo: entity.elo ?? undefined,
+        role: entity.role ?? 'USER',
       },
       entity.id,
     );
 
     domainUser.refreshTokenHash = entity.refreshTokenHash;
     domainUser.refreshTokenAbsoluteExpiry = entity.refreshTokenAbsoluteExpiry;
+    domainUser.bannedUntil = entity.bannedUntil;
+    domainUser.bannedPermanent = entity.bannedPermanent ?? false;
+    domainUser.banReason = entity.banReason;
+    domainUser.bannedAt = entity.bannedAt;
 
     return domainUser;
   }
@@ -30,6 +35,11 @@ export class RelationalUserMapper {
     entity.avatar = domainUser.avatar;
     entity.signature = domainUser.signature;
     entity.elo = domainUser.elo;
+    entity.role = domainUser.role;
+    entity.bannedUntil = domainUser.bannedUntil;
+    entity.bannedPermanent = domainUser.bannedPermanent;
+    entity.banReason = domainUser.banReason;
+    entity.bannedAt = domainUser.bannedAt;
     entity.refreshTokenHash = domainUser.refreshTokenHash;
     entity.refreshTokenAbsoluteExpiry = domainUser.refreshTokenAbsoluteExpiry;
 

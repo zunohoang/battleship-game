@@ -8,6 +8,7 @@ export interface CreateUserParams {
   avatar?: string | null;
   signature?: string | null;
   elo?: number;
+  role?: string;
 }
 
 export class User {
@@ -18,6 +19,11 @@ export class User {
   public avatar: string | null;
   public signature: string | null;
   public elo: number;
+  public role: string;
+  public bannedUntil: Date | null;
+  public bannedPermanent: boolean;
+  public banReason: string | null;
+  public bannedAt: Date | null;
   public refreshTokenHash: string | null;
   public refreshTokenAbsoluteExpiry: number | null;
 
@@ -32,8 +38,23 @@ export class User {
       typeof params.elo === 'number' && Number.isFinite(params.elo)
         ? Math.max(0, Math.round(params.elo))
         : DEFAULT_STARTING_ELO;
+    this.role = (params.role ?? 'USER').toUpperCase();
+    this.bannedUntil = null;
+    this.bannedPermanent = false;
+    this.banReason = null;
+    this.bannedAt = null;
     this.refreshTokenHash = null;
     this.refreshTokenAbsoluteExpiry = null;
+  }
+
+  isBanned(now: Date = new Date()): boolean {
+    if (this.bannedPermanent) {
+      return true;
+    }
+    if (!this.bannedUntil) {
+      return false;
+    }
+    return this.bannedUntil.getTime() > now.getTime();
   }
 
   updateUsername(newUsername: string): void {
@@ -72,6 +93,10 @@ export class User {
       avatar: this.avatar,
       signature: this.signature,
       elo: this.elo,
+      role: this.role,
+      bannedUntil: this.bannedUntil?.toISOString() ?? null,
+      bannedPermanent: this.bannedPermanent,
+      banReason: this.banReason,
     };
   }
 }

@@ -1,4 +1,5 @@
 import { ForumVotePill } from '@/components/forum/ForumVotePill';
+import { ForumPostActionsMenu } from '@/components/forum/ForumPostActionsMenu';
 import type { ForumPostCardLabels } from '@/components/forum/ForumPostCard';
 
 type ForumRedditCommentProps = {
@@ -8,9 +9,13 @@ type ForumRedditCommentProps = {
   voteScore: number;
   labels: Pick<
     ForumPostCardLabels,
-    'upvote' | 'downvote' | 'score'
+    'upvote' | 'downvote' | 'score' | 'deletePost' | 'banUser' | 'postOptionsAria'
   >;
   onVote: (value: -1 | 1) => void;
+  canManageComment?: boolean;
+  canBanCommentAuthor?: boolean;
+  onDelete?: () => void;
+  onBanAuthor?: () => void;
 };
 
 function avatarInitial(username: string): string {
@@ -25,6 +30,10 @@ export function ForumRedditComment({
   voteScore,
   labels,
   onVote,
+  canManageComment = false,
+  canBanCommentAuthor = false,
+  onDelete,
+  onBanAuthor,
 }: ForumRedditCommentProps) {
   return (
     <div className='flex gap-2 sm:gap-3'>
@@ -41,13 +50,24 @@ export function ForumRedditComment({
         />
       </div>
       <div className='min-w-0 flex-1 rounded-md border border-(--border-main) bg-(--bg-card-soft) px-3 py-2.5 sm:px-4 sm:py-3'>
-        <p className='text-[13px] font-bold text-(--text-main) sm:text-sm'>
-          <span>{authorUsername}</span>
-          <span className='font-normal text-(--text-muted)'> · </span>
-          <span className='text-xs font-medium text-(--text-muted)'>
-            {createdAtLabel}
-          </span>
-        </p>
+        <div className='flex items-start justify-between gap-2'>
+          <p className='text-[13px] font-bold text-(--text-main) sm:text-sm'>
+            <span>{authorUsername}</span>
+            <span className='font-normal text-(--text-muted)'> · </span>
+            <span className='text-xs font-medium text-(--text-muted)'>
+              {createdAtLabel}
+            </span>
+          </p>
+          {canManageComment && onDelete ? (
+            <ForumPostActionsMenu
+              deleteLabel={labels.deletePost}
+              banUserLabel={labels.banUser}
+              optionsAriaLabel={labels.postOptionsAria}
+              onDelete={onDelete}
+              onBanUser={canBanCommentAuthor ? onBanAuthor : undefined}
+            />
+          ) : null}
+        </div>
         <p className='mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-(--text-main) sm:text-sm'>
           {content}
         </p>

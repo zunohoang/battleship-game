@@ -301,6 +301,7 @@ export function WaitingRoomPage() {
         avatar: response.user.avatar,
         signature: response.user.signature,
         elo: response.user.elo,
+        role: response.user.role,
         isAnonymous: false,
       });
       setProfileSetupOpen(false);
@@ -674,12 +675,15 @@ export function WaitingRoomPage() {
             avatar: updated.avatar,
             signature: updated.signature,
             elo: updated.elo,
+            role: updated.role,
             isAnonymous: false,
           });
         }}
         username={user?.username ?? ''}
         signature={user?.signature}
         avatar={user?.avatar}
+        elo={user?.elo}
+        role={user?.role}
       />
 
       <ProfileShowcaseModal

@@ -1,27 +1,36 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/Button'
-import { ChangePasswordModal } from '@/components/modal/ChangePasswordModal'
-import { Modal } from '@/components/ui/Modal'
-import type { UpdateProfileResponse } from '@/services/authService'
-import { validateProfileInput } from '@/utils/authValidation'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/Button';
+import { ChangePasswordModal } from '@/components/modal/ChangePasswordModal';
+import { Modal } from '@/components/ui/Modal';
+import type { UpdateProfileResponse } from '@/services/authService';
+import { getRankTierId } from '@/utils/rankTier';
+import { validateProfileInput } from '@/utils/authValidation';
 
 export type ProfileSetupPayload = {
-  avatarFile: File | null
-  username: string
-  signature: string
-}
+  avatarFile: File | null;
+  username: string;
+  signature: string;
+};
 
 type ProfileSetupModalProps = {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>
-  onLogout: () => Promise<void>
-  onUserUpdated?: (user: UpdateProfileResponse['user']) => void
-  username: string
-  signature?: string | null
-  avatar?: string | null
-}
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (payload: ProfileSetupPayload) => Promise<string | null>;
+  onLogout: () => Promise<void>;
+  onUserUpdated?: (user: UpdateProfileResponse['user']) => void;
+  username: string;
+  signature?: string | null;
+  avatar?: string | null;
+  elo?: number;
+  role?: string;
+};
 
 export function ProfileSetupModal({
   isOpen,
@@ -32,155 +41,185 @@ export function ProfileSetupModal({
   username: initialUsername,
   signature: initialSignature,
   avatar: initialAvatar,
+  elo = 0,
+  role,
 }: ProfileSetupModalProps) {
-  const { t } = useTranslation('common')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const signatureTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const { t } = useTranslation('common');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const signatureTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [avatarSrc, setAvatarSrc] = useState(initialAvatar?.trim() || null)
-  const [username, setUsername] = useState(initialUsername)
-  const [signature, setSignature] = useState(initialSignature ?? '')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false)
+  const [avatarSrc, setAvatarSrc] = useState(initialAvatar?.trim() || null);
+  const [username, setUsername] = useState(initialUsername);
+  const [signature, setSignature] = useState(initialSignature ?? '');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
-  const [showPreview, setShowPreview] = useState(false)
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [showPreview, setShowPreview] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const isChanged =
     username !== initialUsername ||
     signature !== (initialSignature ?? '') ||
-    avatarFile !== null
+    avatarFile !== null;
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setAvatarFile(file)
-    const reader = new FileReader()
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
     reader.onload = (ev) => {
       if (typeof ev.target?.result === 'string') {
-        setAvatarSrc(ev.target.result)
+        setAvatarSrc(ev.target.result);
       }
-    }
-    reader.readAsDataURL(file)
-  }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const syncSignatureHeight = (textarea?: HTMLTextAreaElement | null) => {
-    const target = textarea ?? signatureTextareaRef.current
+    const target = textarea ?? signatureTextareaRef.current;
     if (!target) {
-      return
+      return;
     }
 
-    target.style.height = '0px'
-    target.style.height = `${target.scrollHeight}px`
-  }
+    target.style.height = '0px';
+    target.style.height = `${target.scrollHeight}px`;
+  };
 
   useEffect(() => {
     if (!isOpen) {
-      return
+      return;
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      syncSignatureHeight()
-    })
+      syncSignatureHeight();
+    });
 
     return () => {
-      window.cancelAnimationFrame(frameId)
-    }
-  }, [isOpen, signature])
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isOpen, signature]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const validation = validateProfileInput(username, signature)
+    e.preventDefault();
+    const validation = validateProfileInput(username, signature);
 
     if (validation.errorCode) {
-      setErrorMessage(t(`errors.${validation.errorCode}`))
-      return
+      setErrorMessage(t(`errors.${validation.errorCode}`));
+      return;
     }
 
     const payload: ProfileSetupPayload = {
       avatarFile,
       username: validation.username,
       signature: validation.signature,
-    }
+    };
 
-    const submitError = await onSubmit(payload)
+    const submitError = await onSubmit(payload);
     if (submitError) {
-      setErrorMessage(submitError)
+      setErrorMessage(submitError);
     }
-  }
+  };
 
-  const inputClassName =
-    'ui-input h-11 rounded-sm px-3'
+  const inputClassName = 'ui-input h-11 rounded-sm px-3';
 
   // Only affects rendering; it does not overwrite user data in global state.
-  const renderAvatarSrc = avatarSrc?.trim() || null
-  const avatarInitial = username.trim().slice(0, 1).toUpperCase() || 'A'
+  const renderAvatarSrc = avatarSrc?.trim() || null;
+  const avatarInitial = username.trim().slice(0, 1).toUpperCase() || 'A';
+  const rankTierName = t(`rank.tiers.${getRankTierId(elo)}.name`);
+  const roleLabel =
+    role?.toUpperCase() === 'ADMIN'
+      ? t('home.profile.roleAdmin')
+      : t('home.profile.roleUser');
 
   return (
     <>
-      <Modal isOpen={isOpen} title={t('welcome.modals.profileSetupTitle')} onClose={onClose}>
-        <form className='grid gap-4' noValidate onSubmit={handleSubmit}>
-
+      <Modal
+        isOpen={isOpen}
+        title={t('welcome.modals.profileSetupTitle')}
+        onClose={onClose}
+      >
+        <form className="grid gap-4" noValidate onSubmit={handleSubmit}>
           {/* Avatar */}
-          <div className='flex flex-col items-center gap-2'>
+          <div className="flex flex-col items-center gap-2">
             <button
-              type='button'
+              type="button"
               onClick={() => setShowPreview(true)}
               aria-label={t('welcome.modals.previewAvatar')}
-              className='h-20 w-20 cursor-pointer overflow-hidden rounded-full border-2 border-(--border-strong) bg-(--accent-soft) transition-colors hover:border-(--accent-secondary)'
+              className="h-20 w-20 cursor-pointer overflow-hidden rounded-full border-2 border-(--border-strong) bg-(--accent-soft) transition-colors hover:border-(--accent-secondary)"
             >
               {renderAvatarSrc ? (
                 <img
                   src={renderAvatarSrc}
                   alt={t('welcome.modals.avatar')}
-                  className='h-full w-full object-cover'
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <span className='flex h-full w-full items-center justify-center font-mono text-3xl font-black text-(--accent-secondary)'>
+                <span className="flex h-full w-full items-center justify-center font-mono text-3xl font-black text-(--accent-secondary)">
                   {avatarInitial}
                 </span>
               )}
             </button>
             <button
-              type='button'
+              type="button"
               onClick={() => fileInputRef.current?.click()}
-              className='cursor-pointer text-xs font-semibold text-(--accent-secondary) underline underline-offset-4 hover:text-white'
+              className="cursor-pointer text-xs font-semibold text-(--accent-secondary) underline underline-offset-4 hover:text-white"
             >
               {t('welcome.modals.changeAvatar')}
             </button>
             <input
               ref={fileInputRef}
-              type='file'
-              accept='image/*'
-              className='hidden'
+              type="file"
+              accept="image/*"
+              className="hidden"
               onChange={handleFileChange}
             />
           </div>
 
+          <div className="grid grid-cols-1 gap-2 rounded-sm border border-(--border-main) bg-(--bg-card-soft) px-3 py-2 text-sm sm:grid-cols-2">
+            <p className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-(--text-muted)">
+                {t('home.profile.role')}
+              </span>
+              <span className="font-bold text-(--text-main)">{roleLabel}</span>
+            </p>
+            <p className="flex items-center justify-between gap-2">
+              <span className="font-semibold text-(--text-muted)">
+                {t('home.profile.rank')}
+              </span>
+              <span className="font-bold text-(--text-main)">
+                {rankTierName}
+              </span>
+            </p>
+          </div>
+
           {/* Username */}
-          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            <div className='flex justify-between'>
+          <label className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+            <div className="flex justify-between">
               <span>{t('welcome.modals.username')}</span>
-              <span className='font-normal text-(--text-subtle)'>{username.length}/20</span>
+              <span className="font-normal text-(--text-subtle)">
+                {username.length}/20
+              </span>
             </div>
             <input
-              type='text'
+              type="text"
               required
               maxLength={20}
               value={username}
               onChange={(e) => {
-                setErrorMessage(null)
-                setUsername(e.target.value)
+                setErrorMessage(null);
+                setUsername(e.target.value);
               }}
               className={inputClassName}
             />
           </label>
 
           {/* Signature */}
-          <label className='grid gap-2 text-sm font-semibold text-(--text-muted)'>
-            <div className='flex justify-between'>
+          <label className="grid gap-2 text-sm font-semibold text-(--text-muted)">
+            <div className="flex justify-between">
               <span>{t('welcome.modals.signature')}</span>
-              <span className='font-normal text-(--text-subtle)'>{signature.length}/200</span>
+              <span className="font-normal text-(--text-subtle)">
+                {signature.length}/200
+              </span>
             </div>
             <textarea
               ref={signatureTextareaRef}
@@ -188,26 +227,26 @@ export function ProfileSetupModal({
               rows={3}
               value={signature}
               onChange={(e) => {
-                setErrorMessage(null)
-                setSignature(e.target.value)
-                syncSignatureHeight(e.target)
+                setErrorMessage(null);
+                setSignature(e.target.value);
+                syncSignatureHeight(e.target);
               }}
               placeholder={t('welcome.modals.placeholder.signature')}
-              className='ui-input resize-none overflow-hidden rounded-sm px-3 py-2 text-sm'
+              className="ui-input resize-none overflow-hidden rounded-sm px-3 py-2 text-sm"
             />
           </label>
 
-          <div className='grid gap-2'>
-            <span className='text-sm font-semibold text-(--text-muted)'>
+          <div className="grid gap-2">
+            <span className="text-sm font-semibold text-(--text-muted)">
               {t('welcome.modals.password')}
             </span>
             <Button
-              type='button'
-              variant='default'
-              className='h-11 justify-center'
+              type="button"
+              variant="default"
+              className="h-11 justify-center"
               onClick={() => {
-                setErrorMessage(null)
-                setChangePasswordOpen(true)
+                setErrorMessage(null);
+                setChangePasswordOpen(true);
               }}
             >
               {t('welcome.modals.openChangePassword')}
@@ -215,27 +254,31 @@ export function ProfileSetupModal({
           </div>
 
           {errorMessage && (
-            <p className='rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]'>
+            <p className="rounded-sm border border-[#8d3f47] bg-[#2b1016] px-3 py-2 text-sm font-semibold text-[#ffb4b4]">
               {errorMessage}
             </p>
           )}
 
-          <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2'>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
-              type='button'
-              variant='danger'
-              className='h-11'
+              type="button"
+              variant="danger"
+              className="h-11"
               onClick={() => {
-                void onLogout()
+                void onLogout();
               }}
             >
               {t('welcome.modals.logout')}
             </Button>
-            <Button variant='primary' type='submit' className='h-11' disabled={!isChanged}>
+            <Button
+              variant="primary"
+              type="submit"
+              className="h-11"
+              disabled={!isChanged}
+            >
               {t('welcome.modals.submitProfile')}
             </Button>
           </div>
-
         </form>
       </Modal>
 
@@ -243,29 +286,29 @@ export function ProfileSetupModal({
         isOpen={changePasswordOpen}
         onClose={() => setChangePasswordOpen(false)}
         onSuccess={(user) => {
-          onUserUpdated?.(user)
+          onUserUpdated?.(user);
         }}
       />
 
       {/* Lightbox */}
       {showPreview && (
         <div
-          className='fixed inset-0 z-60 flex items-center justify-center bg-[#020912]/88 backdrop-blur-sm'
+          className="fixed inset-0 z-60 flex items-center justify-center bg-[#020912]/88 backdrop-blur-sm"
           onClick={() => setShowPreview(false)}
-          role='dialog'
-          aria-modal='true'
+          role="dialog"
+          aria-modal="true"
           aria-label={t('welcome.modals.avatarPreview')}
         >
           {renderAvatarSrc ? (
             <img
               src={renderAvatarSrc}
               alt={t('welcome.modals.avatarPreview')}
-              className='max-h-[90vh] max-w-[90vw] rounded-md border border-(--border-strong) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
+              className="max-h-[90vh] max-w-[90vw] rounded-md border border-(--border-strong) shadow-[0_0_30px_rgba(0,174,255,0.22)]"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <div
-              className='flex h-48 w-48 items-center justify-center rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-7xl font-black text-(--accent-secondary) shadow-[0_0_30px_rgba(0,174,255,0.22)]'
+              className="flex h-48 w-48 items-center justify-center rounded-full border border-(--border-strong) bg-(--accent-soft) font-mono text-7xl font-black text-(--accent-secondary) shadow-[0_0_30px_rgba(0,174,255,0.22)]"
               onClick={(e) => e.stopPropagation()}
             >
               {avatarInitial}
@@ -274,5 +317,5 @@ export function ProfileSetupModal({
         </div>
       )}
     </>
-  )
+  );
 }

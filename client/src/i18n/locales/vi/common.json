@@ -71,6 +71,9 @@
         "profile": {
             "username": "Tên người dùng",
             "signature": "Chữ ký",
+            "role": "Quyền",
+            "roleUser": "Người dùng",
+            "roleAdmin": "Quản trị viên",
             "rank": "Cấp bậc",
             "elo": "Elo"
         },
@@ -648,6 +651,20 @@
             "editSave": "Lưu thay đổi",
             "editSaving": "Đang lưu…",
             "editCancel": "Hủy"
+        },
+        "moderation": {
+            "banUser": "Ban user",
+            "banTitle": "Ban người dùng",
+            "banTarget": "Mục tiêu: {{username}}",
+            "banTemporary": "Ban theo ngày",
+            "banPermanent": "Ban vĩnh viễn",
+            "banDaysLabel": "Số ngày ban",
+            "banReasonLabel": "Lý do (tùy chọn)",
+            "banReasonPlaceholder": "Nhập lý do ban...",
+            "banConfirm": "Xác nhận ban",
+            "banning": "Đang xử lý...",
+            "deleteCommentDialogTitle": "Xóa bình luận này?",
+            "deleteCommentConfirm": "Bình luận sẽ bị gỡ khỏi thảo luận. Thao tác này không thể hoàn tác."
         }
     },
     "errors": {
@@ -691,6 +708,10 @@
         "FORUM_SEARCH_TOO_LONG": "Nội dung tìm kiếm quá dài.",
         "PAGINATION_INVALID": "Tham số phân trang không hợp lệ.",
         "USER_NOT_FOUND": "Không tìm thấy người dùng.",
+        "USER_BANNED": "Tài khoản của bạn đang bị khóa.",
+        "ADMIN_FORBIDDEN": "Bạn không có quyền quản trị.",
+        "ADMIN_CANNOT_BAN_SELF": "Bạn không thể tự ban chính mình.",
+        "BAN_DAYS_REQUIRED": "Ban tạm thời cần số ngày hợp lệ.",
         "UNKNOWN_ERROR": "Có lỗi xảy ra. Vui lòng thử lại."
     },
     "gameBattle": {

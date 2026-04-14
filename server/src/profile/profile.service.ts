@@ -138,6 +138,7 @@ export class ProfileService {
       avatar: user.avatar,
       signature: user.signature,
       elo: user.elo,
+      role: user.role,
     };
   }
 

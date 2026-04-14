@@ -23,6 +23,7 @@ export interface GlobalUser {
   avatar: string | null
   signature: string | null
   elo: number
+  role?: string
   isAnonymous: boolean
 }
 
@@ -32,6 +33,7 @@ export const ANONYMOUS_USER: GlobalUser = {
   avatar: null,
   signature: '- - -',
   elo: 0,
+  role: undefined,
   isAnonymous: true,
 }
 
@@ -50,7 +52,7 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { id, username, avatar, signature, elo, isAnonymous } = candidate
+  const { id, username, avatar, signature, elo, role, isAnonymous } = candidate
 
   return (
     (typeof id === 'string' || id === null) &&
@@ -58,6 +60,7 @@ const isGlobalUser = (value: unknown): value is GlobalUser => {
     (typeof avatar === 'string' || avatar === null) &&
     (typeof signature === 'string' || signature === null) &&
     typeof elo === 'number' &&
+    (typeof role === 'string' || typeof role === 'undefined') &&
     typeof isAnonymous === 'boolean'
   )
 }
@@ -72,7 +75,7 @@ const normalizeStoredUser = (value: unknown): GlobalUser => {
   }
 
   const candidate = value as Record<string, unknown>
-  const { id, username, avatar, signature } = candidate
+  const { id, username, avatar, signature, role } = candidate
 
   if (
     (typeof id !== 'string' && id !== null && typeof id !== 'undefined') ||
@@ -90,6 +93,7 @@ const normalizeStoredUser = (value: unknown): GlobalUser => {
     avatar,
     signature,
     elo: typeof eloRaw === 'number' ? eloRaw : 0,
+    role: typeof role === 'string' ? role : undefined,
     isAnonymous: false,
   }
 }
@@ -136,13 +140,20 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation('common')
   const [user, setUserState] = useState<GlobalUser>(() => loadStoredUser())
   const [isSessionExpiredModalOpen, setSessionExpiredModalOpen] = useState(false)
+  const [sessionModalTitle, setSessionModalTitle] = useState<string>(
+    t('errors.SESSION_EXPIRED_TITLE'),
+  )
 
   useEffect(() => {
     saveStoredUser(user)
   }, [user])
 
   useEffect(() => {
-    if (!user?.id || user.isAnonymous || user.elo > 0) {
+    if (
+      !user?.id ||
+      user.isAnonymous ||
+      (user.elo > 0 && typeof user.role === 'string' && user.role.length > 0)
+    ) {
       return
     }
 
@@ -153,7 +164,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
       }
       setUserState((prev) =>
         prev && !prev.isAnonymous && prev.id === user.id
-          ? { ...prev, elo: profile.elo }
+          ? { ...prev, elo: profile.elo, role: profile.role }
           : prev,
       )
     })
@@ -161,7 +172,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [user?.id, user?.isAnonymous, user?.elo])
+  }, [user?.id, user?.isAnonymous, user?.elo, user?.role])
 
   const logout = useCallback(() => {
     clearAccessToken()
@@ -174,15 +185,27 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
 
   const handleForceLogout = useCallback(
     (reasonCode?: string) => {
+      const resolveTitle = (): string => {
+        if (reasonCode === 'USER_BANNED') {
+          return t('errors.USER_BANNED')
+        }
+        return t('errors.SESSION_EXPIRED_TITLE')
+      }
+
       if (reasonCode === 'INVALID_REFRESH_TOKEN') {
         logout()
+        setSessionModalTitle(resolveTitle())
         setSessionExpiredModalOpen(true)
         return
       }
 
       logout()
+      if (reasonCode === 'USER_BANNED') {
+        setSessionModalTitle(resolveTitle())
+        setSessionExpiredModalOpen(true)
+      }
     },
-    [logout],
+    [logout, t],
   )
 
   useEffect(() => {
@@ -201,7 +224,7 @@ export function GlobalProvider({ children }: { children: ReactNode }) {
       {children}
       <Modal
         isOpen={isSessionExpiredModalOpen}
-        title={t('errors.SESSION_EXPIRED_TITLE')}
+        title={sessionModalTitle}
         onClose={redirectToWelcome}
       >
         <div className='mt-4'>

@@ -4,4 +4,5 @@ export interface ProfileSummaryDto {
   avatar: string | null;
   signature: string | null;
   elo: number;
+  role: string;
 }

@@ -88,6 +88,8 @@ export class AuthService {
       });
     }
 
+    this.assertUserNotBanned(user);
+
     return this.issueTokenPair(user);
   }
 
@@ -118,6 +120,8 @@ export class AuthService {
         message: 'Invalid or expired refresh token',
       });
     }
+
+    this.assertUserNotBanned(user);
 
     const incomingHash = createHash('sha256').update(payload.jti).digest('hex');
     if (user.refreshTokenHash !== incomingHash) {
@@ -157,6 +161,8 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid token');
     }
+
+    this.assertUserNotBanned(user);
 
     return user;
   }
@@ -199,5 +205,35 @@ export class AuthService {
     }
 
     return days * 24 * 60 * 60 * 1000;
+  }
+
+  private assertUserNotBanned(user: User): void {
+    if (!user.isBanned()) {
+      return;
+    }
+
+    throw new UnauthorizedException({
+      error: 'USER_BANNED',
+      message: this.buildBanMessage(user),
+    });
+  }
+
+  private buildBanMessage(user: User): string {
+    const reasonText = user.banReason?.trim();
+    const reasonSuffix = reasonText ? ` Ly do: ${reasonText}` : '';
+
+    if (user.bannedPermanent) {
+      return `Tai khoan cua ban da bi ban vinh vien.${reasonSuffix}`.trim();
+    }
+
+    if (user.bannedUntil) {
+      const now = Date.now();
+      const msRemaining = Math.max(0, user.bannedUntil.getTime() - now);
+      const daysRemaining = Math.max(1, Math.ceil(msRemaining / 86400000));
+      const untilText = user.bannedUntil.toISOString();
+      return `Tai khoan cua ban dang bi ban ${daysRemaining} ngay (den ${untilText}).${reasonSuffix}`.trim();
+    }
+
+    return `Tai khoan cua ban dang bi tam khoa.${reasonSuffix}`.trim();
   }
 }

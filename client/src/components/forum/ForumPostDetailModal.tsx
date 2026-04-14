@@ -6,12 +6,15 @@ import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { BanUserModal } from '@/components/forum/BanUserModal';
 import { ForumRedditComment } from '@/components/forum/ForumComment';
 import { ForumPostActionsMenu } from '@/components/forum/ForumPostActionsMenu';
 import { ForumVotePill } from '@/components/forum/ForumVotePill';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import {
   archivePost,
+  archiveComment,
+  banUser,
   createComment,
   getPost,
   listComments,
@@ -32,6 +35,7 @@ type ForumPostDetailModalProps = {
   onPostVoteUpdated?: (postId: string, voteScore: number) => void;
   onPostCommentCountDelta?: (postId: string, delta: number) => void;
   viewerUserId: string | null;
+  isViewerAdmin?: boolean;
   onPostUpdated?: (post: ForumPost) => void;
   onPostDeleted?: (postId: string) => void;
 };
@@ -42,6 +46,7 @@ export function ForumPostDetailModal({
   onPostVoteUpdated,
   onPostCommentCountDelta,
   viewerUserId,
+  isViewerAdmin = false,
   onPostUpdated,
   onPostDeleted,
 }: ForumPostDetailModalProps) {
@@ -60,6 +65,13 @@ export function ForumPostDetailModal({
   const [editContent, setEditContent] = useState('');
   const [savingPost, setSavingPost] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [commentPendingDelete, setCommentPendingDelete] =
+    useState<ForumComment | null>(null);
+  const [banTarget, setBanTarget] = useState<{
+    id: string;
+    username: string;
+  } | null>(null);
+  const [isBanningUser, setIsBanningUser] = useState(false);
 
   const labels = useMemo(
     () => ({
@@ -67,6 +79,9 @@ export function ForumPostDetailModal({
       downvote: t('forum.feed.downvote'),
       score: t('forum.feed.score'),
       comments: t('forum.feed.comments'),
+      deletePost: t('forum.feed.deletePost'),
+      banUser: t('forum.moderation.banUser'),
+      postOptionsAria: t('forum.feed.postOptionsAria'),
     }),
     [t],
   );
@@ -157,6 +172,8 @@ export function ForumPostDetailModal({
   useEffect(() => {
     if (!postId) {
       setDeleteConfirmOpen(false);
+      setCommentPendingDelete(null);
+      setBanTarget(null);
     }
   }, [postId]);
 
@@ -247,6 +264,33 @@ export function ForumPostDetailModal({
     }
   };
 
+  const executeDeleteComment = useCallback(async () => {
+    if (!commentPendingDelete) {
+      return;
+    }
+    setErrorCode(null);
+    try {
+      await archiveComment(commentPendingDelete.id);
+      setComments((previous) =>
+        previous.filter((comment) => comment.id !== commentPendingDelete.id),
+      );
+      setPost((previous) =>
+        previous
+          ? {
+              ...previous,
+              commentCount: Math.max(0, previous.commentCount - 1),
+            }
+          : previous,
+      );
+      if (postId) {
+        onPostCommentCountDelta?.(postId, -1);
+      }
+      setCommentPendingDelete(null);
+    } catch (error) {
+      setErrorCode(getApiErrorCode(error));
+    }
+  }, [commentPendingDelete, onPostCommentCountDelta, postId]);
+
   if (!postId) {
     return null;
   }
@@ -281,13 +325,28 @@ export function ForumPostDetailModal({
               {t('forum.post.modalTitle')}
             </h2>
             <div className='flex shrink-0 items-center gap-1'>
-              {!isLoading && post && viewerUserId === post.author.id ? (
+              {!isLoading &&
+              post &&
+              viewerUserId &&
+              (viewerUserId === post.author.id || isViewerAdmin) ? (
                 <ForumPostActionsMenu
                   editLabel={t('forum.feed.editPost')}
                   deleteLabel={t('forum.feed.deletePost')}
+                  banUserLabel={t('forum.moderation.banUser')}
                   optionsAriaLabel={t('forum.feed.postOptionsAria')}
-                  onEdit={beginEditPost}
+                  onEdit={
+                    viewerUserId === post.author.id ? beginEditPost : undefined
+                  }
                   onDelete={() => setDeleteConfirmOpen(true)}
+                  onBanUser={
+                    isViewerAdmin && viewerUserId !== post.author.id
+                      ? () =>
+                          setBanTarget({
+                            id: post.author.id,
+                            username: post.author.username,
+                          })
+                      : undefined
+                  }
                 />
               ) : null}
               <Button
@@ -442,6 +501,20 @@ export function ForumPostDetailModal({
                     voteScore={comment.voteScore}
                     labels={labels}
                     onVote={(value: -1 | 1) => onVoteComment(comment.id, value)}
+                    canManageComment={Boolean(
+                      viewerUserId &&
+                        (viewerUserId === comment.author.id || isViewerAdmin),
+                    )}
+                    canBanCommentAuthor={
+                      isViewerAdmin && viewerUserId !== comment.author.id
+                    }
+                    onDelete={() => setCommentPendingDelete(comment)}
+                    onBanAuthor={() =>
+                      setBanTarget({
+                        id: comment.author.id,
+                        username: comment.author.username,
+                      })
+                    }
                   />
                 ))}
               </div>
@@ -459,6 +532,39 @@ export function ForumPostDetailModal({
         confirmLabel={t('forum.feed.deletePost')}
         confirmVariant='danger'
         onConfirm={executeDeletePost}
+      />
+
+      <ConfirmDialog
+        isOpen={commentPendingDelete !== null}
+        onClose={() => setCommentPendingDelete(null)}
+        title={t('forum.moderation.deleteCommentDialogTitle')}
+        message={t('forum.moderation.deleteCommentConfirm')}
+        cancelLabel={t('forum.post.editCancel')}
+        confirmLabel={t('forum.feed.deletePost')}
+        confirmVariant='danger'
+        onConfirm={executeDeleteComment}
+      />
+
+      <BanUserModal
+        isOpen={banTarget !== null}
+        username={banTarget?.username ?? null}
+        isSubmitting={isBanningUser}
+        onClose={() => setBanTarget(null)}
+        onSubmit={async (payload) => {
+          if (!banTarget) {
+            return;
+          }
+          setErrorCode(null);
+          setIsBanningUser(true);
+          try {
+            await banUser(banTarget.id, payload);
+            setBanTarget(null);
+          } catch (error) {
+            setErrorCode(getApiErrorCode(error));
+          } finally {
+            setIsBanningUser(false);
+          }
+        }}
       />
     </>,
     document.body,

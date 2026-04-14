@@ -9,6 +9,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { BadRequestException, HttpException, Inject } from '@nestjs/common';
 import {
+  USER_REPOSITORY,
+  type IUserRepository,
+} from '../auth/infrastructure/persistence/user.repository';
+import {
   TOKEN_REPOSITORY,
   type ITokenRepository,
 } from '../auth/infrastructure/security/token.repository';
@@ -49,6 +53,8 @@ export class GameGateway {
   constructor(
     @Inject(TOKEN_REPOSITORY)
     private readonly tokenRepository: ITokenRepository,
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
     private readonly chatService: ChatService,
     private readonly gameService: GameService,
   ) {}
@@ -63,6 +69,7 @@ export class GameGateway {
       if (!payload) {
         throw new BadRequestException('Invalid access token');
       }
+      await this.assertUserIsActive(payload.sub);
       (client.data as { userId?: string }).userId = payload.sub;
     } catch {
       client.emit(GameEvents.ServerError, {
@@ -83,7 +90,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       const room = await this.gameService.createRoom(userId, payload);
       return this.emitRoomUpdate(client, {
         room,
@@ -101,7 +108,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       return this.emitRoomUpdate(
         client,
         await this.gameService.configureRoomSetup(userId, payload),
@@ -114,7 +121,7 @@ export class GameGateway {
 
   @SubscribeMessage(GameEvents.RoomList)
   async handleListRooms(@ConnectedSocket() client: Socket) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const rooms = await this.gameService.listOpenRooms(userId);
     return { rooms };
   }
@@ -125,7 +132,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       return this.emitRoomUpdate(
         client,
         await this.gameService.joinRoom(userId, {
@@ -144,7 +151,7 @@ export class GameGateway {
     @MessageBody() payload: RoomActionDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const result = await this.gameService.startRoom(payload.roomId, userId);
     this.server
       .to(`room:${payload.roomId}`)
@@ -157,7 +164,7 @@ export class GameGateway {
     @MessageBody() payload: RoomReadyDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const result = await this.gameService.markReady(
       payload.roomId,
       userId,
@@ -174,7 +181,7 @@ export class GameGateway {
     @MessageBody() payload: MoveDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const match = await this.gameService.submitMove(userId, payload);
     this.server
       .to(`room:${match.roomId}`)
@@ -193,7 +200,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       const state = await this.gameService.spectateJoin(userId, payload.roomId);
       await client.join(this.spectatorRoom(payload.roomId));
       client.emit(GameEvents.ServerSpectatorChatHistory, {
@@ -229,7 +236,7 @@ export class GameGateway {
   @SubscribeMessage(GameEvents.RoomLeave)
   async handleLeaveRoom(@ConnectedSocket() client: Socket) {
     const roomId = this.readRoomIdFromSocket(client);
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const room = await this.gameService.leaveRoom(roomId, userId);
     await client.leave(`room:${roomId}`);
     this.server
@@ -246,7 +253,7 @@ export class GameGateway {
     @MessageBody() payload: ReconnectDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const state = await this.gameService.reconnect(userId, {
       roomId: payload.roomId,
       matchId: payload.matchId,
@@ -257,7 +264,7 @@ export class GameGateway {
 
   @SubscribeMessage(GameEvents.MatchForfeit)
   async handleForfeit(@ConnectedSocket() client: Socket) {
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const roomId = this.readRoomIdFromSocket(client);
     const match = await this.gameService.forfeit(roomId, userId);
     this.server
@@ -277,7 +284,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     const roomId = this.readRoomIdFromSocket(client);
-    const userId = this.getUserId(client);
+    const userId = await this.getUserId(client);
     const result = await this.gameService.rematchVote(
       roomId,
       userId,
@@ -301,7 +308,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       await this.gameService.spectateJoin(userId, payload.roomId);
 
       const messages = await this.chatService.getRecentSpectatorMessages(
@@ -322,7 +329,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       await this.gameService.spectateJoin(userId, payload.roomId);
 
       const message = await this.chatService.sendSpectatorMessage(
@@ -350,7 +357,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       const roomId = payload.roomId ?? this.readRoomIdFromSocket(client);
       const messages = await this.chatService.getRecentMessages(userId, roomId);
       const response = { roomId, messages };
@@ -368,7 +375,7 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const userId = this.getUserId(client);
+      const userId = await this.getUserId(client);
       const roomId = payload.roomId ?? this.readRoomIdFromSocket(client);
       const message = await this.chatService.sendMessage(
         userId,
@@ -401,13 +408,42 @@ export class GameGateway {
     throw new WsException('Missing access token');
   }
 
-  private getUserId(client: Socket): string {
+  private async getUserId(client: Socket): Promise<string> {
     const data = client.data as { userId?: unknown };
     const userId = data.userId;
     if (typeof userId !== 'string' || userId.length === 0) {
       throw new WsException('Unauthorized socket');
     }
+    try {
+      await this.assertUserIsActive(userId);
+    } catch (error) {
+      const message =
+        error instanceof WsException
+          ? String(error.message)
+          : 'Your account has been banned.';
+      client.emit(GameEvents.ServerError, {
+        error: 'USER_BANNED',
+        message,
+      });
+      client.disconnect(true);
+      throw new WsException('User banned');
+    }
     return userId;
+  }
+
+  private async assertUserIsActive(userId: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new WsException('Unauthorized socket');
+    }
+    if (user.isBanned()) {
+      const reason = user.banReason?.trim();
+      throw new WsException(
+        reason && reason.length > 0
+          ? `Your account has been banned. Reason: ${reason}`
+          : 'Your account has been banned.',
+      );
+    }
   }
 
   private readRoomIdFromSocket(client: Socket): string {

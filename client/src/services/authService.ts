@@ -21,6 +21,7 @@ export interface RegisterResponse {
     avatar: string | null
     signature: string | null
     elo: number
+    role?: string
   }
 }
 
@@ -33,6 +34,7 @@ export interface LoginResponse {
     avatar: string | null
     signature: string | null
     elo: number
+    role?: string
   }
 }
 
@@ -56,6 +58,7 @@ export interface UpdateProfileResponse {
     avatar: string | null
     signature: string | null
     elo: number
+    role?: string
   }
 }
 
@@ -65,6 +68,7 @@ export interface UserProfileResponse {
   avatar: string | null
   signature: string | null
   elo: number
+  role?: string
 }
 
 export async function register(payload: RegisterRequest): Promise<RegisterResponse> {

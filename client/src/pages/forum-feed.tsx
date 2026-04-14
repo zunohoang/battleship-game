@@ -13,9 +13,11 @@ import { ForumCreatePostComposer } from '@/components/forum/ForumCreatePostCompo
 import { ForumEditPostModal } from '@/components/forum/ForumEditPostModal';
 import { ForumPostDetailModal } from '@/components/forum/ForumPostDetailModal';
 import { ForumPostCard } from '@/components/forum/ForumPostCard';
+import { BanUserModal } from '@/components/forum/BanUserModal';
 import { useGlobalContext } from '@/hooks/useGlobalContext';
 import {
   archivePost,
+  banUser,
   createPost,
   listPosts,
   votePost,
@@ -53,6 +55,11 @@ export function ForumFeedPage() {
   const [postPendingDelete, setPostPendingDelete] = useState<ForumPost | null>(
     null,
   );
+  const [banTarget, setBanTarget] = useState<{
+    id: string;
+    username: string;
+  } | null>(null);
+  const [isBanningUser, setIsBanningUser] = useState(false);
 
   const postsRef = useRef<ForumPost[]>([]);
   const totalRef = useRef(0);
@@ -106,12 +113,14 @@ export function ForumFeedPage() {
       comments: t('forum.feed.comments'),
       editPost: t('forum.feed.editPost'),
       deletePost: t('forum.feed.deletePost'),
+      banUser: t('forum.moderation.banUser'),
       postOptionsAria: t('forum.feed.postOptionsAria'),
     }),
     [t],
   );
 
   const viewerUserId = user?.id ?? null;
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
   const onPostUpdatedInFeed = useCallback((updated: ForumPost) => {
     setPosts((previous) =>
@@ -401,10 +410,25 @@ export function ForumFeedPage() {
                     content={post.content}
                     authorUsername={post.author.username}
                     authorAvatarUrl={post.author.avatar}
-                    authorId={post.author.id}
-                    viewerUserId={viewerUserId}
-                    onEditPost={() => setPostToEdit(post)}
+                    canManagePost={Boolean(
+                      viewerUserId &&
+                        (viewerUserId === post.author.id || isAdmin),
+                    )}
+                    onEditPost={
+                      viewerUserId === post.author.id
+                        ? () => setPostToEdit(post)
+                        : undefined
+                    }
                     onDeletePost={() => setPostPendingDelete(post)}
+                    onBanAuthor={
+                      isAdmin && viewerUserId !== post.author.id
+                        ? () =>
+                            setBanTarget({
+                              id: post.author.id,
+                              username: post.author.username,
+                            })
+                        : undefined
+                    }
                     createdAtLabel={new Date(post.createdAt).toLocaleString()}
                     commentCount={post.commentCount}
                     voteScore={post.voteScore}
@@ -471,6 +495,29 @@ export function ForumFeedPage() {
         viewerUserId={viewerUserId}
         onPostUpdated={onPostUpdatedInFeed}
         onPostDeleted={onPostDeletedFromFeed}
+        isViewerAdmin={isAdmin}
+      />
+
+      <BanUserModal
+        isOpen={banTarget !== null}
+        username={banTarget?.username ?? null}
+        isSubmitting={isBanningUser}
+        onClose={() => setBanTarget(null)}
+        onSubmit={async (payload) => {
+          if (!banTarget) {
+            return;
+          }
+          setErrorCode(null);
+          setIsBanningUser(true);
+          try {
+            await banUser(banTarget.id, payload);
+            setBanTarget(null);
+          } catch (error) {
+            setErrorCode(getApiErrorCode(error));
+          } finally {
+            setIsBanningUser(false);
+          }
+        }}
       />
     </main>
   );

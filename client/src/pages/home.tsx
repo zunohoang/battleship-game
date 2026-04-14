@@ -22,6 +22,7 @@ import {
 } from '@/services/leaderboardService';
 import {
   getApiErrorCode,
+  getApiErrorMessage,
   isGloballyHandledApiError,
 } from '@/services/httpError';
 import {
@@ -188,6 +189,7 @@ export function HomePage() {
         avatar: response.user.avatar,
         signature: response.user.signature,
         elo: response.user.elo,
+        role: response.user.role,
         isAnonymous: false,
       });
 
@@ -196,7 +198,12 @@ export function HomePage() {
       if (isGloballyHandledApiError(error)) {
         return;
       }
-      setLoginError(t(`errors.${getApiErrorCode(error)}`));
+      const code = getApiErrorCode(error);
+      if (code === 'USER_BANNED') {
+        setLoginError(getApiErrorMessage(error) ?? t('errors.USER_BANNED'));
+        return;
+      }
+      setLoginError(t(`errors.${code}`));
     }
   };
 
@@ -233,6 +240,7 @@ export function HomePage() {
         avatar: response.user.avatar,
         signature: null,
         elo: response.user.elo,
+        role: response.user.role,
         isAnonymous: false,
       });
 
@@ -261,6 +269,7 @@ export function HomePage() {
         avatar: response.user.avatar,
         signature: response.user.signature,
         elo: response.user.elo,
+        role: response.user.role,
         isAnonymous: false,
       });
       closeModal();
@@ -868,12 +877,15 @@ export function HomePage() {
             avatar: updated.avatar,
             signature: updated.signature,
             elo: updated.elo,
+            role: updated.role,
             isAnonymous: false,
           });
         }}
         username={user?.username ?? ''}
         signature={user?.signature}
         avatar={user?.avatar}
+        elo={user?.elo}
+        role={user?.role}
       />
 
       <SettingsModal

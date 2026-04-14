@@ -71,6 +71,9 @@
         "profile": {
             "username": "Username",
             "signature": "Signature",
+            "role": "Role",
+            "roleUser": "User",
+            "roleAdmin": "Admin",
             "rank": "Rank",
             "elo": "Elo"
         },
@@ -648,6 +651,20 @@
             "editSave": "Save changes",
             "editSaving": "Saving…",
             "editCancel": "Cancel"
+        },
+        "moderation": {
+            "banUser": "Ban user",
+            "banTitle": "Ban user",
+            "banTarget": "Target: {{username}}",
+            "banTemporary": "Temporary ban",
+            "banPermanent": "Permanent ban",
+            "banDaysLabel": "Ban duration (days)",
+            "banReasonLabel": "Reason (optional)",
+            "banReasonPlaceholder": "Add a moderation reason...",
+            "banConfirm": "Confirm ban",
+            "banning": "Applying...",
+            "deleteCommentDialogTitle": "Delete this comment?",
+            "deleteCommentConfirm": "This comment will be removed from the discussion and cannot be restored."
         }
     },
     "errors": {
@@ -691,6 +708,10 @@
         "FORUM_SEARCH_TOO_LONG": "Search text is too long.",
         "PAGINATION_INVALID": "Invalid pagination parameters.",
         "USER_NOT_FOUND": "User not found.",
+        "USER_BANNED": "Your account is suspended.",
+        "ADMIN_FORBIDDEN": "Admin permission is required.",
+        "ADMIN_CANNOT_BAN_SELF": "You cannot ban your own account.",
+        "BAN_DAYS_REQUIRED": "Temporary bans require a valid days value.",
         "UNKNOWN_ERROR": "Something went wrong. Please try again."
     },
     "gameBattle": {

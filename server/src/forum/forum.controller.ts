@@ -54,7 +54,7 @@ export class ForumController {
     @Param('postId') postId: string,
     @Body() dto: UpdatePostDto,
   ) {
-    return this.forumService.updatePost(user.id, postId, dto);
+    return this.forumService.updatePost(user, postId, dto);
   }
 
   @Delete('posts/:postId')
@@ -64,7 +64,7 @@ export class ForumController {
     @CurrentUser() user: User,
     @Param('postId') postId: string,
   ): Promise<void> {
-    await this.forumService.archivePost(user.id, postId);
+    await this.forumService.archivePost(user, postId);
   }
 
   @Post('posts/:postId/comments')
@@ -84,7 +84,7 @@ export class ForumController {
     @Param('commentId') commentId: string,
     @Body() dto: UpdateCommentDto,
   ) {
-    return this.forumService.updateComment(user.id, commentId, dto);
+    return this.forumService.updateComment(user, commentId, dto);
   }
 
   @Delete('comments/:commentId')
@@ -94,7 +94,7 @@ export class ForumController {
     @CurrentUser() user: User,
     @Param('commentId') commentId: string,
   ): Promise<void> {
-    await this.forumService.deleteComment(user.id, commentId);
+    await this.forumService.deleteComment(user, commentId);
   }
 
   @Post('posts/:postId/vote')
