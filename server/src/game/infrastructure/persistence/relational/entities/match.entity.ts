@@ -73,6 +73,18 @@ export class MatchEntity {
   @Column({ type: 'boolean', default: false })
   eloSettled!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  endedByAdmin!: boolean;
+
+  @Column({ type: 'character varying', length: 50, nullable: true })
+  adminInterventionType!: 'force_win' | 'kick' | 'ban' | null;
+
+  @Column({ type: 'character varying', length: 500, nullable: true })
+  adminInterventionReason!: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  adminActorId!: string | null;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 

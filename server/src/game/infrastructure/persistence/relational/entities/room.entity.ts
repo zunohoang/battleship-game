@@ -41,6 +41,15 @@ export class RoomEntity {
   @Column({ type: 'timestamp with time zone', nullable: true })
   expiresAt: Date | null;
 
+  @Column({ type: 'character varying', length: 80, nullable: true })
+  closeReasonCode: string | null;
+
+  @Column({ type: 'character varying', length: 500, nullable: true })
+  closeReasonMessage: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  closeReasonTargetUserId: string | null;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 

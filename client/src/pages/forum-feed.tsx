@@ -120,7 +120,9 @@ export function ForumFeedPage() {
   );
 
   const viewerUserId = user?.id ?? null;
-  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const role = user?.role?.toUpperCase();
+  const isForumModerator = role === 'ADMIN' || role === 'MOD';
+  const canBanFromForum = role === 'ADMIN';
 
   const onPostUpdatedInFeed = useCallback((updated: ForumPost) => {
     setPosts((previous) =>
@@ -323,10 +325,10 @@ export function ForumFeedPage() {
   };
 
   return (
-    <main className='relative flex h-[100dvh] flex-col overflow-hidden pt-0 text-(--text-main) pb-3 sm:pb-4'>
+    <main className='relative flex h-dvh flex-col overflow-hidden pt-0 text-(--text-main) pb-3 sm:pb-4'>
       <div className='ui-page-bg -z-20' />
       <section className='ui-hud-shell flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-none border-x-0 px-3 sm:gap-5 sm:px-4 md:px-6 lg:h-full lg:min-h-0 lg:gap-4 lg:px-6 xl:px-8'>
-        <header className='ui-panel flex w-full min-w-0 shrink-0 items-center justify-between gap-3 rounded-lg border border-(--panel-stroke) px-4 py-3 shadow-[var(--hud-shadow)] sm:gap-4 sm:px-5 sm:py-4'>
+        <header className='ui-panel flex w-full min-w-0 shrink-0 items-center justify-between gap-3 rounded-lg border border-(--panel-stroke) px-4 py-3 shadow-(--hud-shadow) sm:gap-4 sm:px-5 sm:py-4'>
           <div className='min-w-0 flex-1'>
             <p className='ui-title-eyebrow'>{t('forum.feed.eyebrow')}</p>
             <h1 className='mt-1 text-xl font-black uppercase tracking-[0.08em] sm:text-2xl'>
@@ -336,7 +338,7 @@ export function ForumFeedPage() {
           <Button
             type='button'
             variant='default'
-            className='!h-10 !w-auto shrink-0 whitespace-nowrap px-4 sm:px-5 inline-flex items-center justify-center gap-2'
+            className='h-10! w-auto! shrink-0 whitespace-nowrap px-4 sm:px-5 inline-flex items-center justify-center gap-2'
             onClick={onBack}
           >
             <ChevronLeft className='h-4 w-4 shrink-0' aria-hidden />
@@ -412,7 +414,7 @@ export function ForumFeedPage() {
                     authorAvatarUrl={post.author.avatar}
                     canManagePost={Boolean(
                       viewerUserId &&
-                        (viewerUserId === post.author.id || isAdmin),
+                        (viewerUserId === post.author.id || isForumModerator),
                     )}
                     onEditPost={
                       viewerUserId === post.author.id
@@ -421,7 +423,7 @@ export function ForumFeedPage() {
                     }
                     onDeletePost={() => setPostPendingDelete(post)}
                     onBanAuthor={
-                      isAdmin && viewerUserId !== post.author.id
+                      canBanFromForum && viewerUserId !== post.author.id
                         ? () =>
                             setBanTarget({
                               id: post.author.id,
@@ -495,7 +497,7 @@ export function ForumFeedPage() {
         viewerUserId={viewerUserId}
         onPostUpdated={onPostUpdatedInFeed}
         onPostDeleted={onPostDeletedFromFeed}
-        isViewerAdmin={isAdmin}
+        isViewerAdmin={isForumModerator}
       />
 
       <BanUserModal

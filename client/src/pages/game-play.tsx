@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, SlidersHorizontal } from 'lucide-react';
@@ -23,6 +23,7 @@ import { useGamePlayMusic } from '@/hooks/useGamePlayMusic';
 import { useLocalGamePlaySession } from '@/hooks/useLocalGamePlaySession';
 import { useOnlineGamePlaySession } from '@/hooks/useOnlineGamePlaySession';
 import { usePlayerProfiles } from '@/hooks/usePlayerProfiles';
+import { useGlobalContext } from '@/hooks/useGlobalContext';
 import {
   buildBotHeatMapExplanation,
   calculateFleetShipStatuses,
@@ -63,6 +64,14 @@ export interface GamePlayHeaderSideContent {
   elo: number;
   userId?: string | null;
   pingMs?: number | null;
+  adminActions?: Array<{
+    key: string;
+    label: string;
+    icon: ReactNode;
+    onClick: () => void;
+    disabled?: boolean;
+    tone?: 'default' | 'danger';
+  }>;
 }
 
 export interface GamePlayLoadingFallback {
@@ -775,6 +784,7 @@ export function GamePlayPage() {
     fallbackPlacements: onlineState?.placements,
     enabled: isOnlineMode && !!onlineState,
   });
+  const { user } = useGlobalContext();
   const onlineOpponentId =
     currentUserId === match?.player1Id
       ? match.player2Id
@@ -900,10 +910,43 @@ export function GamePlayPage() {
     }
 
     if (room.status === 'closed') {
+      const closeReasonCode = room.closeReasonCode ?? 'host_closed';
+      const closeReasonMessage = room.closeReasonMessage ?? undefined;
+      const wasSelfBanned =
+        closeReasonCode === 'admin_ban' &&
+        !!room.closeReasonTargetUserId &&
+        user?.id === room.closeReasonTargetUserId;
       leaveOnlineRoom();
+      if (closeReasonCode === 'admin_ban') {
+        navigate('/game/rooms', {
+          replace: true,
+          state: {
+            roomDismissed: wasSelfBanned ? 'banned' : 'banned_other',
+            roomDismissedMessage:
+              closeReasonMessage ??
+              (wasSelfBanned
+                ? t('gameRooms.banAcknowledgeDefaultMessage')
+                : t('gameRooms.roomOtherPlayerBannedByAdmin')),
+            requireBanAcknowledge: wasSelfBanned,
+          },
+        });
+        return;
+      }
       navigate('/game/rooms', {
         replace: true,
-        state: { roomDismissed: 'host_closed' },
+        state: {
+          roomDismissed:
+            closeReasonCode === 'admin_force_result'
+              ? 'forced_result'
+              : closeReasonCode === 'admin_kick'
+                ? 'kicked'
+                : closeReasonCode === 'admin_ban'
+                  ? 'banned'
+                  : match?.status === 'finished'
+                    ? 'forced_result'
+                    : 'host_closed',
+          roomDismissedMessage: closeReasonMessage,
+        },
       });
       return;
     }
@@ -926,7 +969,18 @@ export function GamePlayPage() {
         state: { roomId: onlineState.roomId },
       });
     }
-  }, [isOnlineMode, leaveOnlineRoom, match?.id, navigate, onlineState, room]);
+  }, [
+    isOnlineMode,
+    leaveOnlineRoom,
+    match?.id,
+    match?.status,
+    navigate,
+    onlineState,
+    room,
+    t,
+    user?.id,
+    room?.closeReasonTargetUserId,
+  ]);
 
   const ownFleetStatus = useMemo(
     () => calculateFleetShipStatuses(playerPlacements, shipsById, botShots),

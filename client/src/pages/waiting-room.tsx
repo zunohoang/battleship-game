@@ -81,13 +81,56 @@ export function WaitingRoomPage() {
 
   useEffect(() => {
     if (room?.status === 'closed') {
+      const closeReasonCode = room.closeReasonCode ?? 'host_closed';
+      const closeReasonMessage = room.closeReasonMessage ?? undefined;
+      const wasSelfBanned =
+        closeReasonCode === 'admin_ban' &&
+        !!room.closeReasonTargetUserId &&
+        user?.id === room.closeReasonTargetUserId;
       leaveRoom();
+      if (closeReasonCode === 'admin_ban') {
+        navigate('/game/rooms', {
+          replace: true,
+          state: {
+            roomDismissed: wasSelfBanned ? 'banned' : 'banned_other',
+            roomDismissedMessage:
+              closeReasonMessage ??
+              (wasSelfBanned
+                ? t('gameRooms.banAcknowledgeDefaultMessage')
+                : t('gameRooms.roomOtherPlayerBannedByAdmin')),
+            requireBanAcknowledge: wasSelfBanned,
+          },
+        });
+        return;
+      }
       navigate('/game/rooms', {
         replace: true,
-        state: { roomDismissed: 'host_closed' },
+        state: {
+          roomDismissed:
+            closeReasonCode === 'admin_force_result'
+              ? 'forced_result'
+              : closeReasonCode === 'admin_kick'
+                ? 'kicked'
+                : closeReasonCode === 'admin_ban'
+                  ? 'banned'
+                  : match?.status === 'finished'
+                    ? 'forced_result'
+                    : 'host_closed',
+          roomDismissedMessage: closeReasonMessage,
+        },
       });
     }
-  }, [leaveRoom, navigate, room?.status]);
+  }, [
+    leaveRoom,
+    match?.status,
+    navigate,
+    room?.closeReasonCode,
+    room?.closeReasonMessage,
+    room?.closeReasonTargetUserId,
+    room?.status,
+    t,
+    user?.id,
+  ]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -692,6 +735,7 @@ export function WaitingRoomPage() {
         title={t('waitingRoom.opponentProfile')}
         profile={opponentShowcaseProfile}
       />
+
     </>
   );
 }

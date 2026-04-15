@@ -44,6 +44,18 @@ export class UserEntity {
   @Column({ type: 'timestamptz', nullable: true })
   bannedAt!: Date | null;
 
+  @Column({ type: 'uuid', nullable: true })
+  banActorId!: string | null;
+
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  lastBanAction!: 'BAN_USER_TEMP' | 'BAN_USER_PERMANENT' | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  unbannedAt!: Date | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  unbanActorId!: string | null;
+
   @Column({ type: 'text', nullable: true })
   refreshTokenHash!: string | null;
 

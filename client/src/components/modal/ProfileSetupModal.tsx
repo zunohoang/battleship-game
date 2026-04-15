@@ -129,6 +129,8 @@ export function ProfileSetupModal({
   const roleLabel =
     role?.toUpperCase() === 'ADMIN'
       ? t('home.profile.roleAdmin')
+      : role?.toUpperCase() === 'MOD'
+        ? t('home.profile.roleMod')
       : t('home.profile.roleUser');
 
   return (

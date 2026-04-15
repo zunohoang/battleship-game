@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -176,11 +176,49 @@ export function GameRoomsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const hostClosedNotice =
-    (location.state as { roomDismissed?: string } | null)?.roomDismissed ===
-    'host_closed';
+  const locationState =
+    (location.state as
+      | {
+          roomDismissed?: string;
+          roomDismissedMessage?: string;
+          requireBanAcknowledge?: boolean;
+        }
+      | null) ?? null;
+  const roomDismissedReason = (
+    locationState
+  )?.roomDismissed;
+  const roomDismissedMessageFromState = (locationState)?.roomDismissedMessage;
+  const [isBanAcknowledgeOpen, setBanAcknowledgeOpen] = useState(
+    Boolean(locationState?.requireBanAcknowledge),
+  );
+  const roomDismissedMessage = useMemo(() => {
+    if (roomDismissedMessageFromState && roomDismissedMessageFromState.trim()) {
+      return roomDismissedMessageFromState;
+    }
+    if (roomDismissedReason === 'forced_result') {
+      return t('gameRooms.roomClosedByAdminResult');
+    }
+    if (roomDismissedReason === 'kicked') {
+      return t('gameRooms.roomKickedByAdmin');
+    }
+    if (roomDismissedReason === 'banned') {
+      return t('gameRooms.roomBannedByAdmin');
+    }
+    if (roomDismissedReason === 'banned_other') {
+      return t('gameRooms.roomOtherPlayerBannedByAdmin');
+    }
+    if (roomDismissedReason === 'host_closed') {
+      return t('gameRooms.roomClosedByHost');
+    }
+    return null;
+  }, [roomDismissedMessageFromState, roomDismissedReason, t]);
   const filterBarRef = useRef<HTMLDivElement | null>(null);
-  const { isLoggedIn } = useGlobalContext();
+  const { isLoggedIn, logout } = useGlobalContext();
+  const handleBanAcknowledge = useCallback(() => {
+    setBanAcknowledgeOpen(false);
+    logout();
+    navigate('/home', { replace: true });
+  }, [logout, navigate]);
 
   const statusLabelMap = useMemo(
     (): Record<RoomStatus, string> => ({
@@ -401,12 +439,12 @@ export function GameRoomsPage() {
               <p className='mt-1 text-sm text-(--text-muted)'>
                 {t('gameRooms.subtitle')}
               </p>
-              {hostClosedNotice ? (
+              {roomDismissedMessage ? (
                 <p
                   role='status'
                   className='mt-3 rounded-sm border border-[rgba(63,203,232,0.35)] bg-[rgba(180,230,246,0.35)] px-3 py-2 text-sm text-(--text-main)'
                 >
-                  {t('gameRooms.roomClosedByHost')}
+                  {roomDismissedMessage}
                 </p>
               ) : null}
             </div>
@@ -727,6 +765,11 @@ export function GameRoomsPage() {
                               <p className='mt-2 truncate font-mono text-lg font-black uppercase tracking-[0.08em] text-(--text-main)'>
                                 {roomItem.roomCode}
                               </p>
+                              {roomItem.visibility === 'private' ? (
+                                <span className='mt-2 inline-flex rounded-sm border border-[rgba(255,138,61,0.55)] bg-[rgba(255,138,61,0.16)] px-2 py-0.5 font-mono text-[10px] font-black tracking-[0.12em] text-(--accent-warning) uppercase'>
+                                  {t('gameRooms.private')}
+                                </span>
+                              ) : null}
                             </div>
 
                             <Button
@@ -798,9 +841,16 @@ export function GameRoomsPage() {
                         >
                           <div className='grid min-w-187.5 grid-cols-[minmax(120px,0.55fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(140px,0.9fr)_1px_minmax(150px,1.2fr)] items-stretch gap-0'>
                             <div className='flex min-h-10 min-w-0 items-center px-3 py-2 lg:px-4'>
-                              <p className='truncate font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
-                                {roomItem.roomCode}
-                              </p>
+                              <div className='flex min-w-0 items-center gap-2'>
+                                <p className='truncate font-mono text-xs font-bold uppercase tracking-[0.12em] text-(--text-main)'>
+                                  {roomItem.roomCode}
+                                </p>
+                                {roomItem.visibility === 'private' ? (
+                                  <span className='inline-flex rounded-sm border border-[rgba(255,138,61,0.55)] bg-[rgba(255,138,61,0.16)] px-1.5 py-0.5 font-mono text-[9px] font-black tracking-widest text-(--accent-warning) uppercase'>
+                                    {t('gameRooms.private')}
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
 
                             <div
@@ -931,7 +981,10 @@ export function GameRoomsPage() {
                     </p>
                     <p className='font-mono text-xs font-bold uppercase tracking-[0.14em] text-(--text-muted)'>
                       {statusLabelMap[selectedRoom.status]} /{' '}
-                      {accessStateLabelMap[selectedRoom.accessState]}
+                      {accessStateLabelMap[selectedRoom.accessState]} /{' '}
+                      {selectedRoom.visibility === 'private'
+                        ? t('gameRooms.private')
+                        : t('gameRooms.public')}
                     </p>
                   </div>
 
@@ -990,6 +1043,23 @@ export function GameRoomsPage() {
             </div>
           </div>
         ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={isBanAcknowledgeOpen}
+        title={t('gameRooms.banAcknowledgeTitle')}
+        onClose={handleBanAcknowledge}
+      >
+        <div className='space-y-4'>
+          <p className='text-sm text-(--text-muted)'>
+            {roomDismissedMessage ?? t('gameRooms.banAcknowledgeDefaultMessage')}
+          </p>
+          <div className='flex justify-end'>
+            <Button variant='danger' className='h-9 w-auto px-4' onClick={handleBanAcknowledge}>
+              {t('gameRooms.banAcknowledgeConfirm')}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </motion.main>
   );

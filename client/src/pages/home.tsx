@@ -346,6 +346,20 @@ export function HomePage() {
   const currentRankTierId = getRankTierId(currentElo);
   const currentBadgeImage = getBadgeImageForTier(currentRankTierId);
   const topRankEntries = leaderboardEntries;
+  const adminMenuItems: Array<{
+    id: string;
+    label: string;
+    icon: typeof SettingsIcon;
+    disabled: boolean;
+  }> = [];
+  if (['ADMIN', 'MOD'].includes(user?.role?.toUpperCase() ?? '')) {
+    adminMenuItems.push({
+      id: 'adminDashboard',
+      label: 'Admin Dashboard',
+      icon: SettingsIcon,
+      disabled: false,
+    });
+  }
 
   const isProfileSetupOpen = isModalOpen && authModalMode === 'profileSetup';
   const profileSetupModalKey = [
@@ -394,6 +408,7 @@ export function HomePage() {
       icon: TrophyIcon,
       disabled: false,
     },
+    ...adminMenuItems,
   ];
 
   const gameModeMap: Record<string, string> = {
@@ -415,6 +430,11 @@ export function HomePage() {
 
     if (id === 'leaderboard') {
       navigate('/leaderboard');
+      return;
+    }
+
+    if (id === 'adminDashboard') {
+      navigate('/admin');
       return;
     }
 
