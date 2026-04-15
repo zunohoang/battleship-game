@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package forum.v1;
+
+service ForumService {
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+  rpc GetPost(GetPostRequest) returns (GetPostResponse);
+}
+
+message CreatePostRequest {
+  string author_user_id = 1;
+  string title = 2;
+  string content = 3;
+}
+
+message CreatePostResponse {
+  string post_id = 1;
+  bool created = 2;
+}
+
+message GetPostRequest {
+  string post_id = 1;
+}
+
+message GetPostResponse {
+  string post_id = 1;
+  string author_user_id = 2;
+  string title = 3;
+  string content = 4;
+  string created_at = 5;
+}

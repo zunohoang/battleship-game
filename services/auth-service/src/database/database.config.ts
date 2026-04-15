@@ -1,0 +1,59 @@
+import { UserEntity } from '../auth/infrastructure/persistence/relational/entities/user.entity';
+import { ForumCommentEntity } from '../forum/infrastructure/persistence/relational/entities/forum-comment.entity';
+import { ForumCommentVoteEntity } from '../forum/infrastructure/persistence/relational/entities/forum-comment-vote.entity';
+import { ForumPostEntity } from '../forum/infrastructure/persistence/relational/entities/forum-post.entity';
+import { ForumPostVoteEntity } from '../forum/infrastructure/persistence/relational/entities/forum-post-vote.entity';
+import { MatchEntity } from '../game/infrastructure/persistence/relational/entities/match.entity';
+import { MoveEntity } from '../game/infrastructure/persistence/relational/entities/move.entity';
+import { RoomEntity } from '../game/infrastructure/persistence/relational/entities/room.entity';
+import type { DataSourceOptions } from 'typeorm';
+
+type EnvReader = (key: string) => string | undefined;
+
+function getRequiredEnv(readEnv: EnvReader, key: string): string {
+  const value = readEnv(key);
+  if (!value) {
+    throw new Error(`${key} environment variable is required`);
+  }
+
+  return value;
+}
+
+export function getDatabaseConfig(readEnv: EnvReader): DataSourceOptions {
+  const databaseUrl = readEnv('DATABASE_URL');
+  const synchronize = readEnv('DB_SYNCHRONIZE') === 'true';
+  const logging = readEnv('DB_LOGGING') === 'true';
+
+  const baseConfig: DataSourceOptions = {
+    type: 'postgres',
+    entities: [
+      UserEntity,
+      RoomEntity,
+      MatchEntity,
+      MoveEntity,
+      ForumPostEntity,
+      ForumCommentEntity,
+      ForumPostVoteEntity,
+      ForumCommentVoteEntity,
+    ],
+    migrations: [`${__dirname}/migrations/*{.ts,.js}`],
+    synchronize,
+    logging,
+  };
+
+  if (databaseUrl) {
+    return {
+      ...baseConfig,
+      url: databaseUrl,
+    };
+  }
+
+  return {
+    ...baseConfig,
+    host: getRequiredEnv(readEnv, 'DB_HOST'),
+    port: Number(getRequiredEnv(readEnv, 'DB_PORT')),
+    username: getRequiredEnv(readEnv, 'DB_USER'),
+    password: getRequiredEnv(readEnv, 'DB_PASSWORD'),
+    database: getRequiredEnv(readEnv, 'DB_NAME'),
+  };
+}

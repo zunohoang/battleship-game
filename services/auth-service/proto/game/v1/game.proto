@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package game.v1;
+
+service GameService {
+  rpc GetRoomState(GetRoomStateRequest) returns (GetRoomStateResponse);
+  rpc ReportMatchResult(ReportMatchResultRequest) returns (ReportMatchResultResponse);
+}
+
+message GetRoomStateRequest {
+  string room_id = 1;
+}
+
+message GetRoomStateResponse {
+  string room_id = 1;
+  string status = 2;
+  repeated string player_ids = 3;
+}
+
+message ReportMatchResultRequest {
+  string match_id = 1;
+  string winner_user_id = 2;
+  string loser_user_id = 3;
+}
+
+message ReportMatchResultResponse {
+  bool accepted = 1;
+}
