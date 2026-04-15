@@ -13,6 +13,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from './domain/entities/user';
 import { LoginDto } from './dto/login.dto';
@@ -39,6 +40,18 @@ export class AuthController {
   ): Promise<AuthResponse> {
     const { accessToken, refreshToken, user } =
       await this.authService.register(dto);
+    setRefreshCookie(res, refreshToken, this.configService);
+    return { accessToken, user };
+  }
+
+  @Post('bootstrap-admin')
+  @HttpCode(HttpStatus.OK)
+  async bootstrapAdmin(
+    @Body() dto: BootstrapAdminDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponse> {
+    const { accessToken, refreshToken, user } =
+      await this.authService.bootstrapAdmin(dto);
     setRefreshCookie(res, refreshToken, this.configService);
     return { accessToken, user };
   }

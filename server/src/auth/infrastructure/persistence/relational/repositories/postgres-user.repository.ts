@@ -18,6 +18,9 @@ interface UserStore {
   findOne(options: {
     where: Partial<Pick<UserEntity, 'id' | 'email' | 'username'>>;
   }): Promise<UserEntity | null>;
+  count(options: {
+    where: Partial<Pick<UserEntity, 'role'>>;
+  }): Promise<number>;
   save(entity: UserEntity): Promise<UserEntity>;
 }
 
@@ -67,6 +70,12 @@ export class PostgresUserRepository implements IUserRepository {
     });
 
     return user ? RelationalUserMapper.toDomain(user) : null;
+  }
+
+  async countByRole(role: string): Promise<number> {
+    return this.repository.count({
+      where: { role: role.toUpperCase() },
+    });
   }
 
   async save(user: DomainUser): Promise<DomainUser> {
