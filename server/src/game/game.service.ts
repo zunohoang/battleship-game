@@ -320,7 +320,10 @@ export class GameService {
   }
 
   async listOpenRooms(userId: string): Promise<RoomListSummary[]> {
-    const [memberRooms, publicRooms] = await Promise.all([
+    const requester = await this.userRepository.findById(userId);
+    const isAdmin = requester?.role?.toUpperCase() === 'ADMIN';
+
+    const [memberRooms, listedRooms] = await Promise.all([
       this.roomRepo.find({
         where: [
           {
@@ -335,35 +338,45 @@ export class GameService {
         order: { updatedAt: 'DESC' },
         take: 25,
       }),
-      this.roomRepo.find({
-        where: [
-          {
-            status: 'waiting',
-            visibility: 'public',
-          },
-          {
-            status: 'in_game',
-            visibility: 'public',
-          },
-        ],
-        order: { updatedAt: 'DESC' },
-        take: 50,
-      }),
+      isAdmin
+        ? this.roomRepo.find({
+            where: {
+              status: In(ACTIVE_ROOM_STATUSES),
+            },
+            order: { updatedAt: 'DESC' },
+            take: 80,
+          })
+        : this.roomRepo.find({
+            where: [
+              {
+                status: 'waiting',
+                visibility: 'public',
+              },
+              {
+                status: 'in_game',
+                visibility: 'public',
+              },
+            ],
+            order: { updatedAt: 'DESC' },
+            take: 50,
+          }),
     ]);
 
     const seenRoomIds = new Set<string>();
 
-    const listRooms = [...memberRooms, ...publicRooms]
+    const listRooms = [...memberRooms, ...listedRooms]
       .filter((room) => {
         if (seenRoomIds.has(room.id)) {
           return false;
         }
         const isRoomMember = room.ownerId === userId || room.guestId === userId;
+        const canShowForAdmin =
+          isAdmin && ACTIVE_ROOM_STATUSES.includes(room.status);
         const canShowFromRoomList =
           room.visibility === 'public' &&
           (room.status === 'waiting' || room.status === 'in_game');
 
-        if (!isRoomMember && !canShowFromRoomList) {
+        if (!isRoomMember && !canShowFromRoomList && !canShowForAdmin) {
           return false;
         }
 
@@ -1397,6 +1410,9 @@ export class GameService {
       currentMatchId: room.currentMatchId,
       ownerReady: room.ownerReady,
       guestReady: room.guestReady,
+      closeReasonCode: room.closeReasonCode,
+      closeReasonMessage: room.closeReasonMessage,
+      closeReasonTargetUserId: room.closeReasonTargetUserId,
       createdAt: room.createdAt.toISOString(),
       updatedAt: room.updatedAt.toISOString(),
     };
@@ -1413,6 +1429,7 @@ export class GameService {
     return {
       roomId: room.id,
       roomCode: room.code,
+      visibility: room.visibility,
       status: room.status,
       accessState: this.toRoomListAccessState(room),
       occupancy: room.guestId ? '2/2' : '1/2',
@@ -1505,6 +1522,9 @@ export class GameService {
       turnDeadlineAt: this.toIsoDateString(match.turnDeadlineAt),
       version: match.version,
       rematchVotes: match.rematchVotes,
+      endedByAdmin: match.endedByAdmin,
+      adminInterventionType: match.adminInterventionType,
+      adminInterventionReason: match.adminInterventionReason,
       updatedAt: match.updatedAt.toISOString(),
     };
   }

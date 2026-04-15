@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { User } from './domain/entities/user';
 import { RegisterDto } from './dto/register.dto';
+import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
 import { LoginDto } from './dto/login.dto';
 import type { IUserRepository } from './infrastructure/persistence/user.repository';
 import { USER_REPOSITORY } from './infrastructure/persistence/user.repository';
@@ -63,6 +64,44 @@ export class AuthService {
       email: dto.email,
       username: dto.username,
       passwordHash,
+    });
+
+    return this.issueTokenPair(user);
+  }
+
+  async bootstrapAdmin(dto: BootstrapAdminDto): Promise<AuthServiceResult> {
+    const existingAdminCount = await this.userRepository.countByRole('ADMIN');
+    if (existingAdminCount > 0) {
+      throw new ConflictException({
+        error: 'ADMIN_ALREADY_EXISTS',
+        message: 'Admin account already exists',
+      });
+    }
+
+    const existingByEmail = await this.userRepository.findByEmail(dto.email);
+    if (existingByEmail) {
+      throw new ConflictException({
+        error: 'EMAIL_ALREADY_EXISTS',
+        message: 'Email already exists',
+      });
+    }
+
+    const existingByUsername = await this.userRepository.findByUsername(
+      dto.username,
+    );
+    if (existingByUsername) {
+      throw new ConflictException({
+        error: 'USERNAME_ALREADY_EXISTS',
+        message: 'Username already exists',
+      });
+    }
+
+    const passwordHash = await this.passwordHasher.hash(dto.password);
+    const user = new User({
+      email: dto.email,
+      username: dto.username,
+      passwordHash,
+      role: 'ADMIN',
     });
 
     return this.issueTokenPair(user);

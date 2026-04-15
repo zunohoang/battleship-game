@@ -1,19 +1,25 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { BootstrapAdminDto } from './dto/bootstrap-admin.dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from './domain/entities/user';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponse } from './dto/auth-response.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   clearRefreshCookie,
   getRefreshCookieName,
@@ -34,6 +40,18 @@ export class AuthController {
   ): Promise<AuthResponse> {
     const { accessToken, refreshToken, user } =
       await this.authService.register(dto);
+    setRefreshCookie(res, refreshToken, this.configService);
+    return { accessToken, user };
+  }
+
+  @Post('bootstrap-admin')
+  @HttpCode(HttpStatus.OK)
+  async bootstrapAdmin(
+    @Body() dto: BootstrapAdminDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponse> {
+    const { accessToken, refreshToken, user } =
+      await this.authService.bootstrapAdmin(dto);
     setRefreshCookie(res, refreshToken, this.configService);
     return { accessToken, user };
   }
@@ -92,5 +110,11 @@ export class AuthController {
       await this.authService.revokeRefreshToken(refreshTokenCookie);
     }
     clearRefreshCookie(res, this.configService);
+  }
+
+  @Get('session')
+  @UseGuards(JwtAuthGuard)
+  getSession(@CurrentUser() user: User): { userId: string; role: string } {
+    return { userId: user.id, role: user.role };
   }
 }

@@ -108,6 +108,9 @@ export interface RoomSnapshot {
   currentMatchId: string | null;
   ownerReady: boolean;
   guestReady: boolean;
+  closeReasonCode?: string | null;
+  closeReasonMessage?: string | null;
+  closeReasonTargetUserId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -115,6 +118,7 @@ export interface RoomSnapshot {
 export interface RoomListSummary {
   roomId: string;
   roomCode: string;
+  visibility: RoomVisibility;
   status: RoomStatus;
   accessState: RoomListAccessState;
   occupancy: RoomListOccupancy;
@@ -141,6 +145,9 @@ export interface MatchSnapshot {
   turnDeadlineAt: string | null;
   version: number;
   rematchVotes: Record<string, boolean>;
+  endedByAdmin?: boolean;
+  adminInterventionType?: 'force_win' | 'kick' | 'ban' | null;
+  adminInterventionReason?: string | null;
   updatedAt: string;
 }
 

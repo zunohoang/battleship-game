@@ -73,6 +73,7 @@
             "signature": "Chữ ký",
             "role": "Quyền",
             "roleUser": "Người dùng",
+            "roleMod": "Điều hành viên",
             "roleAdmin": "Quản trị viên",
             "rank": "Cấp bậc",
             "elo": "Elo"
@@ -832,6 +833,13 @@
         "private": "Riêng tư",
         "phase1HostHint": "Giai đoạn 1 do chủ phòng cấu hình trong phòng chờ trước khi người khác có thể vào.",
         "roomClosedByHost": "Chủ phòng đã đóng phòng. Bạn đã được đưa về danh sách phòng.",
+        "roomClosedByAdminResult": "Trận đã được admin xử kết quả (force win). Bạn đã được đưa về danh sách phòng.",
+        "roomKickedByAdmin": "Bạn đã bị admin kick khỏi trận/phòng.",
+        "roomBannedByAdmin": "Bạn đã bị admin ban trong trận.",
+        "roomOtherPlayerBannedByAdmin": "Đối thủ của bạn đã bị admin ban. Phòng đã bị đóng.",
+        "banAcknowledgeTitle": "Tài khoản bị tạm khóa",
+        "banAcknowledgeDefaultMessage": "Tài khoản của bạn đã bị admin ban trong trận.",
+        "banAcknowledgeConfirm": "Xác nhận & đăng xuất",
         "createRoom": "Tạo phòng",
         "creating": "Đang tạo…",
         "joinByCode": "Vào bằng mã",
@@ -886,6 +894,68 @@
         "phase1Status": "Giai đoạn 1",
         "pending": "Chưa có",
         "phase1PendingDesc": "Chủ phòng chưa công bố cấu hình giai đoạn 1 cho phòng này."
+    },
+    "adminSpectate": {
+        "forceWin": "Xử thắng",
+        "kickUser": "Kick người chơi",
+        "banUser": "Ban người chơi",
+        "confirmTitle": "Xác nhận hành động admin",
+        "targetLabel": "Mục tiêu",
+        "actionLabel": "Hành động",
+        "reasonLabel": "Lý do",
+        "reasonPlaceholder": "Nhập lý do...",
+        "cancel": "Hủy",
+        "confirm": "Xác nhận",
+        "defaultReasonForceWin": "Admin xử thắng từ khối thông tin người chơi",
+        "defaultReasonKick": "Admin kick từ khối thông tin người chơi",
+        "defaultReasonBan": "Admin ban trong trận từ khối thông tin người chơi",
+        "successForceWin": "Đã xử thắng cho {{name}}",
+        "successKick": "Đã kick {{name}} khỏi phòng",
+        "successBan": "Đã ban {{name}} và loại khỏi trận"
+    },
+    "adminDashboard": {
+        "eyebrow": "Quản trị hệ thống",
+        "title": "Bảng điều khiển quản trị",
+        "backHome": "Về trang chủ",
+        "unauthorizedTitle": "Không có quyền truy cập",
+        "unauthorizedDescription": "Trang này chỉ dành cho tài khoản quản trị viên.",
+        "loading": "Đang tải dữ liệu quản trị...",
+        "errorWithCode": "Lỗi: {{code}}",
+        "nav": {
+            "overview": "Tổng quan",
+            "matches": "Quản lý trận đấu",
+            "forum": "Hàng chờ kiểm duyệt",
+            "users": "Người dùng",
+            "audit": "Nhật ký hệ thống"
+        },
+        "toolbar": {
+            "apply": "Áp dụng"
+        },
+        "pagination": {
+            "summary": "Trang {{page}}/{{totalPages}} - Tổng {{total}}",
+            "prev": "Trước",
+            "next": "Sau"
+        },
+        "table": {
+            "noData": "Không có dữ liệu"
+        },
+        "audit": {
+            "title": "Nhật ký hệ thống",
+            "loading": "Đang tải...",
+            "filters": {
+                "searchLabel": "Tìm kiếm",
+                "searchPlaceholder": "actor / target",
+                "actionLabel": "Hành động",
+                "allActions": "Tất cả"
+            },
+            "table": {
+                "time": "Thời gian",
+                "actor": "Người thực hiện",
+                "action": "Hành động",
+                "target": "Mục tiêu",
+                "metadata": "Dữ liệu kèm theo"
+            }
+        }
     },
     "waitingRoom": {
         "commander": "CHỈ HUY",

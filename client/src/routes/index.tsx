@@ -10,6 +10,7 @@ import { WaitingRoomPage } from '@/pages/waiting-room';
 import { ForumPostLegacyRedirect } from '@/components/forum/ForumPostLegacyRedirect';
 import { ForumFeedPage } from '@/pages/forum-feed';
 import { LeaderboardPage } from '@/pages/leaderboard';
+import { AdminDashboardPage } from '@/pages/admin-dashboard';
 import { GameSetupProvider } from '@/store/gameSetupContext';
 import i18n from '@/i18n';
 
@@ -29,6 +30,10 @@ export const appRouter = createBrowserRouter([
   {
     path: '/leaderboard',
     element: <LeaderboardPage />,
+  },
+  {
+    path: '/admin',
+    element: <AdminDashboardPage />,
   },
   {
     path: '/forum/posts/:postId',

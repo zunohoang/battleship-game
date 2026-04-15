@@ -73,6 +73,7 @@
             "signature": "Signature",
             "role": "Role",
             "roleUser": "User",
+            "roleMod": "Moderator",
             "roleAdmin": "Admin",
             "rank": "Rank",
             "elo": "Elo"
@@ -832,6 +833,13 @@
         "private": "Private",
         "phase1HostHint": "Phase 1 is now configured in the waiting room by the host before anyone can join.",
         "roomClosedByHost": "The host closed this room. You have been returned to the room list.",
+        "roomClosedByAdminResult": "An admin force-resolved the match result. You have been returned to the room list.",
+        "roomKickedByAdmin": "You were kicked by an admin from this room.",
+        "roomBannedByAdmin": "You were banned by an admin in this match.",
+        "roomOtherPlayerBannedByAdmin": "Your opponent was banned by an admin. The room has been closed.",
+        "banAcknowledgeTitle": "Account Suspended",
+        "banAcknowledgeDefaultMessage": "Your account was banned by admin during the match.",
+        "banAcknowledgeConfirm": "Confirm & Logout",
         "createRoom": "Create Room",
         "creating": "Creating...",
         "joinByCode": "Join by code",
@@ -886,6 +894,68 @@
         "phase1Status": "Phase 1 status",
         "pending": "Pending",
         "phase1PendingDesc": "The host has not published a phase 1 configuration for this room yet."
+    },
+    "adminSpectate": {
+        "forceWin": "Force win",
+        "kickUser": "Kick user",
+        "banUser": "Ban user",
+        "confirmTitle": "Confirm Admin Action",
+        "targetLabel": "Target",
+        "actionLabel": "Action",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Enter reason...",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "defaultReasonForceWin": "Admin force win from user info block",
+        "defaultReasonKick": "Admin kick from user info block",
+        "defaultReasonBan": "Admin ban in-match from user info block",
+        "successForceWin": "Forced win for {{name}}",
+        "successKick": "Kicked {{name}} from room",
+        "successBan": "Banned {{name}} and removed from match"
+    },
+    "adminDashboard": {
+        "eyebrow": "Administration",
+        "title": "Admin Dashboard",
+        "backHome": "Back Home",
+        "unauthorizedTitle": "Unauthorized",
+        "unauthorizedDescription": "This page is only available for admin accounts.",
+        "loading": "Loading admin data...",
+        "errorWithCode": "Error: {{code}}",
+        "nav": {
+            "overview": "Overview",
+            "matches": "Matches",
+            "forum": "Moderation Queue",
+            "users": "Users",
+            "audit": "Audit Logs"
+        },
+        "toolbar": {
+            "apply": "Apply"
+        },
+        "pagination": {
+            "summary": "Page {{page}}/{{totalPages}} - Total {{total}}",
+            "prev": "Prev",
+            "next": "Next"
+        },
+        "table": {
+            "noData": "No data"
+        },
+        "audit": {
+            "title": "Audit Logs",
+            "loading": "Loading...",
+            "filters": {
+                "searchLabel": "Search",
+                "searchPlaceholder": "actor / target",
+                "actionLabel": "Action",
+                "allActions": "all"
+            },
+            "table": {
+                "time": "Time",
+                "actor": "Actor",
+                "action": "Action",
+                "target": "Target",
+                "metadata": "Metadata"
+            }
+        }
     },
     "waitingRoom": {
         "commander": "COMMANDER",

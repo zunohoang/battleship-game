@@ -71,6 +71,11 @@ export interface UserProfileResponse {
   role?: string
 }
 
+export interface SessionStatusResponse {
+  userId: string
+  role: string
+}
+
 export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
   const response = await apiClient.post<RegisterResponse>('/auth/register', payload)
   return response.data
@@ -120,5 +125,10 @@ export async function changePassword(
 
 export async function getUserProfile(userId: string): Promise<UserProfileResponse> {
   const response = await apiClient.get<UserProfileResponse>(`/users/${userId}/profile`)
+  return response.data
+}
+
+export async function getSessionStatus(): Promise<SessionStatusResponse> {
+  const response = await apiClient.get<SessionStatusResponse>('/auth/session')
   return response.data
 }

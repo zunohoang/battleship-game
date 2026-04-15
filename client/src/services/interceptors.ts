@@ -111,6 +111,13 @@ export function setupInterceptors(instance: AxiosInstance): void {
       const original = error.config as
         | (InternalAxiosRequestConfig & { _retried?: boolean })
         | undefined
+      const errorCode = readApiErrorCode(error)
+
+      // User was banned while the current session is active (e.g., banned by admin from forum).
+      if (errorCode === 'USER_BANNED' && getAccessToken()) {
+        forceLogoutCallback?.('USER_BANNED')
+        return Promise.reject(error)
+      }
 
       // Only intercept 401 on the first attempt and not on the refresh endpoint itself
       if (

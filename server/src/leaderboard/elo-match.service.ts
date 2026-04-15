@@ -30,7 +30,8 @@ export class EloMatchService {
         !match ||
         match.status !== 'finished' ||
         !match.winnerId ||
-        match.eloSettled
+        match.eloSettled ||
+        match.endedByAdmin
       ) {
         return;
       }

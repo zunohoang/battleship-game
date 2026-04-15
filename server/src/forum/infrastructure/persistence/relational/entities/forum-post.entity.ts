@@ -38,6 +38,9 @@ export class ForumPostEntity {
   @Column({ type: 'varchar', length: 20, default: 'published' })
   status: 'published' | 'archived';
 
+  @Column({ type: 'uuid', nullable: true })
+  archivedByAdminId: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

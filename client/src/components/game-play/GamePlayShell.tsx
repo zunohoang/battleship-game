@@ -16,6 +16,14 @@ export type HeaderSideContent = {
   elo: number;
   /** Round-trip latency in milliseconds for network signal rendering. */
   pingMs?: number | null;
+  adminActions?: Array<{
+    key: string;
+    label: string;
+    icon: ReactNode;
+    onClick: () => void;
+    disabled?: boolean;
+    tone?: 'default' | 'danger';
+  }>;
 };
 
 interface GamePlayShellProps {
@@ -167,6 +175,34 @@ export function GamePlayIdentityCard({
           </p>
         ) : null}
       </div>
+      {content.adminActions?.length ? (
+        <div
+          className={`flex shrink-0 items-center gap-1.5 ${
+            isRightAligned ? 'lg:flex-row-reverse' : ''
+          }`}
+        >
+          {content.adminActions.map((action) => (
+            <button
+              key={action.key}
+              type='button'
+              title={action.label}
+              aria-label={action.label}
+              disabled={action.disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                action.onClick();
+              }}
+              className={`ui-button-shell flex h-8 w-8 cursor-pointer items-center justify-center rounded-sm border transition-colors ${
+                action.tone === 'danger'
+                  ? 'border-[rgba(255,90,90,0.45)] bg-[rgba(255,70,70,0.14)] text-[rgba(255,130,130,0.95)] hover:bg-[rgba(255,70,70,0.2)]'
+                  : 'ui-button-default text-(--accent-secondary) hover:bg-[rgba(34,211,238,0.18)]'
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {action.icon}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 
