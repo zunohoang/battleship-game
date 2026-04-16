@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import type { BoardConfig, AiDifficulty } from '@/types/game';
@@ -32,19 +33,136 @@ function toColumnLabel(index: number): string {
   return label;
 }
 
-function renderSourceList(sourceLabels: string[]) {
-  if (sourceLabels.length === 0) {
+/** Long ship-placement paths: short summary + expandable list (theme follows ui-panel / CSS vars). */
+function PlacementPathsBlock({
+  sourceLabels,
+  t,
+}: {
+  sourceLabels: string[];
+  t: TFunction;
+}) {
+  const count = sourceLabels.length;
+  if (count === 0) {
     return <span>-</span>;
   }
 
   return (
-    <span className='mt-0.5 block space-y-0.5'>
-      {sourceLabels.map((label) => (
-        <span key={label} className='block wrap-break-word'>
-          {label}
+    <div className='mt-0.5 space-y-1.5'>
+      <p className='text-[10px] leading-snug text-(--text-muted)'>
+        {t('gameBattle.heatMapPlacementSummary', { count })}
+      </p>
+      <details className='ui-subpanel rounded-sm px-2 py-1.5'>
+        <summary className='cursor-pointer list-none font-mono text-[10px] font-semibold text-(--accent-secondary) [&::-webkit-details-marker]:hidden'>
+          <span className='underline decoration-dotted underline-offset-2'>
+            {t('gameBattle.heatMapPlacementListToggle', { count })}
+          </span>
+        </summary>
+        <div className='themed-scrollbar mt-2 max-h-36 space-y-0.5 overflow-y-auto border-t border-(--border-main) pt-2 pr-1'>
+          {sourceLabels.map((label, i) => (
+            <span
+              key={`placement-${i}-${label.slice(0, 24)}`}
+              className='block wrap-break-word font-mono text-[9px] leading-relaxed text-(--text-main)'
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+}
+
+/** Short labels (e.g. cell ids): chips; collapsible if many. */
+function ShortLabelsBlock({ labels, t }: { labels: string[]; t: TFunction }) {
+  const count = labels.length;
+  if (count === 0) {
+    return <span>-</span>;
+  }
+
+  if (count <= 8) {
+    return (
+      <span className='mt-0.5 inline-flex flex-wrap gap-1.5'>
+        {labels.map((label, i) => (
+          <span
+            key={`${i}-${label}`}
+            className='rounded-sm border border-(--border-main) bg-(--bg-card-soft) px-1.5 py-px font-mono text-[9px] text-(--text-main)'
+          >
+            {label}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return (
+    <details className='ui-subpanel mt-0.5 rounded-sm px-2 py-1.5'>
+      <summary className='cursor-pointer list-none font-mono text-[10px] font-semibold text-(--accent-secondary) [&::-webkit-details-marker]:hidden'>
+        <span className='underline decoration-dotted underline-offset-2'>
+          {t('gameBattle.heatMapPlacementListToggle', { count })}
         </span>
-      ))}
-    </span>
+      </summary>
+      <div className='themed-scrollbar mt-2 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto border-t border-(--border-main) pt-2 pr-1'>
+        {labels.map((label, i) => (
+          <span
+            key={`${i}-${label}`}
+            className='rounded-sm border border-(--border-main) bg-(--bg-card-soft) px-1.5 py-px font-mono text-[9px] text-(--text-main)'
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function ClusterSourcesBlock({
+  sourceLabels,
+  t,
+}: {
+  sourceLabels: string[];
+  t: TFunction;
+}) {
+  const count = sourceLabels.length;
+  if (count === 0) {
+    return <span>-</span>;
+  }
+
+  const avgLen =
+    sourceLabels.reduce((acc, s) => acc + s.length, 0) / Math.max(1, count);
+  const useDetails = count > 4 || avgLen > 48;
+
+  if (!useDetails) {
+    return (
+      <span className='mt-0.5 block space-y-0.5'>
+        {sourceLabels.map((label) => (
+          <span key={label} className='block wrap-break-word font-mono text-[9px] text-(--text-main)'>
+            {label}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return (
+    <div className='mt-0.5 space-y-1'>
+      <details className='ui-subpanel rounded-sm px-2 py-1.5'>
+        <summary className='cursor-pointer list-none font-mono text-[10px] font-semibold text-(--accent-secondary) [&::-webkit-details-marker]:hidden'>
+          <span className='underline decoration-dotted underline-offset-2'>
+            {t('gameBattle.heatMapPlacementListToggle', { count })}
+          </span>
+        </summary>
+        <div className='themed-scrollbar mt-2 max-h-32 space-y-0.5 overflow-y-auto border-t border-(--border-main) pt-2 pr-1'>
+          {sourceLabels.map((label, i) => (
+            <span
+              key={`cl-${i}-${label.slice(0, 20)}`}
+              className='block wrap-break-word font-mono text-[9px] leading-relaxed text-(--text-main)'
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </details>
+    </div>
   );
 }
 
@@ -94,7 +212,6 @@ export function HeatMapExplainWidget({
     onOpenChange?.(false);
   };
 
-
   return (
     <>
       <Button
@@ -116,7 +233,7 @@ export function HeatMapExplainWidget({
           <AnimatePresence>
             {isOpen ? (
               <motion.div
-                className='themed-scrollbar fixed left-3 top-3 z-1000 w-[min(92vw,42rem)] rounded-md border border-[rgba(117,235,255,0.88)] bg-[rgba(6,18,30,0.98)] shadow-[0_0_0_1px_rgba(117,235,255,0.24),0_20px_54px_rgba(0,0,0,0.5)]'
+                className='themed-scrollbar ui-panel ui-panel-strong fixed left-3 top-3 z-1000 w-[min(92vw,42rem)] overflow-hidden rounded-md text-(--text-main)'
                 style={{
                   transform: `translate(${offset.x}px, ${offset.y}px)`,
                 }}
@@ -151,7 +268,7 @@ export function HeatMapExplainWidget({
                   <button
                     type='button'
                     onClick={closePanel}
-                    className='ui-button-shell ui-button-default cursor-pointer rounded-sm border px-3 py-1.5 text-sm font-semibold'
+                    className='ui-button-shell ui-button-default cursor-pointer rounded-sm border px-3 py-1.5 text-sm font-semibold text-(--text-main)'
                   >
                     X
                   </button>
@@ -160,14 +277,14 @@ export function HeatMapExplainWidget({
                 <div className='space-y-3 px-4 py-3'>
                   {isTheoryPage ? (
                     <div className='themed-scrollbar max-h-[50vh] space-y-3 overflow-y-auto pr-1'>
-                      <div className='rounded-sm border border-(--border-main) bg-[rgba(255,255,255,0.02)] px-3 py-2'>
+                      <div className='ui-subpanel rounded-sm px-3 py-2'>
                         <p className='font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-(--accent-secondary)'>
                           {t('gameBattle.heatMapTheoryPseudoTitle')}
                         </p>
                         <pre className='mt-2 overflow-x-auto font-mono text-[10px] leading-5 text-(--text-main) whitespace-pre-wrap'>{t('gameBattle.heatMapTheoryPseudoCode')}</pre>
                       </div>
 
-                      <div className='rounded-sm border border-(--border-main) bg-[rgba(255,255,255,0.02)] px-3 py-2'>
+                      <div className='ui-subpanel rounded-sm px-3 py-2'>
                         <p className='font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-(--accent-secondary)'>
                           {t('gameBattle.heatMapTheoryTermsTitle')}
                         </p>
@@ -195,7 +312,7 @@ export function HeatMapExplainWidget({
                         </div>
                       </div>
 
-                      <div className='rounded-sm border border-(--border-main) bg-[rgba(255,255,255,0.02)] px-3 py-2'>
+                      <div className='ui-subpanel rounded-sm px-3 py-2'>
                         <p className='font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-(--accent-secondary)'>
                           {t('gameBattle.heatMapTheoryHowTitle')}
                         </p>
@@ -222,7 +339,7 @@ export function HeatMapExplainWidget({
                             return (
                               <div
                                 key={`row-${y}`}
-                                className='flex items-center gap-2 rounded-sm border border-(--border-main) bg-[rgba(255,255,255,0.02)] px-2.5 py-1.5 font-mono text-[10px]'
+                                className='ui-subpanel flex items-center gap-2 rounded-sm px-2.5 py-1.5 font-mono text-[10px]'
                               >
                                 <span className='w-7 shrink-0 text-right font-bold text-(--accent-secondary)'>
                                   {coordLabel}
@@ -244,18 +361,18 @@ export function HeatMapExplainWidget({
                           return (
                             <div
                               key={`row-${y}`}
-                              className='rounded-sm border border-(--border-main) bg-[rgba(255,255,255,0.02)] px-2.5 py-1.5'
+                              className='ui-subpanel rounded-sm px-2.5 py-1.5'
                             >
                               <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[10px]'>
                                 <span className='font-bold text-(--accent-secondary)'>{coordLabel}</span>
-                                <span className='rounded px-1 py-px text-[8px] font-bold uppercase tracking-wider bg-[rgba(117,235,255,0.12)] text-(--accent-secondary)'>
+                                <span className='rounded px-1 py-px text-[8px] font-bold uppercase tracking-wider bg-(--accent-soft) text-(--accent-secondary)'>
                                   {modeLabel}
                                 </span>
                               </div>
                               <div className='mt-1.5 space-y-0.5 pl-3 font-mono text-[10px]'>
                                 {entry.mode === 'hunt' && (
                                   <>
-                                    <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                    <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                       <div className='flex gap-1.5'>
                                         <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                         <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.base}</span>
@@ -263,10 +380,10 @@ export function HeatMapExplainWidget({
                                       </div>
                                       <div className='text-(--text-muted)'>
                                         <span>{t('gameBattle.heatMapSourcePlacements')}:</span>
-                                        {renderSourceList(entry.basePlacementLabels)}
+                                        <PlacementPathsBlock sourceLabels={entry.basePlacementLabels} t={t} />
                                       </div>
                                     </div>
-                                    <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                    <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                       <div className='flex gap-1.5'>
                                         <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                         <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.parityBonus}</span>
@@ -278,7 +395,7 @@ export function HeatMapExplainWidget({
                                           : t('gameBattle.heatMapParitySourceInactive', { cell: coordLabel })}
                                       </div>
                                     </div>
-                                    <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                    <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                       <div className='flex gap-1.5'>
                                         <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                         <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.centerBonus}</span>
@@ -292,7 +409,7 @@ export function HeatMapExplainWidget({
                                 )}
                                 {entry.mode === 'target' && (
                                   <>
-                                    <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                    <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                       <div className='flex gap-1.5'>
                                         <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                         <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.base}</span>
@@ -300,10 +417,10 @@ export function HeatMapExplainWidget({
                                       </div>
                                       <div className='text-(--text-muted)'>
                                         <span>{t('gameBattle.heatMapSourcePlacements')}:</span>
-                                        {renderSourceList(entry.basePlacementLabels)}
+                                        <PlacementPathsBlock sourceLabels={entry.basePlacementLabels} t={t} />
                                       </div>
                                     </div>
-                                    <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                    <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                       <div className='flex gap-1.5'>
                                         <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                         <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.adjacencyBonus}</span>
@@ -311,13 +428,13 @@ export function HeatMapExplainWidget({
                                       </div>
                                       <div className='text-(--text-muted)'>
                                         <span>{t('gameBattle.heatMapSourceHits')}:</span>
-                                        {renderSourceList(entry.adjacencySourceLabels)}
+                                        <ShortLabelsBlock labels={entry.adjacencySourceLabels} t={t} />
                                       </div>
                                     </div>
                                   </>
                                 )}
                                 {entry.mode === 'cluster' && (
-                                  <div className='space-y-0.5 rounded-sm bg-[rgba(0,0,0,0.14)] px-2 py-1'>
+                                  <div className='ui-subpanel space-y-0.5 rounded-sm px-2 py-1'>
                                     <div className='flex gap-1.5'>
                                       <span className='w-3 shrink-0 text-right text-(--text-muted)'>+</span>
                                       <span className='w-5 shrink-0 text-right tabular-nums text-(--text-main)'>{entry.isFocusCandidate ? 1 : 0}</span>
@@ -325,7 +442,7 @@ export function HeatMapExplainWidget({
                                     </div>
                                     <div className='text-(--text-muted)'>
                                       <span>{t('gameBattle.heatMapSourceClusters')}:</span>
-                                      {renderSourceList(entry.clusterSourceLabels)}
+                                      <ClusterSourcesBlock sourceLabels={entry.clusterSourceLabels} t={t} />
                                     </div>
                                   </div>
                                 )}
@@ -355,8 +472,8 @@ export function HeatMapExplainWidget({
                         onClick={() => setPageIndex(i)}
                         className={`cursor-pointer h-6 min-w-6 rounded px-1.5 font-mono text-[10px] font-semibold transition-colors ${
                           isActive
-                            ? 'bg-[rgba(117,235,255,0.18)] text-(--accent-secondary) ring-1 ring-[rgba(117,235,255,0.6)]'
-                            : 'text-(--text-muted) hover:bg-[rgba(255,255,255,0.06)] hover:text-(--text-main)'
+                            ? 'bg-(--accent-soft) text-(--accent-secondary) ring-1 ring-(--border-strong)'
+                            : 'text-(--text-muted) hover:bg-(--bg-card-soft) hover:text-(--text-main)'
                         }`}
                       >
                         {label}

@@ -443,7 +443,6 @@ export function GameSpectatePage() {
       },
       missionLog: {
         entries: logEntries,
-        heightClassName: 'h-11 sm:h-32',
         chatMessages,
         currentUserId,
         onSendChatMessage: canSendSpectatorChat

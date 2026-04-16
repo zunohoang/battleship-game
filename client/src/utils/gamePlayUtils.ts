@@ -650,40 +650,6 @@ export function botFireRandom(
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-export function botFireLearning(
-  boardConfig: BoardConfig,
-  shots: Shot[],
-): { x: number; y: number } | null {
-  const shotSet = new Set(shots.map((shot) => cellKey(shot.x, shot.y)));
-  const hits = shots.filter((shot) => shot.isHit);
-  const adjacentTargets: { x: number; y: number }[] = [];
-
-  for (const hit of hits) {
-    for (const target of [
-      { x: hit.x - 1, y: hit.y },
-      { x: hit.x + 1, y: hit.y },
-      { x: hit.x, y: hit.y - 1 },
-      { x: hit.x, y: hit.y + 1 },
-    ]) {
-      if (
-        target.x >= 0 &&
-        target.x < boardConfig.cols &&
-        target.y >= 0 &&
-        target.y < boardConfig.rows &&
-        !shotSet.has(cellKey(target.x, target.y))
-      ) {
-        adjacentTargets.push(target);
-      }
-    }
-  }
-
-  if (adjacentTargets.length > 0) {
-    return adjacentTargets[Math.floor(Math.random() * adjacentTargets.length)];
-  }
-
-  return botFireRandom(boardConfig, shots);
-}
-
 function buildShipTracking(
   targetPlacements: PlacedShip[],
   targetShipsById: Map<string, ShipDefinition>,
@@ -817,10 +783,6 @@ export function getBotShot(
   targetPlacements?: PlacedShip[],
   targetShipsById?: Map<string, ShipDefinition>,
 ): { x: number; y: number } | null {
-  if (difficulty === 'learning') {
-    return botFireLearning(boardConfig, shots);
-  }
-
   if (difficulty === 'probability') {
     const attemptedShots = new Set(
       shots.map((shot) => cellKey(shot.x, shot.y)),

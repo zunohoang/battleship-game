@@ -476,7 +476,6 @@ export function useOnlineGamePlaySession({
       },
       missionLog: {
         entries: logEntries,
-        heightClassName: 'h-28',
       },
     };
   }, [
