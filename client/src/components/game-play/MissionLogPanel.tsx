@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageSquare, ScrollText, type LucideIcon } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageSquare,
+  ScrollText,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { MissionLogEntry } from '@/types/game';
 import type { ChatMessage } from '@/types/chat';
@@ -13,12 +19,18 @@ export interface MissionLogPanelProps {
   resolveChatAuthorLabel?: (senderId: string) => string;
   jumpToChatSignal?: number;
   className?: string;
+  /** Overrides default fixed log viewport (`h-28 sm:h-32`). Use Tailwind `h-*` / `min-h-*` classes. */
   logHeightClassName?: string;
+  /** When true, log starts collapsed to a thin bottom bar; expand to read full log/chat. */
+  docked?: boolean;
   defaultTab?: MissionLogTab;
   mode?: 'tabs' | 'chat-only' | 'logs-only';
 }
 
 type MissionLogTab = 'logs' | 'chats';
+
+/** Fixed viewport for log/chat scroll area — stable when empty or full (overflow scroll). */
+const DEFAULT_LOG_VIEWPORT_CLASS = 'h-28 shrink-0 sm:h-32';
 
 interface PendingJumpToChat {
   signal: number;
@@ -95,11 +107,14 @@ export function MissionLogPanel({
   currentUserId,
   resolveChatAuthorLabel,
   jumpToChatSignal = 0,
+  logHeightClassName,
+  docked = false,
   defaultTab = 'logs',
   mode = 'tabs',
 }: MissionLogPanelProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<MissionLogTab>(defaultTab);
+  const [dockExpanded, setDockExpanded] = useState(!docked);
   const isChatOnly = mode === 'chat-only';
   const isLogsOnly = mode === 'logs-only';
   const isLogsTab = isLogsOnly || (!isChatOnly && activeTab === 'logs');
@@ -188,8 +203,8 @@ export function MissionLogPanel({
 
     return () => {
       window.cancelAnimationFrame(frameId);
-    }
-  }, [currentTab, entries.length, scrollToBottom])
+    };
+  }, [currentTab, entries.length, scrollToBottom]);
 
   // Xử lý nhảy đến chat khi có tín hiệu mới
   useEffect(() => {
@@ -198,6 +213,10 @@ export function MissionLogPanel({
       jumpToChatSignal === handledJumpSignalRef.current
     ) {
       return;
+    }
+
+    if (docked) {
+      setDockExpanded(true);
     }
 
     handledJumpSignalRef.current = jumpToChatSignal;
@@ -238,7 +257,7 @@ export function MissionLogPanel({
       }
       window.clearTimeout(timeoutId);
     };
-  }, [isChatOnly, jumpToChatSignal, scrollToBottom]);
+  }, [docked, isChatOnly, jumpToChatSignal, scrollToBottom]);
 
   useEffect(() => {
     const pendingJump = pendingJumpRef.current;
@@ -263,6 +282,10 @@ export function MissionLogPanel({
       window.cancelAnimationFrame(frameId);
     };
   }, [activeTab, chatMessages.length, isChatOnly, jumpToChatSignal, scrollToBottom]);
+
+  const scrollAreaClassName = `themed-scrollbar overflow-y-auto pr-1 ${
+    logHeightClassName ?? DEFAULT_LOG_VIEWPORT_CLASS
+  }`;
 
   const renderChatContent = () => {
     if (chatMessages.length === 0) {
@@ -303,8 +326,54 @@ export function MissionLogPanel({
     });
   };
 
+  if (docked && !dockExpanded) {
+    const hintCount = isLogsTab ? entries.length : chatMessages.length;
+    const hintKey = isLogsTab
+      ? 'gameBattle.missionLogDockHintLogs'
+      : 'gameBattle.missionLogDockHintChats';
+
+    return (
+      <div className='px-3 pt-2 pb-2 sm:px-4'>
+        <button
+          type='button'
+          onClick={() => setDockExpanded(true)}
+          className='flex w-full cursor-pointer items-center justify-between gap-3 rounded-sm border border-(--border-main) bg-[rgba(8,22,36,0.45)] px-3 py-2 text-left transition-colors hover:border-[rgba(117,235,255,0.42)] hover:bg-[rgba(34,211,238,0.08)]'
+          aria-expanded={false}
+          aria-label={t('gameBattle.missionLogDockExpand')}
+        >
+          <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+            <ScrollText
+              size={16}
+              strokeWidth={2.25}
+              className='shrink-0 text-(--accent-secondary)'
+              aria-hidden
+            />
+            <div className='min-w-0'>
+              <p className='truncate font-mono text-[10px] font-black uppercase tracking-[0.22em] text-(--accent-secondary)'>
+                {panelTitle}
+              </p>
+              <p className='truncate font-mono text-[10px] text-(--text-muted)'>
+                {t(hintKey, { count: hintCount })}
+              </p>
+            </div>
+          </div>
+          <ChevronUp
+            size={18}
+            strokeWidth={2.25}
+            className='shrink-0 text-(--text-muted)'
+            aria-hidden
+          />
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className='px-3 pt-3 pb-2 sm:px-4 flex items-stretch gap-3'>
+    <div
+      className={`flex items-stretch gap-3 px-3 pb-2 sm:px-4 ${
+        docked ? 'pt-2' : 'pt-3'
+      }`}
+    >
       {showTabButtons ? (
         <div className='flex shrink-0 flex-col gap-2'>
           <MissionLogTabButton
@@ -322,32 +391,52 @@ export function MissionLogPanel({
         </div>
       ) : null}
       <div className='min-w-0 flex-1'>
-        <div className='flex items-center gap-3'>
-          <p className='font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
+        <div className='flex items-center justify-between gap-2'>
+          <p className='min-w-0 truncate font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
             {panelTitle}
           </p>
+          {docked ? (
+            <button
+              type='button'
+              onClick={() => setDockExpanded(false)}
+              className='ui-button-shell flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors'
+              aria-label={t('gameBattle.missionLogDockCollapse')}
+              title={t('gameBattle.missionLogDockCollapse')}
+            >
+              <ChevronDown size={18} strokeWidth={2.25} />
+            </button>
+          ) : null}
         </div>
         <div
           ref={containerRef}
           onScroll={handleContainerScroll}
-          className='themed-scrollbar overflow-y-auto pr-1 h-11 sm:h-30'
+          className={scrollAreaClassName}
         >
           {isLogsTab ? (
-            <>
-              {entries.map((entry, index) => (
-                <p
-                  key={`${entry.id}-${index}`}
-                  className='font-mono text-[11px] leading-6'
-                >
-                  <span className='text-(--text-subtle)'>
-                    [{entry.timestamp}]{' '}
-                  </span>
-                  <span className={getLogHighlightClass(entry.highlight)}>
-                    {entry.message}
-                  </span>
-                </p>
-              ))}
-            </>
+            entries.length === 0 ? (
+              <p className='font-mono text-[11px] leading-6'>
+                <span className='text-(--text-subtle)'>[SYS] </span>
+                <span className='text-(--text-muted)'>
+                  {t('gameBattle.missionLogEmpty')}
+                </span>
+              </p>
+            ) : (
+              <>
+                {entries.map((entry, index) => (
+                  <p
+                    key={`${entry.id}-${index}`}
+                    className='font-mono text-[11px] leading-6'
+                  >
+                    <span className='text-(--text-subtle)'>
+                      [{entry.timestamp}]{' '}
+                    </span>
+                    <span className={getLogHighlightClass(entry.highlight)}>
+                      {entry.message}
+                    </span>
+                  </p>
+                ))}
+              </>
+            )
           ) : (
             renderChatContent()
           )}
