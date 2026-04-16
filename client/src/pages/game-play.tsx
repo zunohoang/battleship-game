@@ -477,7 +477,6 @@ export function GamePlayScreen({
                     <StatsOverlay
                       playerShots={battlefield.ownShots}
                       botShots={battlefield.incomingShots}
-                      isBotVBot={battlefield.isBotVBot}
                       onClose={() => setStatsDisplayState('hidden')}
                       primaryFleetTitle={battlefield.statsPrimaryTitle}
                       secondaryFleetTitle={battlefield.statsSecondaryTitle}

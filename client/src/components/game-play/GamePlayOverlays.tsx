@@ -31,7 +31,6 @@ interface GameOverOverlayProps {
 interface StatsOverlayProps {
   playerShots: Shot[];
   botShots: Shot[];
-  isBotVBot: boolean;
   onClose: () => void;
   primaryFleetTitle?: string;
   secondaryFleetTitle?: string;
@@ -272,7 +271,6 @@ export function BattleStatsBreakdown({
 export function StatsOverlay({
   playerShots,
   botShots,
-  isBotVBot,
   onClose,
   primaryFleetTitle,
   secondaryFleetTitle,
