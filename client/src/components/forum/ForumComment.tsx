@@ -1,5 +1,9 @@
 import { ForumVotePill } from '@/components/forum/ForumVotePill';
 import { ForumPostActionsMenu } from '@/components/forum/ForumPostActionsMenu';
+import {
+  extractFirstForumMedia,
+  stripFirstForumMedia,
+} from '@/utils/forumMediaUtils';
 import type { ForumPostCardLabels } from '@/components/forum/ForumPostCard';
 
 type ForumRedditCommentProps = {
@@ -35,6 +39,9 @@ export function ForumRedditComment({
   onDelete,
   onBanAuthor,
 }: ForumRedditCommentProps) {
+  const media = extractFirstForumMedia(content);
+  const plainContent = media ? stripFirstForumMedia(content) : content;
+
   return (
     <div className='flex gap-2 sm:gap-3'>
       <div className='flex w-8 shrink-0 flex-col items-center sm:w-9'>
@@ -68,9 +75,27 @@ export function ForumRedditComment({
             />
           ) : null}
         </div>
-        <p className='mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-(--text-main) sm:text-sm'>
-          {content}
-        </p>
+        {plainContent ? (
+          <p className='mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-(--text-main) sm:text-sm'>
+            {plainContent}
+          </p>
+        ) : null}
+        {media ? (
+          media.kind === 'video' ? (
+            <video
+              src={media.url}
+              className='mt-2 max-h-64 w-full rounded-md border border-(--border-main) object-contain'
+              controls
+              preload='metadata'
+            />
+          ) : (
+            <img
+              src={media.url}
+              alt=''
+              className='mt-2 max-h-64 w-full rounded-md border border-(--border-main) object-contain'
+            />
+          )
+        ) : null}
         <ForumVotePill
           voteScore={voteScore}
           upvoteLabel={labels.upvote}

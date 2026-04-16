@@ -20,13 +20,27 @@ import {
   banUser,
   createPost,
   listPosts,
+  uploadForumMedia,
   votePost,
 } from '@/services/forumService';
 import { getApiErrorCode } from '@/services/httpError';
 import type { ForumPost } from '@/types/forum';
+import {
+  appendMediaToForumContent,
+  resolveForumMediaKindFromMime,
+} from '@/utils/forumMediaUtils';
 
 /** Feed + API page size (must match server `ForumPostsQueryDto` default). */
 const FORUM_FEED_PAGE_SIZE = 10;
+const FORUM_MEDIA_MAX_SIZE_BYTES = 15 * 1024 * 1024;
+const FORUM_MEDIA_ALLOWED_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+]);
 
 export function ForumFeedPage() {
   const { t } = useTranslation('common');
@@ -48,6 +62,7 @@ export function ForumFeedPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [postMediaFiles, setPostMediaFiles] = useState<File[]>([]);
   const [composerExpanded, setComposerExpanded] = useState(false);
   const [composerFullscreen, setComposerFullscreen] = useState(false);
   const [modalPostId, setModalPostId] = useState<string | null>(null);
@@ -60,6 +75,7 @@ export function ForumFeedPage() {
     username: string;
   } | null>(null);
   const [isBanningUser, setIsBanningUser] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
 
   const postsRef = useRef<ForumPost[]>([]);
   const totalRef = useRef(0);
@@ -88,6 +104,10 @@ export function ForumFeedPage() {
       openFullscreen: t('forum.feed.openFullscreen'),
       collapseComposer: t('forum.feed.collapseComposer'),
       closeFullscreen: t('forum.feed.closeFullscreen'),
+      uploadMedia: t('forum.feed.uploadMedia'),
+      removeMedia: t('forum.feed.removeMedia'),
+      selectedMediaLabel: t('forum.feed.selectedMedia'),
+      mediaHint: t('forum.feed.mediaHint', { maxMb: 15 }),
     }),
     [t],
   );
@@ -251,9 +271,34 @@ export function ForumFeedPage() {
     try {
       setIsCreating(true);
       setErrorCode(null);
-      await createPost({ title, content });
+      setMediaError(null);
+      let payloadContent = content;
+
+      for (const file of postMediaFiles) {
+        if (!FORUM_MEDIA_ALLOWED_TYPES.has(file.type)) {
+          setMediaError(t('forum.feed.mediaTypeInvalid'));
+          return;
+        }
+        if (file.size > FORUM_MEDIA_MAX_SIZE_BYTES) {
+          setMediaError(t('forum.feed.mediaTooLarge', { maxMb: 15 }));
+          return;
+        }
+      }
+
+      if (postMediaFiles.length > 0) {
+        for (const file of postMediaFiles) {
+          const uploaded = await uploadForumMedia(file);
+          payloadContent = appendMediaToForumContent(payloadContent, {
+            url: uploaded.url,
+            kind: resolveForumMediaKindFromMime(file.type),
+          });
+        }
+      }
+
+      await createPost({ title, content: payloadContent });
       setTitle('');
       setContent('');
+      setPostMediaFiles([]);
       setComposerExpanded(false);
       setComposerFullscreen(false);
       await loadInitial();
@@ -367,6 +412,16 @@ export function ForumFeedPage() {
                 onContentChange={setContent}
                 isCreating={isCreating}
                 onSubmit={submitPost}
+                selectedMediaFiles={postMediaFiles}
+                onMediaChange={(files) => {
+                  setMediaError(null);
+                  setPostMediaFiles((prev) =>
+                    files.length === 0 ? [] : [...prev, ...files],
+                  );
+                }}
+                onRemoveMediaAt={(index) =>
+                  setPostMediaFiles((prev) => prev.filter((_, i) => i !== index))
+                }
                 expanded={composerExpanded}
                 fullscreen={composerFullscreen}
                 onExpand={() => setComposerExpanded(true)}
@@ -387,6 +442,11 @@ export function ForumFeedPage() {
               className='themed-scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1'
             >
               <div className='space-y-3'>
+                {mediaError ? (
+                  <div className='rounded-sm border border-(--accent-danger) bg-[rgba(255,90,90,0.14)] px-4 py-3 text-sm font-semibold text-(--text-main)'>
+                    {mediaError}
+                  </div>
+                ) : null}
                 {errorCode ? (
                   <div className='rounded-sm border border-(--accent-danger) bg-[rgba(255,90,90,0.14)] px-4 py-3 text-sm font-semibold text-(--text-main)'>
                     {t(`errors.${errorCode}`)}

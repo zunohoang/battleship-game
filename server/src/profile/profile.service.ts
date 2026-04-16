@@ -3,6 +3,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -23,10 +24,12 @@ import { AuthResponse } from '../auth/dto/auth-response.dto';
 import type { ProfileSummaryDto } from './dto/profile-summary.dto';
 import { existsSync, unlinkSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { CloudinaryService } from '../common/infrastructure/media/cloudinary.service';
 
 @Injectable()
 export class ProfileService {
   private readonly uploadDir = join(process.cwd(), 'uploads');
+  private readonly logger = new Logger(ProfileService.name);
 
   constructor(
     @Inject(USER_REPOSITORY)
@@ -35,6 +38,7 @@ export class ProfileService {
     private readonly tokenService: ITokenRepository,
     @Inject(PASSWORD_HASHER_REPOSITORY)
     private readonly passwordHasher: IPasswordHasherRepository,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async updateProfile(
@@ -68,6 +72,7 @@ export class ProfileService {
 
     if (avatarUrl) {
       this.deleteLocalAvatarIfExists(user.avatar);
+      await this.deleteCloudinaryAvatarIfExists(user.avatar);
       user.updateAvatar(avatarUrl);
     }
 
@@ -172,6 +177,24 @@ export class ProfileService {
       unlinkSync(targetPath);
     } catch {
       // Ignore file system deletion issues; profile update should still proceed.
+    }
+  }
+
+  private async deleteCloudinaryAvatarIfExists(
+    avatarUrl: string | null | undefined,
+  ): Promise<void> {
+    const publicId = this.cloudinaryService.extractPublicIdFromUrl(avatarUrl);
+    if (!publicId) {
+      return;
+    }
+
+    try {
+      await this.cloudinaryService.destroy(publicId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to delete old Cloudinary avatar (${publicId})`,
+        error instanceof Error ? error.stack : undefined,
+      );
     }
   }
 }

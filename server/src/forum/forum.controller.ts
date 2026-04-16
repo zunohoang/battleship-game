@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,11 +10,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../auth/domain/entities/user';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CloudinaryService } from '../common/infrastructure/media/cloudinary.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { ForumPostsQueryDto } from './dto/forum-posts-query.dto';
@@ -24,7 +29,53 @@ import { ForumService } from './forum.service';
 
 @Controller('forum')
 export class ForumController {
-  constructor(private readonly forumService: ForumService) {}
+  constructor(
+    private readonly forumService: ForumService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
+
+  @Post('media')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 15,
+      },
+      fileFilter: (_req, file, cb) => {
+        const allowed = [
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'video/mp4',
+          'video/webm',
+        ];
+        const isAllowed = allowed.includes(file.mimetype);
+        cb(isAllowed ? null : new Error('INVALID_FORUM_MEDIA_TYPE'), isAllowed);
+      },
+    }),
+  )
+  async uploadMedia(@UploadedFile() file?: Express.Multer.File): Promise<{
+    url: string;
+    resourceType: string;
+  }> {
+    if (!file) {
+      throw new BadRequestException({
+        error: 'FORUM_MEDIA_REQUIRED',
+        message: 'Media file is required',
+      });
+    }
+
+    const uploaded = await this.cloudinaryService.uploadMedia(file, {
+      folder: 'forum-media',
+      publicId: `forum_${Date.now()}`,
+    });
+
+    return {
+      url: uploaded.secure_url,
+      resourceType: uploaded.resource_type,
+    };
+  }
 
   @Get('posts')
   listPosts(@Query() query: ForumPostsQueryDto) {

@@ -1,9 +1,9 @@
 import { ForumPostActionsMenu } from '@/components/forum/ForumPostActionsMenu';
 import { ForumVotePill } from '@/components/forum/ForumVotePill';
 import {
-  extractFirstImageUrlFromPostContent,
-  stripFirstMarkdownImage,
-} from '@/utils/forumImageUtils';
+  extractForumMediaList,
+  stripAllForumMedia,
+} from '@/utils/forumMediaUtils';
 
 export type ForumPostCardLabels = {
   upvote: string;
@@ -65,10 +65,13 @@ export function ForumPostCard({
   const canManage = canManagePost && onDeletePost;
 
   const meta = `${authorUsername} · ${createdAtLabel}`;
-  const imageUrl = extractFirstImageUrlFromPostContent(content);
+  const medias = extractForumMediaList(content);
+  const imageMedias = medias.filter((item) => item.kind === 'image');
+  const videoMedias = medias.filter((item) => item.kind === 'video');
+  const primaryMedia = medias[0] ?? null;
   const textForExcerpt =
-    lineClampContent !== undefined && imageUrl
-      ? stripFirstMarkdownImage(content)
+    lineClampContent !== undefined && primaryMedia
+      ? stripAllForumMedia(content)
       : content;
 
   const body = (
@@ -108,8 +111,10 @@ export function ForumPostCard({
     </>
   );
 
-  const imageBlock =
-    imageUrl && onOpenPost ? (
+  const MAX_GRID_IMAGES = 4;
+  const remainingImageCount = Math.max(0, imageMedias.length - MAX_GRID_IMAGES);
+  const mediaBlock =
+    onOpenPost && imageMedias.length > 0 ? (
       <button
         type='button'
         className={`relative mt-2 w-full overflow-hidden rounded-md border border-(--border-main) bg-(--bg-card-soft) text-left transition-opacity hover:opacity-95 ${compact ? 'max-h-40' : 'max-h-48'}`}
@@ -118,10 +123,52 @@ export function ForumPostCard({
           onOpenPost();
         }}
       >
-        <img
-          src={imageUrl}
-          alt=''
+        {imageMedias.length === 1 ? (
+          <img
+            src={imageMedias[0].url}
+            alt=''
+            className='max-h-40 w-full object-cover sm:max-h-48'
+          />
+        ) : (
+          <div className='grid grid-cols-2 gap-1 p-1'>
+            {imageMedias.slice(0, MAX_GRID_IMAGES).map((item, idx) => {
+              const isLastVisible = idx === MAX_GRID_IMAGES - 1;
+              const shouldOverlay = isLastVisible && remainingImageCount > 0;
+              return (
+                <div
+                  key={`${item.url}-${idx}`}
+                  className='relative h-20 overflow-hidden rounded sm:h-24'
+                >
+                  <img
+                    src={item.url}
+                    alt=''
+                    className={`h-full w-full object-cover ${shouldOverlay ? 'scale-105 blur-[1.5px]' : ''}`}
+                  />
+                  {shouldOverlay ? (
+                    <div className='absolute inset-0 flex items-center justify-center bg-[rgba(0,0,0,0.42)] text-xl font-black text-white'>
+                      +{remainingImageCount}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </button>
+    ) : onOpenPost && videoMedias.length > 0 ? (
+      <button
+        type='button'
+        className={`relative mt-2 w-full overflow-hidden rounded-md border border-(--border-main) bg-(--bg-card-soft) text-left transition-opacity hover:opacity-95 ${compact ? 'max-h-40' : 'max-h-48'}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          onOpenPost();
+        }}
+      >
+        <video
+          src={videoMedias[0].url}
           className='max-h-40 w-full object-cover sm:max-h-48'
+          controls
+          preload='metadata'
         />
       </button>
     ) : null;
@@ -174,7 +221,7 @@ export function ForumPostCard({
           >
             {body}
           </button>
-          {imageBlock}
+          {mediaBlock}
         </>
       ) : (
         <div className={compact ? 'mt-2' : 'mt-3'}>{body}</div>

@@ -1,6 +1,6 @@
-import { useEffect, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Maximize2, Minimize2, X } from 'lucide-react';
+import { ChevronDown, Maximize2, Minimize2, Paperclip, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export type ForumCreatePostComposerLabels = {
@@ -15,6 +15,10 @@ export type ForumCreatePostComposerLabels = {
   openFullscreen: string;
   collapseComposer: string;
   closeFullscreen: string;
+  uploadMedia: string;
+  removeMedia: string;
+  selectedMediaLabel: string;
+  mediaHint: string;
 };
 
 type ForumCreatePostComposerProps = {
@@ -26,6 +30,9 @@ type ForumCreatePostComposerProps = {
   onContentChange: (value: string) => void;
   isCreating: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  selectedMediaFiles: File[];
+  onMediaChange: (files: File[]) => void;
+  onRemoveMediaAt: (index: number) => void;
   expanded: boolean;
   fullscreen: boolean;
   onExpand: () => void;
@@ -44,6 +51,9 @@ function ComposerFormFields({
   isCreating,
   showSubmitButton = true,
   footerEndSlot,
+  selectedMediaFiles,
+  onMediaChange,
+  onRemoveMediaAt,
 }: {
   labels: ForumCreatePostComposerLabels;
   isLoggedIn: boolean;
@@ -54,7 +64,22 @@ function ComposerFormFields({
   isCreating: boolean;
   showSubmitButton?: boolean;
   footerEndSlot?: ReactNode;
+  selectedMediaFiles: File[];
+  onMediaChange: (files: File[]) => void;
+  onRemoveMediaAt: (index: number) => void;
 }) {
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (selectedMediaFiles.length === 0) {
+      setPreviewUrls([]);
+      return;
+    }
+    const objectUrls = selectedMediaFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(objectUrls);
+    return () => objectUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [selectedMediaFiles]);
+
   return (
     <>
       <input
@@ -75,10 +100,43 @@ function ComposerFormFields({
         required
       />
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-        <p className='text-sm text-(--text-muted)'>
-          {isLoggedIn ? labels.loginStateReady : labels.loginStateRequired}
-        </p>
+        <div className='flex flex-col gap-1'>
+          <p className='text-sm text-(--text-muted)'>
+            {isLoggedIn ? labels.loginStateReady : labels.loginStateRequired}
+          </p>
+          <p className='text-xs text-(--text-muted)'>{labels.mediaHint}</p>
+        </div>
         <div className='flex flex-wrap items-center justify-end gap-2'>
+          <label className='inline-flex cursor-pointer items-center gap-2 rounded-sm border border-(--border-main) px-3 py-2 text-xs font-bold tracking-[0.08em] uppercase'>
+            <Paperclip className='h-4 w-4' aria-hidden />
+            <span>{labels.uploadMedia}</span>
+            <input
+              type='file'
+              className='hidden'
+              multiple
+              accept='image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm'
+              disabled={!isLoggedIn || isCreating}
+              onChange={(event) => {
+                const files = Array.from(event.target.files ?? []);
+                onMediaChange(files);
+                event.currentTarget.value = '';
+              }}
+            />
+          </label>
+          {selectedMediaFiles.length > 0 ? (
+            <div className='inline-flex items-center gap-2 rounded-sm border border-(--border-main) px-2.5 py-2 text-xs'>
+              <span className='max-w-[12rem] truncate'>
+                {labels.selectedMediaLabel}: {selectedMediaFiles.length}
+              </span>
+              <button
+                type='button'
+                className='cursor-pointer text-(--text-muted) hover:text-(--text-main)'
+                onClick={() => onMediaChange([])}
+              >
+                {labels.removeMedia}
+              </button>
+            </div>
+          ) : null}
           {footerEndSlot}
           {showSubmitButton ? (
             <Button
@@ -92,6 +150,45 @@ function ComposerFormFields({
           ) : null}
         </div>
       </div>
+      {previewUrls.length > 0 ? (
+        <div className='grid gap-2 rounded-md border border-(--border-main) bg-(--bg-card-soft) p-2'>
+          {previewUrls.map((url, index) => {
+            const file = selectedMediaFiles[index];
+            const isVideo = file?.type.startsWith('video/');
+            return (
+              <div
+                key={`${file.name}-${index}`}
+                className='rounded border border-(--border-main) bg-(--bg-card) p-2'
+              >
+                <div className='mb-2 flex items-center justify-between gap-2 text-xs'>
+                  <span className='truncate text-(--text-muted)'>{file.name}</span>
+                  <button
+                    type='button'
+                    className='cursor-pointer text-(--text-muted) hover:text-(--text-main)'
+                    onClick={() => onRemoveMediaAt(index)}
+                  >
+                    {labels.removeMedia}
+                  </button>
+                </div>
+                {isVideo ? (
+                  <video
+                    src={url}
+                    className='max-h-64 w-full rounded object-contain'
+                    controls
+                    preload='metadata'
+                  />
+                ) : (
+                  <img
+                    src={url}
+                    alt=''
+                    className='max-h-64 w-full rounded object-contain'
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </>
   );
 }
@@ -105,6 +202,9 @@ export function ForumCreatePostComposer({
   onContentChange,
   isCreating,
   onSubmit,
+  selectedMediaFiles,
+  onMediaChange,
+  onRemoveMediaAt,
   expanded,
   fullscreen,
   onExpand,
@@ -175,6 +275,9 @@ export function ForumCreatePostComposer({
               onTitleChange={onTitleChange}
               onContentChange={onContentChange}
               isCreating={isCreating}
+              selectedMediaFiles={selectedMediaFiles}
+              onMediaChange={onMediaChange}
+              onRemoveMediaAt={onRemoveMediaAt}
               showSubmitButton={false}
               footerEndSlot={
                 <Button
@@ -271,6 +374,9 @@ export function ForumCreatePostComposer({
                 onTitleChange={onTitleChange}
                 onContentChange={onContentChange}
                 isCreating={isCreating}
+                selectedMediaFiles={selectedMediaFiles}
+                onMediaChange={onMediaChange}
+                onRemoveMediaAt={onRemoveMediaAt}
               />
             </form>
           )}

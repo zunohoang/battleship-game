@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { BanUserModal } from '@/components/forum/BanUserModal';
@@ -18,6 +18,7 @@ import {
   createComment,
   getPost,
   listComments,
+  uploadForumMedia,
   updatePost,
   voteComment,
   votePost,
@@ -25,9 +26,22 @@ import {
 import { getApiErrorCode } from '@/services/httpError';
 import type { ForumComment, ForumPost } from '@/types/forum';
 import {
-  extractFirstImageUrlFromPostContent,
-  stripFirstMarkdownImage,
-} from '@/utils/forumImageUtils';
+  appendMediaToForumContent,
+  extractFirstForumMedia,
+  extractForumMediaList,
+  resolveForumMediaKindFromMime,
+  stripAllForumMedia,
+} from '@/utils/forumMediaUtils';
+
+const FORUM_MEDIA_MAX_SIZE_BYTES = 15 * 1024 * 1024;
+const FORUM_MEDIA_ALLOWED_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+]);
 
 type ForumPostDetailModalProps = {
   postId: string | null;
@@ -57,6 +71,7 @@ export function ForumPostDetailModal({
   const [post, setPost] = useState<ForumPost | null>(null);
   const [comments, setComments] = useState<ForumComment[]>([]);
   const [commentContent, setCommentContent] = useState('');
+  const [commentMediaFile, setCommentMediaFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -72,6 +87,23 @@ export function ForumPostDetailModal({
     username: string;
   } | null>(null);
   const [isBanningUser, setIsBanningUser] = useState(false);
+  const [commentMediaError, setCommentMediaError] = useState<string | null>(
+    null,
+  );
+  const [commentPreviewUrl, setCommentPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [imageViewerIndex, setImageViewerIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!commentMediaFile) {
+      setCommentPreviewUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(commentMediaFile);
+    setCommentPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [commentMediaFile]);
 
   const labels = useMemo(
     () => ({
@@ -111,6 +143,8 @@ export function ForumPostDetailModal({
       setPost(null);
       setComments([]);
       setCommentContent('');
+      setCommentMediaFile(null);
+      setCommentMediaError(null);
       setErrorCode(null);
       setIsPostEditing(false);
       return;
@@ -208,8 +242,29 @@ export function ForumPostDetailModal({
     try {
       setIsSubmitting(true);
       setErrorCode(null);
-      await createComment(postId, { content: commentContent });
+      setCommentMediaError(null);
+      let payloadContent = commentContent;
+
+      if (commentMediaFile) {
+        if (!FORUM_MEDIA_ALLOWED_TYPES.has(commentMediaFile.type)) {
+          setCommentMediaError(t('forum.feed.mediaTypeInvalid'));
+          return;
+        }
+        if (commentMediaFile.size > FORUM_MEDIA_MAX_SIZE_BYTES) {
+          setCommentMediaError(t('forum.feed.mediaTooLarge', { maxMb: 15 }));
+          return;
+        }
+
+        const uploaded = await uploadForumMedia(commentMediaFile);
+        payloadContent = appendMediaToForumContent(commentContent, {
+          url: uploaded.url,
+          kind: resolveForumMediaKindFromMime(commentMediaFile.type),
+        });
+      }
+
+      await createComment(postId, { content: payloadContent });
       setCommentContent('');
+      setCommentMediaFile(null);
       await loadDetail();
       onPostCommentCountDelta?.(postId, 1);
       setPost((previous) =>
@@ -295,14 +350,33 @@ export function ForumPostDetailModal({
     return null;
   }
 
-  const imageUrl = post
-    ? extractFirstImageUrlFromPostContent(post.content)
-    : null;
+  const media = post ? extractFirstForumMedia(post.content) : null;
+  const mediaList = post ? extractForumMediaList(post.content) : [];
+  const imageMediaList = mediaList.filter((item) => item.kind === 'image');
+  const videoMediaList = mediaList.filter((item) => item.kind === 'video');
   const postBodyText = post
-    ? imageUrl
-      ? stripFirstMarkdownImage(post.content)
+    ? media
+      ? stripAllForumMedia(post.content)
       : post.content
     : undefined;
+
+  const isImageViewerOpen = imageViewerIndex !== null;
+  const currentViewerImage =
+    imageViewerIndex !== null ? imageMediaList[imageViewerIndex] : null;
+  const goToPrevImage = () => {
+    if (imageViewerIndex === null || imageMediaList.length === 0) {
+      return;
+    }
+    setImageViewerIndex(
+      (imageViewerIndex - 1 + imageMediaList.length) % imageMediaList.length,
+    );
+  };
+  const goToNextImage = () => {
+    if (imageViewerIndex === null || imageMediaList.length === 0) {
+      return;
+    }
+    setImageViewerIndex((imageViewerIndex + 1) % imageMediaList.length);
+  };
 
   return createPortal(
     <>
@@ -418,12 +492,43 @@ export function ForumPostDetailModal({
                     <h3 className='mt-2 text-xl font-black uppercase tracking-[0.06em] text-(--text-main) sm:text-2xl'>
                       {post.title}
                     </h3>
-                    {imageUrl ? (
+                    {imageMediaList.length === 1 ? (
                       <img
-                        src={imageUrl}
+                        src={imageMediaList[0].url}
                         alt=''
                         className='mt-3 max-h-[min(50vh,420px)] w-full rounded-md border border-(--border-main) object-contain'
                       />
+                    ) : null}
+                    {imageMediaList.length > 1 ? (
+                      <div className='mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3'>
+                        {imageMediaList.map((item, idx) => (
+                          <button
+                            key={`${item.url}-${idx}`}
+                            type='button'
+                            className='overflow-hidden rounded-md border border-(--border-main) bg-(--bg-card-soft)'
+                            onClick={() => setImageViewerIndex(idx)}
+                          >
+                            <img
+                              src={item.url}
+                              alt=''
+                              className='h-28 w-full object-cover sm:h-32'
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {videoMediaList.length > 0 ? (
+                      <div className='mt-3 grid gap-2'>
+                        {videoMediaList.map((item, idx) => (
+                          <video
+                            key={`${item.url}-${idx}`}
+                            src={item.url}
+                            className='max-h-[min(50vh,420px)] w-full rounded-md border border-(--border-main) object-contain'
+                            controls
+                            preload='metadata'
+                          />
+                        ))}
+                      </div>
                     ) : null}
                     <p className='mt-3 whitespace-pre-wrap text-sm leading-relaxed text-(--text-main)'>
                       {postBodyText ?? ''}
@@ -468,11 +573,47 @@ export function ForumPostDetailModal({
                   required
                 />
                 <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                  <p className='text-sm text-(--text-muted)'>
-                    {isLoggedIn
-                      ? t('forum.feed.loginStateReady')
-                      : t('forum.feed.loginStateRequired')}
-                  </p>
+                  <div className='flex flex-col gap-1'>
+                    <p className='text-sm text-(--text-muted)'>
+                      {isLoggedIn
+                        ? t('forum.feed.loginStateReady')
+                        : t('forum.feed.loginStateRequired')}
+                    </p>
+                    <p className='text-xs text-(--text-muted)'>
+                      {t('forum.feed.mediaHint', { maxMb: 15 })}
+                    </p>
+                    {commentMediaError ? (
+                      <p className='text-xs text-(--accent-danger)'>
+                        {commentMediaError}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <label className='inline-flex cursor-pointer items-center gap-2 rounded-sm border border-(--border-main) px-3 py-2 text-xs font-bold tracking-[0.08em] uppercase'>
+                      <span>{t('forum.feed.uploadMedia')}</span>
+                      <input
+                        type='file'
+                        className='hidden'
+                        accept='image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm'
+                        disabled={!isLoggedIn || isSubmitting}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          setCommentMediaError(null);
+                          setCommentMediaFile(file);
+                          event.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {commentMediaFile ? (
+                      <button
+                        type='button'
+                        className='text-xs text-(--text-muted) hover:text-(--text-main)'
+                        onClick={() => setCommentMediaFile(null)}
+                      >
+                        {t('forum.feed.removeMedia')}
+                      </button>
+                    ) : null}
+                  </div>
                   <Button
                     type='submit'
                     variant='primary'
@@ -484,6 +625,29 @@ export function ForumPostDetailModal({
                       : t('forum.post.submitComment')}
                   </Button>
                 </div>
+                {commentMediaFile ? (
+                  <div className='grid gap-2'>
+                    <p className='text-xs text-(--text-muted)'>
+                      {t('forum.feed.selectedMedia')}: {commentMediaFile.name}
+                    </p>
+                    {commentPreviewUrl ? (
+                      commentMediaFile.type.startsWith('video/') ? (
+                        <video
+                          src={commentPreviewUrl}
+                          className='max-h-56 w-full rounded border border-(--border-main) object-contain'
+                          controls
+                          preload='metadata'
+                        />
+                      ) : (
+                        <img
+                          src={commentPreviewUrl}
+                          alt=''
+                          className='max-h-56 w-full rounded border border-(--border-main) object-contain'
+                        />
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
               </form>
             </div>
 
@@ -566,6 +730,51 @@ export function ForumPostDetailModal({
           }
         }}
       />
+
+      {isImageViewerOpen && currentViewerImage ? (
+        <div
+          className='fixed inset-0 z-[230] flex items-center justify-center bg-[rgba(0,0,0,0.86)] p-3 sm:p-6'
+          role='dialog'
+          aria-modal='true'
+          onClick={() => setImageViewerIndex(null)}
+        >
+          <div
+            className='relative flex h-full w-full max-w-6xl items-center justify-center'
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type='button'
+              className='absolute top-0 right-0 z-10 inline-flex h-10 w-10 items-center justify-center rounded-md border border-(--border-main) bg-(--bg-card-soft) text-(--text-main)'
+              onClick={() => setImageViewerIndex(null)}
+            >
+              <X className='h-5 w-5' aria-hidden />
+            </button>
+            {imageMediaList.length > 1 ? (
+              <>
+                <button
+                  type='button'
+                  className='absolute left-0 z-10 inline-flex h-10 w-10 items-center justify-center rounded-md border border-(--border-main) bg-(--bg-card-soft) text-(--text-main)'
+                  onClick={goToPrevImage}
+                >
+                  <ChevronLeft className='h-5 w-5' aria-hidden />
+                </button>
+                <button
+                  type='button'
+                  className='absolute right-0 z-10 inline-flex h-10 w-10 items-center justify-center rounded-md border border-(--border-main) bg-(--bg-card-soft) text-(--text-main)'
+                  onClick={goToNextImage}
+                >
+                  <ChevronRight className='h-5 w-5' aria-hidden />
+                </button>
+              </>
+            ) : null}
+            <img
+              src={currentViewerImage.url}
+              alt=''
+              className='max-h-full max-w-full rounded-md object-contain'
+            />
+          </div>
+        </div>
+      ) : null}
     </>,
     document.body,
   );
