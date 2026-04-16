@@ -10,10 +10,22 @@ import { Readable } from 'stream';
 @Injectable()
 export class CloudinaryService {
   constructor(private readonly configService: ConfigService) {
+    const cloud_name = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
+    const api_key = this.configService.get<string>('CLOUDINARY_API_KEY');
+    const api_secret = this.configService.get<string>('CLOUDINARY_API_SECRET');
+
+    // In production, docker-compose may default unset env vars to empty string.
+    // We want a clear, actionable error instead of failing later in Cloudinary.
+    if (!cloud_name?.trim() || !api_key?.trim() || !api_secret?.trim()) {
+      throw new Error(
+        'CLOUDINARY_CONFIG_MISSING: CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET must be set',
+      );
+    }
+
     cloudinary.config({
-      cloud_name: this.configService.getOrThrow<string>('CLOUDINARY_CLOUD_NAME'),
-      api_key: this.configService.getOrThrow<string>('CLOUDINARY_API_KEY'),
-      api_secret: this.configService.getOrThrow<string>('CLOUDINARY_API_SECRET'),
+      cloud_name,
+      api_key,
+      api_secret,
     });
   }
 
