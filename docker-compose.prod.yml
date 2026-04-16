@@ -65,6 +65,9 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT}
       CHAT_HISTORY_TTL_SECONDS: ${CHAT_HISTORY_TTL_SECONDS}
+      SHOPAIKEY_API_KEY: ${SHOPAIKEY_API_KEY}
+      SHOPAIKEY_GENAI_BASE_URL: https://api.shopaikey.com
+      SHOPAIKEY_GENAI_MODEL: gemini-2.5-flash
     ports:
       - '${PORT}:3000'
     volumes:
