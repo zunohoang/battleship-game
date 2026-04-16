@@ -4,6 +4,7 @@ import type {
   BotPlacementStrategy,
   BotVBotSettings,
 } from '@/types/game';
+import { useTranslation } from 'react-i18next';
 
 interface BotVsBotMenuProps {
   settings: BotVBotSettings;
@@ -128,10 +129,13 @@ export function BotVsBotMenu({
   editTargetBot,
   onEditTargetBotChange,
 }: BotVsBotMenuProps) {
+  const { t } = useTranslation();
   const hasManualBotA = (settings.botA.placementMode ?? 'auto') === 'manual';
   const hasManualBotB = (settings.botB.placementMode ?? 'auto') === 'manual';
   const hasManualBot = hasManualBotA || hasManualBotB;
   const bothManual = hasManualBotA && hasManualBotB;
+  const botAName = `BOT ${t(`gameSetup.aiDifficulty.${settings.botA.difficulty}`)}`;
+  const botBName = `BOT ${t(`gameSetup.aiDifficulty.${settings.botB.difficulty}`)}`;
 
   return (
     <div className='ui-panel ui-panel-strong rounded-md p-4'>
@@ -146,13 +150,13 @@ export function BotVsBotMenu({
 
       <div className='grid gap-3 md:grid-cols-2'>
         <BotConfigCard
-          title='BOT XÁC SUẤT'
+          title={botAName}
           settings={settings}
           botKey='botA'
           onChange={onChange}
         />
         <BotConfigCard
-          title='BOT LLM'
+          title={botBName}
           settings={settings}
           botKey='botB'
           onChange={onChange}
@@ -174,7 +178,7 @@ export function BotVsBotMenu({
                     : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                 }`}
               >
-                {botKey === 'botA' ? 'BOT XÁC SUẤT' : 'BOT LLM'}
+                {botKey === 'botA' ? botAName : botBName}
               </button>
             ))}
           </div>

@@ -866,15 +866,17 @@ export function GamePlayPage() {
     }
 
     const isBotBTurn = turn === 'bot';
+    const botAName = `BOT ${t(`gameSetup.aiDifficulty.${localBotVBotSettings?.botA.difficulty ?? 'random'}`)}`;
+    const botBName = `BOT ${t(`gameSetup.aiDifficulty.${localBotVBotSettings?.botB.difficulty ?? 'random'}`)}`;
     const difficulty = isBotBTurn
       ? (localBotVBotSettings?.botB.difficulty ?? 'random')
       : (localBotVBotSettings?.botA.difficulty ?? 'random');
 
     return {
-      attackerLabel: isBotBTurn ? 'BOT LLM' : 'BOT XÁC SUẤT',
+      attackerLabel: isBotBTurn ? botBName : botAName,
       targetLabel: isBotBTurn
-        ? t('gameBattle.botAFleet')
-        : t('gameBattle.botBFleet'),
+        ? t('gameBattle.botAFleet', { botName: botAName })
+        : t('gameBattle.botBFleet', { botName: botBName }),
       difficulty,
       targetBoard: isBotBTurn ? ('own' as const) : ('opponent' as const),
       entries: buildBotHeatMapExplanation(
@@ -1080,13 +1082,15 @@ export function GamePlayPage() {
   }
 
   const timerDisplay = `${padTime(Math.floor(timer / 60))}:${padTime(timer % 60)}`;
+  const botAName = `BOT ${t(`gameSetup.aiDifficulty.${localBotVBotSettings?.botA.difficulty ?? 'random'}`)}`;
+  const botBName = `BOT ${t(`gameSetup.aiDifficulty.${localBotVBotSettings?.botB.difficulty ?? 'random'}`)}`;
   const leftHeaderContent =
     localMode === 'botvbot'
       ? createHeaderContent({
         avatarSrc: images.botAvatar,
         label: 'BOT',
-        name: 'BOT XÁC SUẤT',
-        fallbackName: 'BOT XÁC SUẤT',
+        name: botAName,
+        fallbackName: botAName,
         signature: localBotVBotSettings?.botA.difficulty
           ? t(
             `gameSetup.aiDifficulty.${localBotVBotSettings.botA.difficulty}`,
@@ -1110,8 +1114,8 @@ export function GamePlayPage() {
       ? createHeaderContent({
         avatarSrc: images.botAvatar,
         label: 'BOT',
-        name: 'BOT LLM',
-        fallbackName: 'BOT LLM',
+        name: botBName,
+        fallbackName: botBName,
         signature: localBotVBotSettings?.botB.difficulty
           ? t(
             `gameSetup.aiDifficulty.${localBotVBotSettings.botB.difficulty}`,
@@ -1148,8 +1152,18 @@ export function GamePlayPage() {
     incomingShots: botShots,
     ownFleetStatus,
     opponentFleetStatus,
-    ownTitle: isBotVBot ? t('gameBattle.botAFleet') : t('gameBattle.myFleet'),
-    opponentTitle: isBotVBot ? t('gameBattle.botBFleet') : t('gameBattle.enemyWaters'),
+    ownTitle: isBotVBot
+      ? t('gameBattle.botAFleet', { botName: botAName })
+      : t('gameBattle.myFleet'),
+    opponentTitle: isBotVBot
+      ? t('gameBattle.botBFleet', { botName: botBName })
+      : t('gameBattle.enemyWaters'),
+    statsPrimaryTitle: isBotVBot
+      ? t('gameBattle.botAFleet', { botName: botAName })
+      : undefined,
+    statsSecondaryTitle: isBotVBot
+      ? t('gameBattle.botBFleet', { botName: botBName })
+      : undefined,
     canFire: canPlayerFire,
     revealOpponentShips: localPhase === 'gameover' || isBotVBot,
     onFire: isBotVBot ? undefined : handlePlayerFire,

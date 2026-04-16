@@ -94,6 +94,8 @@ export function useLocalGamePlaySession({
   );
   const botADifficulty = botVBotSettings?.botA.difficulty ?? 'random';
   const botBDifficulty = botVBotSettings?.botB.difficulty ?? 'random';
+  const botAName = `BOT ${t(`gameSetup.aiDifficulty.${botADifficulty}`)}`;
+  const botBName = `BOT ${t(`gameSetup.aiDifficulty.${botBDifficulty}`)}`;
 
   const [botPlacements] = useState<PlacedShip[]>(() => {
     if (initialBotPlacements?.length) {
@@ -220,7 +222,10 @@ export function useLocalGamePlaySession({
             : 'gameBattle.logYouMiss';
 
       appendLog(
-        t(messageKey, { coord: toCoordLabel(x, y) }),
+        t(messageKey, {
+          coord: toCoordLabel(x, y),
+          botName: actor === 'botA' ? botAName : undefined,
+        }),
         isHit ? 'friendly' : 'miss',
       );
 
@@ -230,6 +235,9 @@ export function useLocalGamePlaySession({
             actor === 'botA'
               ? 'gameBattle.logBotBFleetSunk'
               : 'gameBattle.logEnemyFleetSunk',
+            {
+              botName: botBName,
+            },
           ),
           'critical',
         );
@@ -304,6 +312,9 @@ export function useLocalGamePlaySession({
             isBotVBot
               ? 'gameBattle.logBotAFleetSunk'
               : 'gameBattle.logYourFleetSunk',
+            {
+              botName: botAName,
+            },
           ),
           'critical',
         );
@@ -641,8 +652,8 @@ export function useLocalGamePlaySession({
 
   const turnLabel = isBotVBot
     ? turn === 'player'
-      ? t('gameBattle.botATurn')
-      : t('gameBattle.botBTurn')
+      ? t('gameBattle.botATurn', { botName: botAName })
+      : t('gameBattle.botBTurn', { botName: botBName })
     : turn === 'player'
       ? t('gameBattle.yourTurn')
       : t('gameBattle.enemyTurn');

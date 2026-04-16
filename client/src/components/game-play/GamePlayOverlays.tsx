@@ -344,16 +344,10 @@ export function StatsOverlay({
       <div className='relative z-10 flex h-full flex-col'>
         <BattleStatsBreakdown
           primaryFleetTitle={
-            primaryFleetTitle ??
-            (isBotVBot
-              ? t('gameBattle.botAFleet')
-              : t('gameBattle.stats.youLabel'))
+            primaryFleetTitle ?? t('gameBattle.stats.youLabel')
           }
           secondaryFleetTitle={
-            secondaryFleetTitle ??
-            (isBotVBot
-              ? t('gameBattle.botBFleet')
-              : t('gameBattle.stats.enemyLabel'))
+            secondaryFleetTitle ?? t('gameBattle.stats.enemyLabel')
           }
           primary={primaryNumbers}
           secondary={secondaryNumbers}
