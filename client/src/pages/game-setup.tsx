@@ -331,6 +331,8 @@ export function GameSetupPage() {
     () => ships.reduce((total, ship) => total + ship.count, 0),
     [ships],
   );
+  const botAName = `BOT ${t(`gameSetup.aiDifficulty.${botVBotSettings.botA.difficulty}`)}`;
+  const botBName = `BOT ${t(`gameSetup.aiDifficulty.${botVBotSettings.botB.difficulty}`)}`;
   const allShipsPlaced =
     requiredShipCount > 0 && state.placements.length === requiredShipCount;
   const botVBotPlacementReady =
@@ -722,7 +724,7 @@ export function GameSetupPage() {
                           botVBotManualPlacements.botA.length === requiredShipCount &&
                           botVBotManualPlacements.botB.length === requiredShipCount
                         }
-                        opponentReadyLabel='BOT XÁC SUẤT & BOT LLM đã hoàn thành'
+                        opponentReadyLabel={`${botAName} & ${botBName} đã hoàn thành`}
                         primaryActionDisabled={primaryActionDisabled}
                         onPrimaryAction={handlePrimaryAction}
                         botSwitcher={
@@ -738,7 +740,7 @@ export function GameSetupPage() {
                                     : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                                 }`}
                               >
-                                {botKey === 'botA' ? 'BOT XÁC SUẤT' : 'BOT LLM'}
+                                {botKey === 'botA' ? botAName : botBName}
                               </button>
                             ))}
                           </div>
