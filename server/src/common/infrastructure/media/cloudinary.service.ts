@@ -5,6 +5,7 @@ import {
   UploadApiResponse,
   v2 as cloudinary,
 } from 'cloudinary';
+import { createReadStream } from 'node:fs';
 import { Readable } from 'stream';
 @Injectable()
 export class CloudinaryService {
@@ -60,7 +61,17 @@ export class CloudinaryService {
         },
       );
 
-      Readable.from(file.buffer).pipe(uploadStream);
+      if (file.buffer && file.buffer.length > 0) {
+        Readable.from(file.buffer).pipe(uploadStream);
+        return;
+      }
+
+      if (file.path) {
+        createReadStream(file.path).pipe(uploadStream);
+        return;
+      }
+
+      reject(new Error('Missing uploaded file data'));
     });
   }
 

@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -66,15 +67,22 @@ export class ForumController {
       });
     }
 
-    const uploaded = await this.cloudinaryService.uploadMedia(file, {
-      folder: 'forum-media',
-      publicId: `forum_${Date.now()}`,
-    });
+    try {
+      const uploaded = await this.cloudinaryService.uploadMedia(file, {
+        folder: 'forum-media',
+        publicId: `forum_${Date.now()}`,
+      });
 
-    return {
-      url: uploaded.secure_url,
-      resourceType: uploaded.resource_type,
-    };
+      return {
+        url: uploaded.secure_url,
+        resourceType: uploaded.resource_type,
+      };
+    } catch (error) {
+      throw new ServiceUnavailableException({
+        error: 'FORUM_MEDIA_UPLOAD_FAILED',
+        message: error instanceof Error ? error.message : 'Media upload failed',
+      });
+    }
   }
 
   @Get('posts')
