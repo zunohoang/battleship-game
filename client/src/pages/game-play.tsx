@@ -33,6 +33,7 @@ import {
 import type {
   AiDifficulty,
   BoardConfig,
+  BotVBotSettings,
   GameConfig,
   GameMode,
   GamePhase,
@@ -332,8 +333,9 @@ export function GamePlayScreen({
   };
 
   return (
-    <GamePlayShell>
-      <div className='flex h-[calc(100dvh-2rem)] min-h-[calc(100dvh-2rem)] flex-col gap-1.5 sm:h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-4rem)] sm:gap-2 md:h-auto md:min-h-0 md:flex-1 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)] md:gap-3'>
+    <GamePlayShell sectionClassName='ui-hud-shell mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col rounded-md p-2 sm:p-4'>
+      <div className='flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col gap-1.5 sm:min-h-[calc(100dvh-5rem)] sm:gap-2'>
+      <div className='flex min-h-0 flex-1 flex-col gap-1.5 sm:gap-2 md:grid md:min-h-0 md:flex-1 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)] md:gap-3'>
         {/* Left header based on 2 device type */}
         <div className='order-1 shrink-0 md:hidden'>
           <GamePlayIdentityCard
@@ -529,7 +531,7 @@ export function GamePlayScreen({
         </div>
       </div>
 
-      <div className='mt-2 ui-panel overflow-hidden rounded-md'>
+      <div className='mt-auto shrink-0 ui-panel overflow-hidden rounded-md'>
         <MissionLogPanel
           title={t('gameBattle.missionLog')}
           entries={missionLog.entries}
@@ -538,6 +540,8 @@ export function GamePlayScreen({
           onSendMessage={missionLog.onSendChatMessage}
           resolveChatAuthorLabel={missionLog.resolveChatAuthorLabel}
           jumpToChatSignal={chatJumpSignal}
+          logHeightClassName={missionLog.heightClassName}
+          docked
           defaultTab={missionLog.defaultTab}
           mode={battlefield.isBotVBot || !missionLog.onSendChatMessage ? 'logs-only' : 'tabs'}
         />
@@ -675,6 +679,7 @@ export function GamePlayScreen({
           </div>
         </div>
       </div>
+      </div>
 
       <SettingsModal
         isOpen={isSettingsModalOpen}
@@ -718,6 +723,35 @@ function hasOnlineMatchState(
   );
 }
 
+/** Old sessions may still carry removed `learning` difficulty in router state. */
+function normalizeLegacyAiDifficulty(value: unknown): AiDifficulty {
+  if (value === 'random' || value === 'probability' || value === 'llm') {
+    return value;
+  }
+  if (value === 'learning') {
+    return 'random';
+  }
+  return 'random';
+}
+
+function normalizeLegacyBotVBotSettings(
+  settings: BotVBotSettings | undefined,
+): BotVBotSettings | undefined {
+  if (!settings) {
+    return undefined;
+  }
+  return {
+    botA: {
+      ...settings.botA,
+      difficulty: normalizeLegacyAiDifficulty(settings.botA.difficulty),
+    },
+    botB: {
+      ...settings.botB,
+      difficulty: normalizeLegacyAiDifficulty(settings.botB.difficulty),
+    },
+  };
+}
+
 // Page included all logics for game panel
 export function GamePlayPage() {
   const location = useLocation();
@@ -728,8 +762,12 @@ export function GamePlayPage() {
   const localState = isValidLocalGamePlayState(state) ? state : null;
   const onlineState = hasOnlineMatchState(state) ? state : null;
   const localMode = localState?.mode === 'botvbot' ? 'botvbot' : 'bot';
-  const localAiDifficulty = localState?.aiDifficulty ?? 'random';
-  const localBotVBotSettings = localState?.botVBotSettings;
+  const localAiDifficulty = normalizeLegacyAiDifficulty(
+    localState?.aiDifficulty ?? 'random',
+  );
+  const localBotVBotSettings = normalizeLegacyBotVBotSettings(
+    localState?.botVBotSettings,
+  );
 
   const {
     boardConfig,
@@ -761,8 +799,8 @@ export function GamePlayPage() {
     config: localState?.config ?? EMPTY_GAME_CONFIG,
     playerPlacements: localState?.placements ?? EMPTY_PLACEMENTS,
     initialBotPlacements: localState?.botPlacements,
-    aiDifficulty: localState?.aiDifficulty ?? 'random',
-    botVBotSettings: localState?.botVBotSettings,
+    aiDifficulty: localAiDifficulty,
+    botVBotSettings: localBotVBotSettings,
     t,
     enabled: !isOnlineMode && !!localState,
   });
@@ -1156,7 +1194,9 @@ export function GamePlayPage() {
       model={{
         header: localHeader,
         battlefield: localBattlefield,
-        missionLog: { entries: logEntries, heightClassName: 'h-11 sm:h-32' },
+        missionLog: {
+          entries: logEntries,
+        },
         actions: localActions,
         state: localState_,
       }}

@@ -55,7 +55,7 @@ export function PlacementSidebar({
   onPrimaryAction,
   aiDifficulty,
   onAiDifficultyChange,
-  difficultyOptions = ['random', 'learning', 'probability', 'llm'],
+  difficultyOptions = ['random', 'probability', 'llm'],
   onStrategicPlace,
   botSwitcher,
   opponentReadyLabel,
@@ -287,7 +287,6 @@ export function PlacementSidebar({
       >
         <div className='space-y-2 text-sm text-(--text-muted)'>
           <p>{t('gameSetup.aiDifficulty.guideRandom')}</p>
-          <p>{t('gameSetup.aiDifficulty.guideLearning')}</p>
           <p>{t('gameSetup.aiDifficulty.guideProbability')}</p>
           <p>{t('gameSetup.aiDifficulty.guideLlm')}</p>
         </div>
