@@ -146,13 +146,13 @@ export function BotVsBotMenu({
 
       <div className='grid gap-3 md:grid-cols-2'>
         <BotConfigCard
-          title='BOT A'
+          title='BOT XÁC SUẤT'
           settings={settings}
           botKey='botA'
           onChange={onChange}
         />
         <BotConfigCard
-          title='BOT B'
+          title='BOT LLM'
           settings={settings}
           botKey='botB'
           onChange={onChange}
@@ -174,7 +174,7 @@ export function BotVsBotMenu({
                     : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                 }`}
               >
-                {botKey === 'botA' ? 'BOT A' : 'BOT B'}
+                {botKey === 'botA' ? 'BOT XÁC SUẤT' : 'BOT LLM'}
               </button>
             ))}
           </div>

@@ -722,7 +722,7 @@ export function GameSetupPage() {
                           botVBotManualPlacements.botA.length === requiredShipCount &&
                           botVBotManualPlacements.botB.length === requiredShipCount
                         }
-                        opponentReadyLabel='BOT A & BOT B đã hoàn thành'
+                        opponentReadyLabel='BOT XÁC SUẤT & BOT LLM đã hoàn thành'
                         primaryActionDisabled={primaryActionDisabled}
                         onPrimaryAction={handlePrimaryAction}
                         botSwitcher={
@@ -738,7 +738,7 @@ export function GameSetupPage() {
                                     : 'ui-state-idle text-(--text-muted) hover:text-(--text-main)'
                                 }`}
                               >
-                                {botKey === 'botA' ? 'BOT A' : 'BOT B'}
+                                {botKey === 'botA' ? 'BOT XÁC SUẤT' : 'BOT LLM'}
                               </button>
                             ))}
                           </div>
