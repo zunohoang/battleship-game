@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../auth/infrastructure/persistence/relational/entities/user.entity';
+import { CloudinaryService } from '../common/infrastructure/media/cloudinary.service';
 import { ForumController } from './forum.controller';
 import { ForumService } from './forum.service';
 import { ForumCommentEntity } from './infrastructure/persistence/relational/entities/forum-comment.entity';
@@ -19,7 +20,7 @@ import { ForumPostVoteEntity } from './infrastructure/persistence/relational/ent
     ]),
   ],
   controllers: [ForumController],
-  providers: [ForumService],
+  providers: [ForumService, CloudinaryService],
   exports: [ForumService],
 })
 export class ForumModule {}

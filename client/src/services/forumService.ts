@@ -27,6 +27,19 @@ export async function createPost(payload: {
   return response.data;
 }
 
+export async function uploadForumMedia(file: File): Promise<{
+  url: string;
+  resourceType: string;
+}> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.post<{ url: string; resourceType: string }>(
+    '/forum/media',
+    formData,
+  );
+  return response.data;
+}
+
 export async function updatePost(
   postId: string,
   payload: { title: string; content: string },
