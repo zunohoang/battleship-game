@@ -112,9 +112,9 @@ export function AdminDashboardPage() {
   }
 
   return (
-    <main className='relative min-h-screen p-4 text-(--text-main) sm:p-8'>
+    <main className='relative h-screen overflow-hidden p-4 text-(--text-main) sm:p-8'>
       <div className='ui-page-bg -z-20' />
-      <section className='ui-hud-shell mx-auto flex w-full max-w-7xl flex-col gap-4 rounded-md p-4 sm:p-6'>
+      <section className='ui-hud-shell mx-auto flex h-full w-full max-w-7xl min-h-0 flex-col gap-4 rounded-md p-4 sm:p-6'>
         <header className='ui-panel flex w-full min-w-0 shrink-0 items-center justify-between gap-3 rounded-lg border border-(--panel-stroke) px-4 py-3 shadow-(--hud-shadow) sm:gap-4 sm:px-5 sm:py-4'>
           <div className='min-w-0 flex-1'>
             <p className='ui-title-eyebrow'>{t('adminDashboard.eyebrow')}</p>
@@ -138,8 +138,8 @@ export function AdminDashboardPage() {
           </Button>
         </header>
 
-        <div className='grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)]'>
-          <aside className='ui-panel rounded-md p-3'>
+        <div className='grid min-h-0 flex-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]'>
+          <aside className='ui-panel rounded-md p-3 lg:min-h-0 lg:overflow-y-auto'>
             <div className='grid gap-2'>
               {NAV_ITEMS.map((item) => (
                 <button
@@ -158,7 +158,7 @@ export function AdminDashboardPage() {
             </div>
           </aside>
 
-          <section className='ui-panel rounded-md p-4 sm:p-5'>
+          <section className='ui-panel themed-scrollbar min-h-0 overflow-y-auto rounded-md p-4 sm:p-5'>
             {loadingOverview && activeSection === 'overview' ? (
               <p className='text-sm text-(--text-muted)'>
                 {t('adminDashboard.loading')}

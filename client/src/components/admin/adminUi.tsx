@@ -35,7 +35,7 @@ export function PaginationBar({
       <div className='flex gap-2'>
         <Button
           variant='default'
-          className='h-9 w-auto px-3'
+          className='inline-flex h-9 min-w-[5.5rem] items-center justify-center px-3 normal-case tracking-normal'
           disabled={!canPrev}
           onClick={() => onPageChange(page - 1)}
         >
@@ -43,7 +43,7 @@ export function PaginationBar({
         </Button>
         <Button
           variant='default'
-          className='h-9 w-auto px-3'
+          className='inline-flex h-9 min-w-[5.5rem] items-center justify-center px-3 normal-case tracking-normal'
           disabled={!canNext}
           onClick={() => onPageChange(page + 1)}
         >

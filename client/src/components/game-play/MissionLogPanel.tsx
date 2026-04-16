@@ -84,7 +84,7 @@ function MissionLogTabButton({
 }: MissionLogTabButtonProps) {
   return (
     <button
-      type='button'
+      type="button"
       aria-label={label}
       title={label}
       aria-pressed={active}
@@ -118,7 +118,11 @@ export function MissionLogPanel({
   const isChatOnly = mode === 'chat-only';
   const isLogsOnly = mode === 'logs-only';
   const isLogsTab = isLogsOnly || (!isChatOnly && activeTab === 'logs');
-  const currentTab: MissionLogTab = isChatOnly ? 'chats' : isLogsOnly ? 'logs' : activeTab;
+  const currentTab: MissionLogTab = isChatOnly
+    ? 'chats'
+    : isLogsOnly
+      ? 'logs'
+      : activeTab;
   const panelTitle = isChatOnly
     ? t('gameBattle.chatTitle')
     : isLogsTab
@@ -160,16 +164,19 @@ export function MissionLogPanel({
   }, []);
 
   // Cuộn xuống cuối khi có tín hiệu mới nhảy đến chat và chưa xử lý tín hiệu đó
-  const scrollToBottom = useCallback((targetTab: MissionLogTab) => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
+  const scrollToBottom = useCallback(
+    (targetTab: MissionLogTab) => {
+      const container = containerRef.current;
+      if (!container) {
+        return;
+      }
 
-    container.scrollTop = container.scrollHeight;
+      container.scrollTop = container.scrollHeight;
 
-    saveTabScrollTop(targetTab);
-  }, [saveTabScrollTop]);
+      saveTabScrollTop(targetTab);
+    },
+    [saveTabScrollTop],
+  );
 
   // Xử lý scroll
   const handleContainerScroll = useCallback(() => {
@@ -177,10 +184,13 @@ export function MissionLogPanel({
   }, [currentTab, saveTabScrollTop]);
 
   // Xử lý chuyển tab
-  const handleTabChange = useCallback((nextTab: MissionLogTab) => {
-    saveTabScrollTop(currentTab);
-    setActiveTab(nextTab);
-  }, [currentTab, saveTabScrollTop]);
+  const handleTabChange = useCallback(
+    (nextTab: MissionLogTab) => {
+      saveTabScrollTop(currentTab);
+      setActiveTab(nextTab);
+    },
+    [currentTab, saveTabScrollTop],
+  );
 
   // Cập nhật số lượng tin nhắn khi messages thay đổi
   useEffect(() => {
@@ -281,7 +291,13 @@ export function MissionLogPanel({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [activeTab, chatMessages.length, isChatOnly, jumpToChatSignal, scrollToBottom]);
+  }, [
+    activeTab,
+    chatMessages.length,
+    isChatOnly,
+    jumpToChatSignal,
+    scrollToBottom,
+  ]);
 
   const scrollAreaClassName = `themed-scrollbar overflow-y-auto pr-1 ${
     logHeightClassName ?? DEFAULT_LOG_VIEWPORT_CLASS
@@ -290,9 +306,9 @@ export function MissionLogPanel({
   const renderChatContent = () => {
     if (chatMessages.length === 0) {
       return (
-        <p className='font-mono text-[11px] leading-6'>
-          <span className='text-(--text-subtle)'>[SYS] </span>
-          <span className='text-(--text-muted)'>
+        <p className="font-mono text-[11px] leading-6">
+          <span className="text-(--text-subtle)">[SYS] </span>
+          <span className="text-(--text-muted)">
             {t('gameBattle.chatPlaceholder')}
           </span>
         </p>
@@ -309,8 +325,8 @@ export function MissionLogPanel({
       const timeLabel = formatChatTime(message.sentAt);
 
       return (
-        <p key={message.id} className='font-mono text-[11px] leading-6'>
-          <span className='text-(--text-subtle)'>[{timeLabel}] </span>
+        <p key={message.id} className="font-mono text-[11px] leading-6">
+          <span className="text-(--text-subtle)">[{timeLabel}] </span>
           <span
             className={
               isOwnMessage
@@ -320,7 +336,7 @@ export function MissionLogPanel({
           >
             [{authorLabel}]
           </span>
-          <span className='text-(--text-main)'>{message.content}</span>
+          <span className="text-(--text-main)">{message.content}</span>
         </p>
       );
     });
@@ -333,26 +349,26 @@ export function MissionLogPanel({
       : 'gameBattle.missionLogDockHintChats';
 
     return (
-      <div className='px-3 pt-2 pb-2 sm:px-4'>
+      <div className="px-3 pt-2 pb-2 sm:px-4">
         <button
-          type='button'
+          type="button"
           onClick={() => setDockExpanded(true)}
-          className='flex w-full cursor-pointer items-center justify-between gap-3 rounded-sm border border-(--border-main) bg-[rgba(8,22,36,0.45)] px-3 py-2 text-left transition-colors hover:border-[rgba(117,235,255,0.42)] hover:bg-[rgba(34,211,238,0.08)]'
+          className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-sm border border-[rgba(117,235,255,0.34)] px-3 py-2 text-left backdrop-blur-[1.5px] transition-colors hover:border-[rgba(117,235,255,0.56)] "
           aria-expanded={false}
           aria-label={t('gameBattle.missionLogDockExpand')}
         >
-          <div className='flex min-w-0 flex-1 items-center gap-2.5'>
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <ScrollText
               size={16}
               strokeWidth={2.25}
-              className='shrink-0 text-(--accent-secondary)'
+              className="shrink-0 text-(--accent-secondary)"
               aria-hidden
             />
-            <div className='min-w-0'>
-              <p className='truncate font-mono text-[10px] font-black uppercase tracking-[0.22em] text-(--accent-secondary)'>
+            <div className="min-w-0">
+              <p className="truncate font-mono text-[10px] font-black uppercase tracking-[0.22em] text-(--accent-secondary)">
                 {panelTitle}
               </p>
-              <p className='truncate font-mono text-[10px] text-(--text-muted)'>
+              <p className="truncate font-mono text-[10px] text-(--text-muted)">
                 {t(hintKey, { count: hintCount })}
               </p>
             </div>
@@ -360,7 +376,7 @@ export function MissionLogPanel({
           <ChevronUp
             size={18}
             strokeWidth={2.25}
-            className='shrink-0 text-(--text-muted)'
+            className="shrink-0 text-(--text-muted)"
             aria-hidden
           />
         </button>
@@ -375,7 +391,7 @@ export function MissionLogPanel({
       }`}
     >
       {showTabButtons ? (
-        <div className='flex shrink-0 flex-col gap-2'>
+        <div className="flex shrink-0 flex-col gap-2">
           <MissionLogTabButton
             active={activeTab === 'logs'}
             icon={ScrollText}
@@ -390,16 +406,16 @@ export function MissionLogPanel({
           />
         </div>
       ) : null}
-      <div className='min-w-0 flex-1'>
-        <div className='flex items-center justify-between gap-2'>
-          <p className='min-w-0 truncate font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)'>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate font-mono text-[10px] font-black uppercase tracking-[0.28em] text-(--accent-secondary)">
             {panelTitle}
           </p>
           {docked ? (
             <button
-              type='button'
+              type="button"
               onClick={() => setDockExpanded(false)}
-              className='ui-button-shell flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors'
+              className="ui-button-shell flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors"
               aria-label={t('gameBattle.missionLogDockCollapse')}
               title={t('gameBattle.missionLogDockCollapse')}
             >
@@ -414,9 +430,9 @@ export function MissionLogPanel({
         >
           {isLogsTab ? (
             entries.length === 0 ? (
-              <p className='font-mono text-[11px] leading-6'>
-                <span className='text-(--text-subtle)'>[SYS] </span>
-                <span className='text-(--text-muted)'>
+              <p className="font-mono text-[11px] leading-6">
+                <span className="text-(--text-subtle)">[SYS] </span>
+                <span className="text-(--text-muted)">
                   {t('gameBattle.missionLogEmpty')}
                 </span>
               </p>
@@ -425,9 +441,9 @@ export function MissionLogPanel({
                 {entries.map((entry, index) => (
                   <p
                     key={`${entry.id}-${index}`}
-                    className='font-mono text-[11px] leading-6'
+                    className="font-mono text-[11px] leading-6"
                   >
-                    <span className='text-(--text-subtle)'>
+                    <span className="text-(--text-subtle)">
                       [{entry.timestamp}]{' '}
                     </span>
                     <span className={getLogHighlightClass(entry.highlight)}>
