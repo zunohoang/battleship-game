@@ -9,7 +9,15 @@ import { createReadStream } from 'node:fs';
 import { Readable } from 'stream';
 @Injectable()
 export class CloudinaryService {
-  constructor(private readonly configService: ConfigService) {
+  private configured = false;
+
+  constructor(private readonly configService: ConfigService) {}
+
+  private ensureConfigured(): void {
+    if (this.configured) {
+      return;
+    }
+
     const cloud_name = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
     const api_key = this.configService.get<string>('CLOUDINARY_API_KEY');
     const api_secret = this.configService.get<string>('CLOUDINARY_API_SECRET');
@@ -27,6 +35,8 @@ export class CloudinaryService {
       api_key,
       api_secret,
     });
+
+    this.configured = true;
   }
 
   uploadImage(
@@ -50,6 +60,7 @@ export class CloudinaryService {
       resourceType?: 'image' | 'video' | 'auto';
     },
   ): Promise<UploadApiResponse> {
+    this.ensureConfigured();
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -88,6 +99,7 @@ export class CloudinaryService {
   }
 
   async destroy(publicId: string): Promise<void> {
+    this.ensureConfigured();
     await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
   }
 
