@@ -27,10 +27,10 @@ export function Modal({
     <AnimatePresence>
       {isOpen ? (
         <motion.div
-          className='ui-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4'
-          role='dialog'
-          aria-modal='true'
-          aria-labelledby='modal-title'
+          className="ui-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -43,27 +43,27 @@ export function Modal({
             exit={{ opacity: 0, y: 20, scale: 0.985 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className='relative z-10 flex items-center justify-between gap-4'>
+            <div className="relative z-10 flex items-center justify-between gap-4">
               <div>
-                <p className='ui-title-eyebrow'>{t('modal.secureChannel')}</p>
+                <p className="ui-title-eyebrow">{t('modal.secureChannel')}</p>
                 <h2
-                  id='modal-title'
-                  className='mt-2 text-xl font-black uppercase tracking-[0.08em] text-(--text-main)'
+                  id="modal-title"
+                  className="mt-2 text-xl font-black uppercase tracking-[0.08em] text-(--text-main)"
                 >
                   {title}
                 </h2>
               </div>
               <button
-                type='button'
+                type="button"
                 aria-label={t('modal.close')}
                 onClick={onClose}
-                className='ui-button-shell ui-button-default cursor-pointer rounded-sm border px-3 py-1.5 text-sm font-semibold'
+                className="ui-button-shell ui-button-default cursor-pointer rounded-sm border px-3 py-1.5 text-sm font-semibold"
               >
                 X
               </button>
             </div>
 
-            <div className='relative z-10 mt-4'>{children}</div>
+            <div className="relative z-10 mt-4">{children}</div>
           </motion.div>
         </motion.div>
       ) : null}

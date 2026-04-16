@@ -909,6 +909,14 @@ export class AdminService {
     ]);
 
     const userMap = new Map(users.map((user) => [user.id, user.username]));
+    const roomIds = [...new Set(finishedMatches.map((match) => match.roomId))];
+    const rooms = roomIds.length
+      ? await this.roomRepo.find({
+          where: { id: In(roomIds) },
+          select: ['id', 'code'],
+        })
+      : [];
+    const roomCodeMap = new Map(rooms.map((room) => [room.id, room.code]));
 
     let data = [
       ...bannedUsers
@@ -941,7 +949,7 @@ export class AdminService {
           ? (userMap.get(post.archivedByAdminId) ?? 'system')
           : 'system',
         action: 'ARCHIVE_FORUM_POST',
-        target: `post:${post.id}`,
+        target: `post:${post.id}:${userMap.get(post.authorId) ?? 'unknown'}`,
         createdAt: post.updatedAt.toISOString(),
         metadata: post.title,
       })),
@@ -952,7 +960,7 @@ export class AdminService {
             ? (userMap.get(match.adminActorId) ?? 'system')
             : 'system',
         action: match.endedByAdmin ? 'MATCH_SUSPENDED_BY_ADMIN' : 'MATCH_FINISHED',
-        target: `match:${match.id}`,
+        target: `match:${match.id}:room:${roomCodeMap.get(match.roomId) ?? match.roomId}`,
         createdAt: match.updatedAt.toISOString(),
         metadata: match.endedByAdmin
           ? `reason=${match.adminInterventionReason ?? '-'} type=${match.adminInterventionType ?? '-'}`
