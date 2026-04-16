@@ -871,7 +871,7 @@ export function GamePlayPage() {
       : (localBotVBotSettings?.botA.difficulty ?? 'random');
 
     return {
-      attackerLabel: isBotBTurn ? 'BOT B' : 'BOT A',
+      attackerLabel: isBotBTurn ? 'BOT LLM' : 'BOT XÁC SUẤT',
       targetLabel: isBotBTurn
         ? t('gameBattle.botAFleet')
         : t('gameBattle.botBFleet'),
@@ -1085,8 +1085,8 @@ export function GamePlayPage() {
       ? createHeaderContent({
         avatarSrc: images.botAvatar,
         label: 'BOT',
-        name: 'BOT A',
-        fallbackName: 'BOT A',
+        name: 'BOT XÁC SUẤT',
+        fallbackName: 'BOT XÁC SUẤT',
         signature: localBotVBotSettings?.botA.difficulty
           ? t(
             `gameSetup.aiDifficulty.${localBotVBotSettings.botA.difficulty}`,
@@ -1110,8 +1110,8 @@ export function GamePlayPage() {
       ? createHeaderContent({
         avatarSrc: images.botAvatar,
         label: 'BOT',
-        name: 'BOT B',
-        fallbackName: 'BOT B',
+        name: 'BOT LLM',
+        fallbackName: 'BOT LLM',
         signature: localBotVBotSettings?.botB.difficulty
           ? t(
             `gameSetup.aiDifficulty.${localBotVBotSettings.botB.difficulty}`,
